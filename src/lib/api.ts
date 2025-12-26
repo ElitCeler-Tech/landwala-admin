@@ -579,3 +579,71 @@ export const enquiriesApi = {
     return response.data;
   },
 };
+
+export interface CreateCommissionPayload {
+  agentId: string;
+  propertyId: string;
+  totalCommissionAmount: number;
+  plotSize: string;
+}
+
+export interface Commission {
+  id: string;
+  agentId: string;
+  propertyId: string;
+  totalCommissionAmount: number;
+  plotSize: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CommissionSummary {
+  agentId: string;
+  agentName: string;
+  phone: string;
+  email: string;
+  totalCommissionAssigned: number;
+  lastAssignedAt: string;
+}
+
+export interface CommissionsResponse {
+  data: CommissionSummary[];
+  meta: PaginationMeta;
+}
+
+export interface LeaderboardEntry {
+  agentId: string;
+  agentName: string;
+  totalCommissionAssigned: number;
+  lastAssignedAt: string;
+  rank: number;
+}
+
+export interface LeaderboardResponse {
+  data: LeaderboardEntry[];
+  meta: PaginationMeta;
+}
+
+export const transactionsApi = {
+  createCommission: async (data: CreateCommissionPayload) => {
+    const response = await api.post<Commission>(
+      "/admin/transactions/commissions",
+      data
+    );
+    return response.data;
+  },
+
+  getCommissions: async (page: number = 1, limit: number = 10) => {
+    const response = await api.get<CommissionsResponse>(
+      `/admin/transactions/commissions?page=${page}&limit=${limit}`
+    );
+    return response.data;
+  },
+
+  getLeaderboard: async (page: number = 1, limit: number = 10) => {
+    const response = await api.get<LeaderboardResponse>(
+      `/admin/transactions/commissions/leaderboard?page=${page}&limit=${limit}`
+    );
+    return response.data;
+  },
+};

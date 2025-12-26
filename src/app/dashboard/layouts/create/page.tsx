@@ -411,7 +411,7 @@ export default function CreateLayoutPage() {
                     value={newSlot.sectionTitle}
                     onChange={handleSlotChange}
                     placeholder="e.g. 32ft Road"
-                    className="w-full bg-gray-50 border-none rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-[#1e2667] outline-none"
+                    className="w-full bg-gray-50 border-none rounded-lg px-3 py-2 text-sm text-gray-900 focus:ring-1 focus:ring-[#1e2667] outline-none"
                   />
                 </div>
                 <div className="space-y-1">
@@ -424,7 +424,7 @@ export default function CreateLayoutPage() {
                     value={newSlot.plotNumber}
                     onChange={handleSlotChange}
                     placeholder="e.g. 24"
-                    className="w-full bg-gray-50 border-none rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-[#1e2667] outline-none"
+                    className="w-full bg-gray-50 border-none rounded-lg px-3 py-2 text-sm text-gray-900 focus:ring-1 focus:ring-[#1e2667] outline-none"
                   />
                 </div>
                 <div className="space-y-1">
@@ -437,7 +437,7 @@ export default function CreateLayoutPage() {
                     value={newSlot.area}
                     onChange={handleSlotChange}
                     placeholder="e.g. 165 sq.yd"
-                    className="w-full bg-gray-50 border-none rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-[#1e2667] outline-none"
+                    className="w-full bg-gray-50 border-none rounded-lg px-3 py-2 text-sm text-gray-900 focus:ring-1 focus:ring-[#1e2667] outline-none"
                   />
                 </div>
                 <div className="space-y-1">
@@ -450,7 +450,7 @@ export default function CreateLayoutPage() {
                     value={newSlot.facing}
                     onChange={handleSlotChange}
                     placeholder="e.g. East"
-                    className="w-full bg-gray-50 border-none rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-[#1e2667] outline-none"
+                    className="w-full bg-gray-50 border-none rounded-lg px-3 py-2 text-sm text-gray-900 focus:ring-1 focus:ring-[#1e2667] outline-none"
                   />
                 </div>
                 <div className="space-y-1">
@@ -464,7 +464,7 @@ export default function CreateLayoutPage() {
                     onChange={handleSlotChange}
                     placeholder="Price value"
                     step="0.01"
-                    className="w-full bg-gray-50 border-none rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-[#1e2667] outline-none"
+                    className="w-full bg-gray-50 border-none rounded-lg px-3 py-2 text-sm text-gray-900 focus:ring-1 focus:ring-[#1e2667] outline-none"
                   />
                 </div>
                 <div className="space-y-1">
@@ -477,7 +477,7 @@ export default function CreateLayoutPage() {
                     value={newSlot.width}
                     onChange={handleSlotChange}
                     placeholder="e.g. 30'4"
-                    className="w-full bg-gray-50 border-none rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-[#1e2667] outline-none"
+                    className="w-full bg-gray-50 border-none rounded-lg px-3 py-2 text-sm text-gray-900 focus:ring-1 focus:ring-[#1e2667] outline-none"
                   />
                 </div>
                 <div className="space-y-1">
@@ -490,7 +490,7 @@ export default function CreateLayoutPage() {
                     value={newSlot.height}
                     onChange={handleSlotChange}
                     placeholder="e.g. 60'0"
-                    className="w-full bg-gray-50 border-none rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-[#1e2667] outline-none"
+                    className="w-full bg-gray-50 border-none rounded-lg px-3 py-2 text-sm text-gray-900 focus:ring-1 focus:ring-[#1e2667] outline-none"
                   />
                 </div>
                 <div className="space-y-1 flex items-end">

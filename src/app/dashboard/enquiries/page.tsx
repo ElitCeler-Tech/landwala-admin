@@ -46,7 +46,7 @@ export default function EnquiriesPage() {
         });
     };
 
-    const truncateId = (id: string) => {
+    const truncateId = (id: string | null) => {
         if (!id) return "-";
         return `${id.substring(0, 8)}...`;
     };
@@ -131,8 +131,8 @@ export default function EnquiriesPage() {
                                                 {enquiry.type}
                                             </span>
                                         </td>
-                                        <td className="py-5 text-gray-500 font-mono" title={enquiry.propertyId}>
-                                            {truncateId(enquiry.propertyId)}
+                                        <td className="py-5 text-gray-500 font-mono" title={enquiry.propertyId || enquiry.layoutId || undefined}>
+                                            {truncateId(enquiry.propertyId || enquiry.layoutId)}
                                         </td>
                                         <td className="py-5 pr-8 text-gray-500">
                                             {formatDate(enquiry.createdAt)}
