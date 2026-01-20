@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ChevronLeft,
@@ -17,9 +17,12 @@ export default function LayoutDetailsPage() {
   const params = useParams();
   const layoutId = params.id as string;
 
+  const router = useRouter();
   const [layout, setLayout] = useState<Layout | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showFullLayout, setShowFullLayout] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   useEffect(() => {
     const fetchLayout = async () => {
@@ -37,6 +40,17 @@ export default function LayoutDetailsPage() {
       fetchLayout();
     }
   }, [layoutId]);
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await layoutsApi.deleteLayout(layoutId);
+      router.push("/dashboard/layouts");
+    } catch (error) {
+      console.error("Failed to delete layout:", error);
+      setIsDeleting(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -61,7 +75,36 @@ export default function LayoutDetailsPage() {
   }
 
   return (
-    <div className="p-8 pb-12 bg-white font-sans min-h-full flex flex-col">
+    <div className="p-8 pb-12 bg-white font-sans min-h-full flex flex-col relative">
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-lg">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Delete Layout</h3>
+            <p className="text-gray-500 mb-6">
+              Are you sure you want to delete this layout? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium cursor-pointer"
+                disabled={isDeleting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors font-medium flex items-center gap-2 cursor-pointer"
+              >
+                {isDeleting && <Loader2 className="w-4 h-4 animate-spin" />}
+                {isDeleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-2">
@@ -124,8 +167,8 @@ export default function LayoutDetailsPage() {
               </span>
               <span
                 className={`text-sm font-medium px-3 py-1 rounded-full ${layout.isActive
-                    ? "bg-green-100 text-green-700"
-                    : "bg-gray-100 text-gray-700"
+                  ? "bg-green-100 text-green-700"
+                  : "bg-gray-100 text-gray-700"
                   }`}
               >
                 {layout.isActive ? "Active" : "Inactive"}
@@ -264,13 +307,19 @@ export default function LayoutDetailsPage() {
 
       {/* Footer Actions */}
       <div className="flex justify-end gap-4 mt-8">
+        <button
+          onClick={() => setShowDeleteModal(true)}
+          className="px-8 py-2 rounded-lg text-white font-medium bg-red-600 hover:bg-opacity-90 transition-opacity cursor-pointer"
+        >
+          Delete
+        </button>
         <Link href={`/dashboard/layouts/${layoutId}/edit`}>
           <button className="px-8 py-2 rounded-lg text-white font-medium bg-blue-600 hover:bg-opacity-90 transition-opacity cursor-pointer">
             Edit
           </button>
         </Link>
         <Link href="/dashboard/layouts">
-          <button className="px-8 py-2 rounded-lg text-white font-medium bg-[#ce1313] hover:bg-opacity-90 transition-opacity cursor-pointer">
+          <button className="px-8 py-2 rounded-lg text-white font-medium bg-gray-500 hover:bg-opacity-90 transition-opacity cursor-pointer">
             Back
           </button>
         </Link>

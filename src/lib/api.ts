@@ -396,6 +396,11 @@ export const layoutsApi = {
     });
     return response.data;
   },
+
+  deleteLayout: async (id: string) => {
+    const response = await api.delete<void>(`/admin/layouts/${id}`);
+    return response.data;
+  },
 };
 
 // Loan Application Types
