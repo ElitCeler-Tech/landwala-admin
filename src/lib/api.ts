@@ -387,6 +387,15 @@ export const layoutsApi = {
     });
     return response.data;
   },
+
+  updateLayout: async (id: string, formData: FormData) => {
+    const response = await api.put<Layout>(`/admin/layouts/${id}`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  },
 };
 
 // Loan Application Types

@@ -123,11 +123,10 @@ export default function LayoutDetailsPage() {
                 Status -{" "}
               </span>
               <span
-                className={`text-sm font-medium px-3 py-1 rounded-full ${
-                  layout.isActive
+                className={`text-sm font-medium px-3 py-1 rounded-full ${layout.isActive
                     ? "bg-green-100 text-green-700"
                     : "bg-gray-100 text-gray-700"
-                }`}
+                  }`}
               >
                 {layout.isActive ? "Active" : "Inactive"}
               </span>
@@ -247,8 +246,8 @@ export default function LayoutDetailsPage() {
                             slot.status === "available"
                               ? "bg-green-100 text-green-700"
                               : slot.status === "booked"
-                              ? "bg-amber-100 text-amber-700"
-                              : "bg-gray-100 text-gray-700"
+                                ? "bg-amber-100 text-amber-700"
+                                : "bg-gray-100 text-gray-700"
                           )}
                         >
                           {slot.status}
@@ -261,6 +260,20 @@ export default function LayoutDetailsPage() {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Footer Actions */}
+      <div className="flex justify-end gap-4 mt-8">
+        <Link href={`/dashboard/layouts/${layoutId}/edit`}>
+          <button className="px-8 py-2 rounded-lg text-white font-medium bg-blue-600 hover:bg-opacity-90 transition-opacity cursor-pointer">
+            Edit
+          </button>
+        </Link>
+        <Link href="/dashboard/layouts">
+          <button className="px-8 py-2 rounded-lg text-white font-medium bg-[#ce1313] hover:bg-opacity-90 transition-opacity cursor-pointer">
+            Back
+          </button>
+        </Link>
       </div>
     </div>
   );
