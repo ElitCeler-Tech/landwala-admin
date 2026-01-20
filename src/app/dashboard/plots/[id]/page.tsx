@@ -241,6 +241,96 @@ export default function PlotDetailsPage() {
         </div>
       </div>
 
+      {/* Visibility & Settings Section */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+        <h2 className="text-lg font-bold text-gray-900 mb-6">
+          Visibility & Settings
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Featured Toggle */}
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div>
+              <p className="font-medium text-gray-900">Featured Property</p>
+              <p className="text-xs text-gray-500">Show in featured section</p>
+            </div>
+            <button
+              onClick={async () => {
+                if (!property) return;
+                try {
+                  const updated = await propertiesApi.toggleFeatured(property.id);
+                  setProperty(updated);
+                } catch (error) {
+                  console.error("Failed to toggle featured:", error);
+                }
+              }}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#1e2667] focus:ring-offset-2 ${property.isFeatured ? "bg-[#1e2667]" : "bg-gray-200"
+                }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${property.isFeatured ? "translate-x-6" : "translate-x-1"
+                  }`}
+              />
+            </button>
+          </div>
+
+          {/* Explore Nearby Toggle */}
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div>
+              <p className="font-medium text-gray-900">Explore Nearby</p>
+              <p className="text-xs text-gray-500">Show in explore nearby</p>
+            </div>
+            <button
+              onClick={async () => {
+                if (!property) return;
+                try {
+                  const updated = await propertiesApi.toggleExploreNearby(
+                    property.id
+                  );
+                  setProperty(updated);
+                } catch (error) {
+                  console.error("Failed to toggle explore nearby:", error);
+                }
+              }}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#1e2667] focus:ring-offset-2 ${property.isExploreNearby ? "bg-[#1e2667]" : "bg-gray-200"
+                }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${property.isExploreNearby ? "translate-x-6" : "translate-x-1"
+                  }`}
+              />
+            </button>
+          </div>
+
+          {/* Latest Listing Toggle */}
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div>
+              <p className="font-medium text-gray-900">Latest Listing</p>
+              <p className="text-xs text-gray-500">Mark as latest listing</p>
+            </div>
+            <button
+              onClick={async () => {
+                if (!property) return;
+                try {
+                  const updated = await propertiesApi.toggleLatestListing(
+                    property.id
+                  );
+                  setProperty(updated);
+                } catch (error) {
+                  console.error("Failed to toggle latest listing:", error);
+                }
+              }}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#1e2667] focus:ring-offset-2 ${property.isLatestListing ? "bg-[#1e2667]" : "bg-gray-200"
+                }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${property.isLatestListing ? "translate-x-6" : "translate-x-1"
+                  }`}
+              />
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Photos Section */}
       {property.images.length > 0 && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">

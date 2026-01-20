@@ -250,6 +250,8 @@ export interface Property {
   overviewFields: OverviewField[];
   isActive: boolean;
   isFeatured: boolean;
+  isExploreNearby: boolean;
+  isLatestListing: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -297,6 +299,27 @@ export const propertiesApi = {
 
   deleteProperty: async (id: string) => {
     const response = await api.delete<void>(`/admin/properties/${id}`);
+    return response.data;
+  },
+
+  toggleFeatured: async (id: string) => {
+    const response = await api.patch<Property>(
+      `/admin/properties/${id}/toggle-featured`,
+    );
+    return response.data;
+  },
+
+  toggleExploreNearby: async (id: string) => {
+    const response = await api.patch<Property>(
+      `/admin/properties/${id}/toggle-explore-nearby`,
+    );
+    return response.data;
+  },
+
+  toggleLatestListing: async (id: string) => {
+    const response = await api.patch<Property>(
+      `/admin/properties/${id}/toggle-latest-listing`,
+    );
     return response.data;
   },
 };
