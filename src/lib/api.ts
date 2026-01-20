@@ -49,16 +49,35 @@ export const authApi = {
 };
 
 // Dashboard Types
+export interface DashboardStats {
+  total: number;
+  pending?: number;
+  approved?: number;
+  rejected?: number;
+  active?: number;
+  inactive?: number;
+  verified?: number;
+  contacted?: number;
+  quoteSent?: number;
+  accepted?: number;
+  reviewed?: number;
+  pendingKyc?: number;
+  approvedKyc?: number;
+  featured?: number;
+}
+
 export interface DashboardData {
   totalUsers: number;
-  totalLoanApplications: number;
-  totalLegalVerifications: number;
-  totalLandRegistrations: number;
-  totalLandProtections: number;
-  pendingLoanApplications: number;
-  pendingLegalVerifications: number;
-  pendingLandRegistrations: number;
-  pendingLandProtections: number;
+  totalAgents: DashboardStats;
+  loanApplications: DashboardStats;
+  landProtection: DashboardStats;
+  layoutEnquiries: number;
+  buyPlots: {
+    total: number;
+  };
+  sellPlots: DashboardStats;
+  latestListings: DashboardStats;
+  legalVerification: DashboardStats;
 }
 
 // Dashboard API
@@ -105,7 +124,7 @@ export interface UsersResponse {
 export const usersApi = {
   getUsers: async (page: number = 1, limit: number = 10) => {
     const response = await api.get<UsersResponse>(
-      `/admin/users?page=${page}&limit=${limit}`
+      `/admin/users?page=${page}&limit=${limit}`,
     );
     return response.data;
   },
@@ -158,7 +177,7 @@ export interface AgentsResponse {
 export const agentsApi = {
   getAgents: async (page: number = 1, limit: number = 10) => {
     const response = await api.get<AgentsResponse>(
-      `/admin/agents?page=${page}&limit=${limit}`
+      `/admin/agents?page=${page}&limit=${limit}`,
     );
     return response.data;
   },
@@ -244,7 +263,7 @@ export interface PropertiesResponse {
 export const propertiesApi = {
   getProperties: async (page: number = 1, limit: number = 10) => {
     const response = await api.get<PropertiesResponse>(
-      `/admin/properties?page=${page}&limit=${limit}`
+      `/admin/properties?page=${page}&limit=${limit}`,
     );
     return response.data;
   },
@@ -260,6 +279,24 @@ export const propertiesApi = {
         "Content-Type": "multipart/form-data",
       },
     });
+    return response.data;
+  },
+
+  updateProperty: async (id: string, formData: FormData) => {
+    const response = await api.put<Property>(
+      `/admin/properties/${id}`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      },
+    );
+    return response.data;
+  },
+
+  deleteProperty: async (id: string) => {
+    const response = await api.delete<void>(`/admin/properties/${id}`);
     return response.data;
   },
 };
@@ -309,7 +346,7 @@ export interface LayoutsResponse {
 export const layoutsApi = {
   getLayouts: async (page: number = 1, limit: number = 10) => {
     const response = await api.get<LayoutsResponse>(
-      `/admin/layouts?page=${page}&limit=${limit}`
+      `/admin/layouts?page=${page}&limit=${limit}`,
     );
     return response.data;
   },
@@ -444,28 +481,28 @@ export interface LandProtectionsResponse {
 export const userActionsApi = {
   getLoanApplications: async (page: number = 1, limit: number = 10) => {
     const response = await api.get<LoanApplicationsResponse>(
-      `/admin/loan-applications?page=${page}&limit=${limit}`
+      `/admin/loan-applications?page=${page}&limit=${limit}`,
     );
     return response.data;
   },
 
   getLegalVerifications: async (page: number = 1, limit: number = 10) => {
     const response = await api.get<LegalVerificationsResponse>(
-      `/admin/legal-verifications?page=${page}&limit=${limit}`
+      `/admin/legal-verifications?page=${page}&limit=${limit}`,
     );
     return response.data;
   },
 
   getLandRegistrations: async (page: number = 1, limit: number = 10) => {
     const response = await api.get<LandRegistrationsResponse>(
-      `/admin/land-registrations?page=${page}&limit=${limit}`
+      `/admin/land-registrations?page=${page}&limit=${limit}`,
     );
     return response.data;
   },
 
   getLandProtections: async (page: number = 1, limit: number = 10) => {
     const response = await api.get<LandProtectionsResponse>(
-      `/admin/land-protections?page=${page}&limit=${limit}`
+      `/admin/land-protections?page=${page}&limit=${limit}`,
     );
     return response.data;
   },
@@ -574,7 +611,7 @@ export interface EnquiriesResponse {
 export const enquiriesApi = {
   getEnquiries: async (page: number = 1, limit: number = 10) => {
     const response = await api.get<EnquiriesResponse>(
-      `/admin/enquiries?page=${page}&limit=${limit}`
+      `/admin/enquiries?page=${page}&limit=${limit}`,
     );
     return response.data;
   },
@@ -628,21 +665,21 @@ export const transactionsApi = {
   createCommission: async (data: CreateCommissionPayload) => {
     const response = await api.post<Commission>(
       "/admin/transactions/commissions",
-      data
+      data,
     );
     return response.data;
   },
 
   getCommissions: async (page: number = 1, limit: number = 10) => {
     const response = await api.get<CommissionsResponse>(
-      `/admin/transactions/commissions?page=${page}&limit=${limit}`
+      `/admin/transactions/commissions?page=${page}&limit=${limit}`,
     );
     return response.data;
   },
 
   getLeaderboard: async (page: number = 1, limit: number = 10) => {
     const response = await api.get<LeaderboardResponse>(
-      `/admin/transactions/commissions/leaderboard?page=${page}&limit=${limit}`
+      `/admin/transactions/commissions/leaderboard?page=${page}&limit=${limit}`,
     );
     return response.data;
   },

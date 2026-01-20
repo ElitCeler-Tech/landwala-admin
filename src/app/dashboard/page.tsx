@@ -24,7 +24,6 @@ import {
 } from "recharts";
 import { dashboardApi, DashboardData } from "@/lib/api";
 
-// Chart Data (Mock for now - can be replaced with API later)
 const plotListingsData = [
   { name: "Jan 1", value: 0 },
   { name: "Jan 8", value: 100 },
@@ -75,30 +74,30 @@ export default function Dashboard() {
 
   const stats = dashboardData
     ? [
-        {
-          label: "Total Users",
-          value: dashboardData.totalUsers,
-          icon: Users,
-        },
-        {
-          label: "Loan Applications",
-          value: dashboardData.totalLoanApplications,
-          pending: dashboardData.pendingLoanApplications,
-          icon: FileText,
-        },
-        {
-          label: "Legal Verifications",
-          value: dashboardData.totalLegalVerifications,
-          pending: dashboardData.pendingLegalVerifications,
-          icon: FileCheck,
-        },
-        {
-          label: "Land Registrations",
-          value: dashboardData.totalLandRegistrations,
-          pending: dashboardData.pendingLandRegistrations,
-          icon: Shield,
-        },
-      ]
+      {
+        label: "Total Users",
+        value: dashboardData.totalUsers,
+        icon: Users,
+      },
+      {
+        label: "Loan Applications",
+        value: dashboardData.loanApplications.total,
+        pending: dashboardData.loanApplications.pending,
+        icon: FileText,
+      },
+      {
+        label: "Legal Verifications",
+        value: dashboardData.legalVerification.total,
+        pending: dashboardData.legalVerification.pending,
+        icon: FileCheck,
+      },
+      {
+        label: "Land Protection",
+        value: dashboardData.landProtection.total,
+        pending: dashboardData.landProtection.pending,
+        icon: Shield,
+      },
+    ]
     : [];
 
   if (isLoading) {
