@@ -1,14 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Users,
-  FileCheck,
   Shield,
   FileText,
   MoveUpRight,
   Calendar,
   Loader2,
+  UserCheck,
+  MessageSquare,
+  LandPlot,
+  TrendingUp,
+  Tag,
+  Scale,
 } from "lucide-react";
 import {
   AreaChart,
@@ -41,19 +46,12 @@ const approvalStatusData = [
   { name: "Approved", value: 40, color: "#1e2667" },
   { name: "Pending", value: 30, color: "#fbbf24" },
   { name: "Rejected", value: 30, color: "#000000" },
+  { name: "Verified", value: 20, color: "#22c55e" },
 ];
-
-// Table Data
-const usersData = Array(5).fill({
-  id: "MA3414",
-  name: "Rohan Sen",
-  email: "rohan24@gmail.com",
-  date: "Oct 6",
-});
 
 export default function Dashboard() {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(
-    null
+    null,
   );
   const [isLoading, setIsLoading] = useState(true);
 
@@ -72,34 +70,6 @@ export default function Dashboard() {
     fetchDashboard();
   }, []);
 
-  const stats = dashboardData
-    ? [
-      {
-        label: "Total Users",
-        value: dashboardData.totalUsers,
-        icon: Users,
-      },
-      {
-        label: "Loan Applications",
-        value: dashboardData.loanApplications.total,
-        pending: dashboardData.loanApplications.pending,
-        icon: FileText,
-      },
-      {
-        label: "Legal Verifications",
-        value: dashboardData.legalVerification.total,
-        pending: dashboardData.legalVerification.pending,
-        icon: FileCheck,
-      },
-      {
-        label: "Land Protection",
-        value: dashboardData.landProtection.total,
-        pending: dashboardData.landProtection.pending,
-        icon: Shield,
-      },
-    ]
-    : [];
-
   if (isLoading) {
     return (
       <div className="p-8 font-sans bg-white min-h-screen flex items-center justify-center">
@@ -108,43 +78,217 @@ export default function Dashboard() {
     );
   }
 
-  return (
-    <div className="p-8 font-sans bg-white">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Dashboard</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat, index) => (
-          <div
-            key={index}
-            className="bg-white p-6 rounded-xl shadow-sm border border-gray-100"
-          >
-            <div className="flex flex-col gap-4">
-              <div className="text-gray-500 text-sm font-medium flex items-center gap-2">
-                <stat.icon className="w-4 h-4" /> {stat.label}
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-3xl font-bold text-gray-900">
-                  {stat.value}
-                </span>
-                {"pending" in stat && stat.pending !== undefined && (
-                  <span className="bg-amber-100 text-amber-700 text-xs font-semibold px-2 py-0.5 rounded flex items-center gap-1">
-                    {stat.pending} Pending
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-        ))}
+  // Helper to format checks for display
+  const renderStatCard = (
+    title: string,
+    value: string | number,
+    icon: React.ElementType,
+    subStats?: {
+      label: string;
+      value: string | number | undefined;
+      color?: string;
+    }[],
+    className?: string,
+  ) => (
+    <div
+      className={`bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col h-full ${className || ""}`}
+    >
+      <div className="flex justify-between items-start mb-4">
+        <div>
+          <p className="text-gray-500 text-sm font-medium mb-1">{title}</p>
+          <h3 className="text-3xl font-bold text-gray-900">{value}</h3>
+        </div>
+        <div className="p-2 bg-gray-50 rounded-lg">
+          {icon &&
+            React.createElement(icon, { className: "w-5 h-5 text-[#1e2667]" })}
+        </div>
       </div>
+
+      {subStats && subStats.length > 0 && (
+        <div className="mt-auto space-y-2 pt-4 border-t border-gray-50">
+          {subStats.map(
+            (stat, idx) =>
+              stat.value !== undefined && (
+                <div
+                  key={idx}
+                  className="flex justify-between items-center text-sm"
+                >
+                  <span className="text-gray-500">{stat.label}</span>
+                  <span
+                    className={`font-semibold ${stat.color || "text-gray-900"}`}
+                  >
+                    {stat.value}
+                  </span>
+                </div>
+              ),
+          )}
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <div className="p-8 font-sans bg-white min-h-full">
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">
+        Dashboard Overview
+      </h1>
+
+      {/* Bento Grid Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {/* Row 1 */}
+        {renderStatCard(
+          "Total Users",
+          dashboardData?.totalUsers || 0,
+          Users,
+          [],
+          "bg-blue-50/50",
+        )}
+
+        {renderStatCard(
+          "Total Agents",
+          dashboardData?.totalAgents.total || 0,
+          UserCheck,
+          [
+            {
+              label: "Active",
+              value: dashboardData?.totalAgents.active,
+              color: "text-green-600",
+            },
+            {
+              label: "Pending KYC",
+              value: dashboardData?.totalAgents.pendingKyc,
+              color: "text-amber-600",
+            },
+          ],
+          "lg:col-span-2 bg-indigo-50/50",
+        )}
+
+        {renderStatCard(
+          "Layout Enquiries",
+          dashboardData?.layoutEnquiries || 0,
+          MessageSquare,
+          [],
+          "bg-purple-50/50",
+        )}
+
+        {/* Row 2 */}
+        {renderStatCard(
+          "Latest Listings",
+          dashboardData?.latestListings.total || 0,
+          Tag,
+          [
+            {
+              label: "Active",
+              value: dashboardData?.latestListings.active,
+              color: "text-green-600",
+            },
+            {
+              label: "Featured",
+              value: dashboardData?.latestListings.featured,
+              color: "text-purple-600",
+            },
+          ],
+          "lg:col-span-2 bg-emerald-50/50",
+        )}
+
+        {renderStatCard(
+          "Buy Plots Interest",
+          dashboardData?.buyPlots.total || 0,
+          LandPlot,
+          [],
+          "bg-teal-50/50",
+        )}
+
+        {renderStatCard(
+          "Sell Requests",
+          dashboardData?.sellPlots.total || 0,
+          TrendingUp,
+          [
+            {
+              label: "Pending",
+              value: dashboardData?.sellPlots.pending,
+              color: "text-amber-600",
+            },
+            {
+              label: "Approved",
+              value: dashboardData?.sellPlots.approved,
+              color: "text-green-600",
+            },
+          ],
+          "bg-cyan-50/50",
+        )}
+
+        {/* Row 3 */}
+        {renderStatCard(
+          "Legal Verification",
+          dashboardData?.legalVerification.total || 0,
+          Scale,
+          [
+            {
+              label: "Pending",
+              value: dashboardData?.legalVerification.pending,
+              color: "text-amber-600",
+            },
+            {
+              label: "Verified",
+              value: dashboardData?.legalVerification.verified,
+              color: "text-green-600",
+            },
+          ],
+          "bg-orange-50/50",
+        )}
+
+        {renderStatCard(
+          "Land Protection",
+          dashboardData?.landProtection.total || 0,
+          Shield,
+          [
+            {
+              label: "Pending",
+              value: dashboardData?.landProtection.pending,
+              color: "text-amber-600",
+            },
+            {
+              label: "Contacted",
+              value: dashboardData?.landProtection.contacted,
+              color: "text-blue-600",
+            },
+          ],
+          "bg-rose-50/50",
+        )}
+
+        {renderStatCard(
+          "Loan Applications",
+          dashboardData?.loanApplications.total || 0,
+          FileText,
+          [
+            {
+              label: "Pending",
+              value: dashboardData?.loanApplications.pending,
+              color: "text-amber-600",
+            },
+            {
+              label: "Approved",
+              value: dashboardData?.loanApplications.approved,
+              color: "text-green-600",
+            },
+          ],
+          "lg:col-span-2 bg-sky-50/50",
+        )}
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 h-[400px]">
         {/* Line Chart */}
         <div className="col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100 h-full flex flex-col">
           <div className="flex justify-between items-center mb-6">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">
-                Plot Listings
+                Plot Listings Growth
               </h2>
               <div className="flex items-center gap-2 mt-1">
-                <span className="text-2xl text-black font-bold">257</span>
+                <span className="text-2xl text-black font-bold">
+                  {dashboardData?.latestListings.total || 0}
+                </span>
                 <span className="bg-green-100 text-green-700 text-xs font-semibold px-2 py-0.5 rounded flex items-center gap-1">
                   16.8% <MoveUpRight className="w-3 h-3" />
                 </span>
@@ -152,7 +296,7 @@ export default function Dashboard() {
             </div>
             <div className="relative">
               <button className="text-xs text-gray-500 border rounded px-3 py-1 flex items-center gap-2 cursor-pointer">
-                <Calendar className="w-3 h-3" /> Jan 2024
+                <Calendar className="w-3 h-3" /> Last 30 Days
               </button>
             </div>
           </div>
@@ -226,61 +370,6 @@ export default function Dashboard() {
               </PieChart>
             </ResponsiveContainer>
           </div>
-        </div>
-      </div>
-
-      {/* Table Section */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-lg font-semibold text-gray-900">All Users</h2>
-          <button className="bg-[#1e2667] text-white text-sm font-medium px-6 py-2 rounded-lg hover:bg-opacity-90 transition-opacity cursor-pointer">
-            View all
-          </button>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-[#f8f9fc]">
-                <th className="py-4 pl-8 rounded-l-xl font-medium text-gray-600">
-                  User ID
-                </th>
-                <th className="py-4 font-medium text-gray-600">Name</th>
-                <th className="py-4 font-medium text-gray-600">Email</th>
-                <th className="py-4 font-medium text-gray-600">
-                  Registered Date
-                </th>
-                <th className="py-4 pr-8 rounded-r-xl font-medium text-gray-600">
-                  Action
-                </th>
-              </tr>
-            </thead>
-            <tbody className="text-sm text-gray-600">
-              {/* Spacer row */}
-              <tr>
-                <td className="h-4"></td>
-              </tr>
-              {usersData.map((user, i) => (
-                <tr
-                  key={i}
-                  className="hover:bg-gray-50/50 transition-colors border-b border-gray-50 last:border-0"
-                >
-                  <td className="py-5 pl-8 font-medium text-gray-900">
-                    {user.id}
-                  </td>
-                  <td className="py-5 font-medium text-gray-900">
-                    {user.name}
-                  </td>
-                  <td className="py-5 text-gray-500">{user.email}</td>
-                  <td className="py-5 text-gray-500">{user.date}</td>
-                  <td className="py-5 pr-8">
-                    <button className="bg-[#1e2667] text-white text-xs font-medium px-6 py-2 rounded-lg hover:bg-opacity-90 transition-opacity w-20 cursor-pointer">
-                      View
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
       </div>
     </div>
