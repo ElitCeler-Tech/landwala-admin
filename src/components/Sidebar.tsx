@@ -9,7 +9,6 @@ import {
   UserCog,
   Grid,
   FileText,
-  Bot,
   ChevronRight,
   ChevronDown,
   ChevronUp,
@@ -40,7 +39,7 @@ const sidebarItems: SidebarItem[] = [
   { name: "Plots", href: "/dashboard/plots", icon: Grid },
   { name: "Layouts", href: "/dashboard/layouts", icon: Map },
   { name: "Transactions", href: "/dashboard/transactions", icon: FileText },
-  { name: "Audit Logs", href: "/dashboard/audit-logs", icon: Bot },
+
   {
     name: "Explore Categories",
     icon: Layers,
@@ -102,7 +101,7 @@ export function Sidebar() {
     setOpenSections((prev) =>
       prev.includes(name)
         ? prev.filter((item) => item !== name)
-        : [...prev, name]
+        : [...prev, name],
     );
   };
 
@@ -123,15 +122,18 @@ export function Sidebar() {
       <nav className="flex-1 px-4 space-y-2 mt-4 overflow-y-auto">
         {sidebarItems.map((item) => {
           const isExpanded = openSections.includes(item.name);
-          // Check if any child is active to highlight the parent if needed, 
+          // Check if any child is active to highlight the parent if needed,
           // but usually we just highlight the child.
-          // For the parent "Quick Actions", it might be highlighted if expanded? 
+          // For the parent "Quick Actions", it might be highlighted if expanded?
           // The image shows it dark blue when expanded.
 
           const hasChildren = item.children && item.children.length > 0;
 
           if (hasChildren) {
-            const isChildActive = item.children?.some(child => pathname === child.href || pathname.startsWith(child.href!));
+            const isChildActive = item.children?.some(
+              (child) =>
+                pathname === child.href || pathname.startsWith(child.href!),
+            );
 
             return (
               <div key={item.name}>
@@ -141,7 +143,7 @@ export function Sidebar() {
                     "w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium transition-colors cursor-pointer",
                     isChildActive
                       ? "bg-[#1e2667] text-white"
-                      : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+                      : "text-gray-500 hover:bg-gray-50 hover:text-gray-900",
                   )}
                 >
                   <div className="flex items-center gap-3">
@@ -159,7 +161,9 @@ export function Sidebar() {
                   <div className="mt-1 space-y-1">
                     {item.children!.map((child) => {
                       const isChildPageActive = child.href
-                        ? (child.href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(child.href))
+                        ? child.href === "/dashboard"
+                          ? pathname === "/dashboard"
+                          : pathname.startsWith(child.href)
                         : false;
 
                       return (
@@ -169,13 +173,13 @@ export function Sidebar() {
                           className={clsx(
                             "flex items-center gap-3 pl-11 pr-4 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer",
                             isChildPageActive
-                              ? "bg-gray-100 text-[#1e2667]" // Sub-items style? or just text color? 
-                              // Image shows the sub-items on white background (or light gray) with gray text, 
-                              // maybe specific active state?
-                              // Let's assume standard logic: active = text-primary.
-                              // In the image, "Blue" background is for the parent.
-                              // The children seem to be on the white background.
-                              : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+                              ? "bg-gray-100 text-[#1e2667]" // Sub-items style? or just text color?
+                              : // Image shows the sub-items on white background (or light gray) with gray text,
+                                // maybe specific active state?
+                                // Let's assume standard logic: active = text-primary.
+                                // In the image, "Blue" background is for the parent.
+                                // The children seem to be on the white background.
+                                "text-gray-500 hover:text-gray-900 hover:bg-gray-50",
                           )}
                         >
                           {child.icon && <child.icon className="w-4 h-4" />}
@@ -202,7 +206,7 @@ export function Sidebar() {
                 "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors cursor-pointer",
                 isActive
                   ? "bg-[#1e2667] text-white"
-                  : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+                  : "text-gray-500 hover:bg-gray-50 hover:text-gray-900",
               )}
             >
               <item.icon className="w-5 h-5" />

@@ -22,10 +22,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
 } from "recharts";
 import { dashboardApi, DashboardData } from "@/lib/api";
 
@@ -40,13 +36,6 @@ const plotListingsData = [
   { name: "Feb 15", value: 200 },
   { name: "Feb 22", value: 250 },
   { name: "Feb 28", value: 150 },
-];
-
-const approvalStatusData = [
-  { name: "Approved", value: 40, color: "#1e2667" },
-  { name: "Pending", value: 30, color: "#fbbf24" },
-  { name: "Rejected", value: 30, color: "#000000" },
-  { name: "Verified", value: 20, color: "#22c55e" },
 ];
 
 export default function Dashboard() {
@@ -279,7 +268,7 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 h-[400px]">
         {/* Line Chart */}
-        <div className="col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100 h-full flex flex-col">
+        <div className="col-span-3 bg-white p-6 rounded-xl shadow-sm border border-gray-100 h-full flex flex-col">
           <div className="flex justify-between items-center mb-6">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">
@@ -331,43 +320,6 @@ export default function Dashboard() {
                   strokeWidth={2}
                 />
               </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Donut Chart */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 h-full flex flex-col">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            Land Approval Status
-          </h2>
-          <div className="flex-1 flex items-center justify-center relative">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={approvalStatusData}
-                  innerRadius={60}
-                  outerRadius={90}
-                  paddingAngle={0}
-                  dataKey="value"
-                  stroke="none"
-                >
-                  {approvalStatusData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Legend
-                  verticalAlign="middle"
-                  align="right"
-                  layout="vertical"
-                  iconType="circle"
-                  formatter={(value) => (
-                    <span className="text-sm font-medium text-gray-700 ml-2">
-                      {value}
-                    </span>
-                  )}
-                />
-                <Tooltip />
-              </PieChart>
             </ResponsiveContainer>
           </div>
         </div>
