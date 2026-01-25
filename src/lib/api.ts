@@ -401,6 +401,40 @@ export const layoutsApi = {
     const response = await api.delete<void>(`/admin/layouts/${id}`);
     return response.data;
   },
+
+  getLayoutSlot: async (layoutId: string, slotId: string) => {
+    const response = await api.get<LayoutSlot>(
+      `/admin/layouts/${layoutId}/slots/${slotId}`,
+    );
+    return response.data;
+  },
+
+  createLayoutSlot: async (layoutId: string, data: Partial<LayoutSlot>) => {
+    const response = await api.post<LayoutSlot>(
+      `/admin/layouts/${layoutId}/slot`,
+      data,
+    );
+    return response.data;
+  },
+
+  updateLayoutSlot: async (
+    layoutId: string,
+    slotId: string,
+    data: Partial<LayoutSlot>,
+  ) => {
+    const response = await api.put<LayoutSlot>(
+      `/admin/layouts/${layoutId}/slots/${slotId}`,
+      data,
+    );
+    return response.data;
+  },
+
+  deleteLayoutSlot: async (layoutId: string, slotId: string) => {
+    const response = await api.delete<void>(
+      `/admin/layouts/${layoutId}/slots/${slotId}`,
+    );
+    return response.data;
+  },
 };
 
 // Loan Application Types
