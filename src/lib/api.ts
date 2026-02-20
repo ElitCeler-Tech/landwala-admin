@@ -809,3 +809,43 @@ export const reportsApi = {
     return response.data.data;
   },
 };
+
+// Listing Requests Types
+export interface ListingRequestAgent {
+  id: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  phone: string;
+  email: string;
+}
+
+export interface ListingRequest {
+  id: string;
+  agentId: string;
+  propertyId: string;
+  agent: ListingRequestAgent;
+  property: Property;
+  createdAt: string;
+}
+
+export interface ListingRequestsResponse {
+  data: ListingRequest[];
+  meta: PaginationMeta;
+}
+
+// Listing Requests API
+export const listingRequestsApi = {
+  getListingRequests: async (page: number = 1, limit: number = 10) => {
+    const response = await api.get<ListingRequestsResponse>(
+      `/admin/listing-requests?page=${page}&limit=${limit}`,
+    );
+    return response.data;
+  },
+  getListingRequestById: async (id: string) => {
+    const response = await api.get<{ data: ListingRequest }>(
+      `/admin/listing-requests/${id}`,
+    );
+    return response.data.data;
+  },
+};

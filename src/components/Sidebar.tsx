@@ -40,6 +40,11 @@ const sidebarItems: SidebarItem[] = [
   { name: "Layouts", href: "/dashboard/layouts", icon: Map },
   { name: "Transactions", href: "/dashboard/transactions", icon: FileText },
   { name: "Reports", href: "/dashboard/reports", icon: MessageSquare },
+  {
+    name: "Listing Requests",
+    href: "/dashboard/listing-requests",
+    icon: FileText,
+  },
 
   {
     name: "Explore Categories",
