@@ -24,13 +24,21 @@ export default function SignupPage() {
     setIsLoading(true);
     setError("");
 
+    const allowedDomains = ["landwalaa.com", "gmail.com"];
+    const emailDomain = formData.email.split("@")[1];
+    if (!emailDomain || !allowedDomains.includes(emailDomain.toLowerCase())) {
+      setError("Please use a landwalaa.com or gmail.com email address");
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const response = await authApi.register(formData);
       // Auto-login after registration since the API returns tokens
       setAuth(
         response.admin,
         response.tokens.accessToken,
-        response.tokens.refreshToken
+        response.tokens.refreshToken,
       );
       router.push("/dashboard");
     } catch (err: any) {
