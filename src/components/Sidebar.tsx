@@ -39,6 +39,7 @@ const sidebarItems: SidebarItem[] = [
   { name: "Plots", href: "/dashboard/plots", icon: Grid },
   { name: "Layouts", href: "/dashboard/layouts", icon: Map },
   { name: "Transactions", href: "/dashboard/transactions", icon: FileText },
+  { name: "Reports", href: "/dashboard/reports", icon: MessageSquare },
 
   {
     name: "Explore Categories",

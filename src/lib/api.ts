@@ -755,3 +755,57 @@ export const transactionsApi = {
     return response.data;
   },
 };
+
+// Report Types
+export interface ReportUser {
+  id: string;
+  email: string;
+  phone: string | null;
+  name: string | null;
+  isProfileComplete: boolean;
+}
+
+export interface ReportAgent {
+  id: string;
+  agentCode: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  email: string;
+  phone: string;
+}
+
+export interface Report {
+  id: string;
+  user: ReportUser | null;
+  agent: ReportAgent | null;
+  reportedBy: string;
+  title: string;
+  description: string;
+  imageKeys: string[];
+  imageUrls: string[];
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ReportsResponse {
+  data: Report[];
+  meta: PaginationMeta;
+}
+
+// Reports API
+export const reportsApi = {
+  getReports: async (page: number = 1, limit: number = 10) => {
+    const response = await api.get<ReportsResponse>(
+      `/admin/issue-reports?page=${page}&limit=${limit}`,
+    );
+    return response.data;
+  },
+  getReportById: async (id: string) => {
+    const response = await api.get<{ data: Report }>(
+      `/admin/issue-reports/${id}`,
+    );
+    return response.data.data;
+  },
+};
