@@ -20,6 +20,7 @@ import {
   Layers,
   LucideIcon,
   Store,
+  CreditCard,
 } from "lucide-react";
 import clsx from "clsx";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -45,6 +46,11 @@ const sidebarItems: SidebarItem[] = [
     name: "Listing Requests",
     href: "/dashboard/listing-requests",
     icon: FileText,
+  },
+  {
+    name: "Subscription Plans",
+    href: "/dashboard/subscription-plans",
+    icon: CreditCard,
   },
 
   {

@@ -891,3 +891,30 @@ export const subAdminsApi = {
     return response.data.data;
   },
 };
+
+// Subscription Plans Types
+export interface SubscriptionPlan {
+  id: string;
+  title: string;
+  description: string[];
+  price: number;
+  durationMonths: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SubscriptionPlansResponse {
+  data: SubscriptionPlan[];
+  meta: PaginationMeta;
+}
+
+// Subscription Plans API
+export const subscriptionPlansApi = {
+  getSubscriptionPlans: async (page: number = 1, limit: number = 10) => {
+    const response = await api.get<SubscriptionPlansResponse>(
+      `/admin/subscription-plans?page=${page}&limit=${limit}`,
+    );
+    return response.data;
+  },
+};
