@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Loader2, Check } from "lucide-react";
+import { Loader2, Check, Plus } from "lucide-react";
+import Link from "next/link";
 import { subscriptionPlansApi, SubscriptionPlan } from "@/lib/api";
 
 export default function SubscriptionPlansPage() {
@@ -48,14 +49,22 @@ export default function SubscriptionPlansPage() {
   return (
     <div className="p-8 pb-4 bg-gray-50/50 font-sans min-h-full flex flex-col items-center">
       <div className="w-full flex-1 max-w-7xl mx-auto flex flex-col">
-        <div className="mb-10 text-center">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Subscription Plans
-          </h1>
-          <p className="text-gray-500 max-w-2xl mx-auto">
-            Manage the subscription plans available for land protection and site
-            visits.
-          </p>
+        <div className="mb-10 flex justify-between items-end w-full">
+          <div className="text-left">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Subscription Plans
+            </h1>
+            <p className="text-gray-500 max-w-2xl">
+              Manage the subscription plans available for land protection and
+              site visits.
+            </p>
+          </div>
+          <Link href="/dashboard/subscription-plans/new">
+            <button className="flex items-center gap-2 bg-[#1e2667] text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-opacity cursor-pointer text-sm font-medium">
+              <Plus className="w-4 h-4" />
+              Add Plan
+            </button>
+          </Link>
         </div>
 
         {plans.length === 0 ? (
@@ -104,9 +113,11 @@ export default function SubscriptionPlansPage() {
                 </div>
 
                 <div className="mt-auto pt-4">
-                  <button className="w-full bg-[#595959] hover:bg-[#666666] active:scale-[0.98] text-[#f4f4f4] font-semibold py-3.5 px-4 rounded-xl transition-all shadow-md cursor-pointer">
-                    Get Started
-                  </button>
+                  <Link href={`/dashboard/subscription-plans/${plan.id}`}>
+                    <button className="w-full bg-[#595959] hover:bg-[#666666] active:scale-[0.98] text-[#f4f4f4] font-semibold py-3.5 px-4 rounded-xl transition-all shadow-md cursor-pointer flex items-center justify-center">
+                      Edit Plan
+                    </button>
+                  </Link>
                 </div>
               </div>
             ))}

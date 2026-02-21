@@ -909,11 +909,55 @@ export interface SubscriptionPlansResponse {
   meta: PaginationMeta;
 }
 
+export interface CreateSubscriptionPlanPayload {
+  title: string;
+  description: string[];
+  price: number;
+  durationMonths: number;
+  isActive: boolean;
+}
+
+export type UpdateSubscriptionPlanPayload =
+  Partial<CreateSubscriptionPlanPayload>;
+
 // Subscription Plans API
 export const subscriptionPlansApi = {
   getSubscriptionPlans: async (page: number = 1, limit: number = 10) => {
     const response = await api.get<SubscriptionPlansResponse>(
       `/admin/subscription-plans?page=${page}&limit=${limit}`,
+    );
+    return response.data;
+  },
+
+  getSubscriptionPlanById: async (id: string) => {
+    const response = await api.get<{ data: SubscriptionPlan }>(
+      `/admin/subscription-plans/${id}`,
+    );
+    return response.data;
+  },
+
+  createSubscriptionPlan: async (data: CreateSubscriptionPlanPayload) => {
+    const response = await api.post<{ data: SubscriptionPlan }>(
+      "/admin/subscription-plans",
+      data,
+    );
+    return response.data;
+  },
+
+  updateSubscriptionPlan: async (
+    id: string,
+    data: UpdateSubscriptionPlanPayload,
+  ) => {
+    const response = await api.patch<{ data: SubscriptionPlan }>(
+      `/admin/subscription-plans/${id}`,
+      data,
+    );
+    return response.data;
+  },
+
+  deleteSubscriptionPlan: async (id: string) => {
+    const response = await api.delete<{ message: string }>(
+      `/admin/subscription-plans/${id}`,
     );
     return response.data;
   },
