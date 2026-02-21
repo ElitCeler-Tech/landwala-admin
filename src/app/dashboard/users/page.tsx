@@ -43,8 +43,8 @@ export default function UsersPage() {
 
   const filteredUsers = users.filter(
     (user) =>
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase())
+      (user.name?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
+      (user.email?.toLowerCase() || "").includes(searchQuery.toLowerCase()),
   );
 
   if (isLoading) {
@@ -117,15 +117,15 @@ export default function UsersPage() {
                       {user.profilePicture ? (
                         <img
                           src={user.profilePicture}
-                          alt={user.name}
+                          alt={user.name || "User"}
                           className="w-8 h-8 rounded-full object-cover"
                         />
                       ) : (
-                        <div className="w-8 h-8 rounded-full bg-[#1e2667] flex items-center justify-center text-white text-xs font-medium">
-                          {user.name.charAt(0).toUpperCase()}
+                        <div className="w-8 h-8 rounded-full bg-[#1e2667] flex items-center justify-center text-white text-xs font-medium uppercase">
+                          {(user.name || user.email || "U").charAt(0)}
                         </div>
                       )}
-                      {user.name}
+                      {user.name || "Unknown"}
                     </div>
                   </td>
                   <td className="py-5 text-gray-500">{user.email}</td>
@@ -154,7 +154,7 @@ export default function UsersPage() {
           {meta
             ? `${(currentPage - 1) * limit + 1}-${Math.min(
                 currentPage * limit,
-                meta.total
+                meta.total,
               )} of ${meta.total}`
             : "0"}
         </span>

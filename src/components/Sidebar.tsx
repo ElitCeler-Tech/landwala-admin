@@ -36,6 +36,7 @@ const sidebarItems: SidebarItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Users", href: "/dashboard/users", icon: Users },
   { name: "Agents", href: "/dashboard/agents", icon: UserCog },
+  { name: "Sub Admins", href: "/dashboard/sub-admins", icon: ShieldCheck },
   { name: "Plots", href: "/dashboard/plots", icon: Grid },
   { name: "Layouts", href: "/dashboard/layouts", icon: Map },
   { name: "Transactions", href: "/dashboard/transactions", icon: FileText },

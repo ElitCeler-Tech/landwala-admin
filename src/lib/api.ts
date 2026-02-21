@@ -849,3 +849,45 @@ export const listingRequestsApi = {
     return response.data.data;
   },
 };
+
+// Sub Admins Types
+export interface SubAdmin {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  permissions: string[];
+  isActive: boolean;
+  lastLoginAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SubAdminsResponse {
+  data: SubAdmin[];
+  meta: PaginationMeta;
+}
+
+export interface CreateSubAdminPayload {
+  email: string;
+  name: string;
+  password?: string;
+  permissions: string[];
+}
+
+// Sub Admins API
+export const subAdminsApi = {
+  getSubAdmins: async (page: number = 1, limit: number = 10) => {
+    const response = await api.get<SubAdminsResponse>(
+      `/admin/sub-admins?page=${page}&limit=${limit}`,
+    );
+    return response.data;
+  },
+  createSubAdmin: async (data: CreateSubAdminPayload) => {
+    const response = await api.post<{ data: SubAdmin }>(
+      `/admin/sub-admins`,
+      data,
+    );
+    return response.data.data;
+  },
+};
