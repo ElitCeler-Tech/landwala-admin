@@ -63,6 +63,11 @@ const sidebarItems: SidebarItem[] = [
         icon: ShieldCheck,
       },
       {
+        name: "Assign - Land Protections",
+        href: "/dashboard/assign-land-protections",
+        icon: UserCog,
+      },
+      {
         name: "Land Registrations",
         href: "/dashboard/explore-categories/land-registrations",
         icon: FileText,

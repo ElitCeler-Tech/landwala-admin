@@ -548,6 +548,52 @@ export interface LandProtectionsResponse {
   meta: PaginationMeta;
 }
 
+export interface LandProtectionAssignment {
+  id: string;
+  landProtectionId: string;
+  agentId: string;
+  assignedById: string;
+  status: string;
+  rejectionReason: string | null;
+  acceptedAt: string | null;
+  rejectedAt: string | null;
+  createdAt: string;
+  landProtection: {
+    id: string;
+    fullName: string;
+    phone: string;
+    countryCode: string;
+    landLocation: string;
+    landArea: string;
+    location: string;
+    pincode: string;
+    latitude: number;
+    longitude: number;
+    quotedAmount: number | null;
+    status: string;
+    imageKeys: string[];
+  };
+  agent: {
+    id: string;
+    agentCode: string;
+    firstName: string;
+    lastName: string;
+    fullName: string;
+    phone: string;
+    email: string;
+  };
+  assignedBy: {
+    id: string;
+    name: string;
+    email: string;
+  };
+}
+
+export interface LandProtectionAssignmentsResponse {
+  data: LandProtectionAssignment[];
+  meta: PaginationMeta;
+}
+
 // User Action APIs
 export const userActionsApi = {
   getLoanApplications: async (page: number = 1, limit: number = 10) => {
@@ -574,6 +620,17 @@ export const userActionsApi = {
   getLandProtections: async (page: number = 1, limit: number = 10) => {
     const response = await api.get<LandProtectionsResponse>(
       `/admin/land-protections?page=${page}&limit=${limit}`,
+    );
+    return response.data;
+  },
+
+  getLandProtectionAssignments: async (
+    page: number = 1,
+    limit: number = 20,
+    status: string = "ACCEPTED",
+  ) => {
+    const response = await api.get<LandProtectionAssignmentsResponse>(
+      `/admin/land-protections/assignments?status=${status}&page=${page}&limit=${limit}`,
     );
     return response.data;
   },
