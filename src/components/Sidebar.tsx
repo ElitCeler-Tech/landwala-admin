@@ -21,6 +21,7 @@ import {
   LucideIcon,
   Store,
   CreditCard,
+  MapPin,
 } from "lucide-react";
 import clsx from "clsx";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -51,6 +52,11 @@ const sidebarItems: SidebarItem[] = [
     name: "Property Submissions",
     href: "/dashboard/property-submissions",
     icon: Home,
+  },
+  {
+    name: "Pincodes",
+    href: "/dashboard/pincodes",
+    icon: MapPin,
   },
   {
     name: "Subscription Plans",

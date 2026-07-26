@@ -1168,3 +1168,62 @@ export const propertySubmissionsApi = {
     return response.data;
   },
 };
+
+// Pincode Types
+export interface PincodeItem {
+  id: string;
+  location: string;
+  pincode: string;
+  area?: string | null;
+}
+
+export interface PincodeListResponse {
+  items: PincodeItem[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+// Pincode Serviceability API
+export const pincodesApi = {
+  getPincodes: async (q?: string, page: number = 1, limit: number = 20) => {
+    const response = await api.get<PincodeListResponse>("/pincodes", {
+      params: { q, page, limit },
+    });
+    return response.data;
+  },
+
+  addPincode: async (pincode: string, location: string, area?: string) => {
+    const response = await api.post<PincodeItem>("/pincodes", {
+      pincode,
+      location,
+      area,
+    });
+    return response.data;
+  },
+
+  bulkAddPincodes: async (
+    pincodes: { pincode: string; location: string; area?: string }[],
+  ) => {
+    const response = await api.post<{ added: number }>("/pincodes/bulk", {
+      pincodes,
+    });
+    return response.data;
+  },
+
+  updatePincode: async (
+    id: string,
+    data: { pincode?: string; location?: string; area?: string },
+  ) => {
+    const response = await api.put<PincodeItem>(`/pincodes/${id}`, data);
+    return response.data;
+  },
+
+  deletePincode: async (id: string) => {
+    const response = await api.delete<{ message: string }>(
+      `/pincodes/${id}`,
+    );
+    return response.data;
+  },
+};
