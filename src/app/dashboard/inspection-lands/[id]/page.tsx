@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft, Loader2 } from "lucide-react";
+import { ChevronLeft, Loader2, Pencil, Check, X } from "lucide-react";
 import {
   inspectionLandsApi,
   landInspectionAssignmentApi,
@@ -12,6 +12,38 @@ import {
   LandInspectionAssignment,
   Executive,
 } from "@/lib/api";
+
+interface EditForm {
+  ownerName: string;
+  ownerPhone: string;
+  surveyNumbers: string;
+  district: string;
+  mandal: string;
+  village: string;
+  location: string;
+  pincode: string;
+  areaValue: string;
+  areaUnit: string;
+  latitude: string;
+  longitude: string;
+}
+
+function toEditForm(land: InspectionLand): EditForm {
+  return {
+    ownerName: land.ownerName,
+    ownerPhone: land.ownerPhone || "",
+    surveyNumbers: land.surveyNumbers.join(", "),
+    district: land.district,
+    mandal: land.mandal,
+    village: land.village,
+    location: land.location,
+    pincode: land.pincode,
+    areaValue: land.areaValue?.toString() || "",
+    areaUnit: land.areaUnit || "",
+    latitude: land.latitude.toString(),
+    longitude: land.longitude.toString(),
+  };
+}
 
 export default function InspectionLandDetailPage() {
   const params = useParams();
@@ -29,6 +61,10 @@ export default function InspectionLandDetailPage() {
   const [selectedExecutiveId, setSelectedExecutiveId] = useState("");
   const [nextVisitDueAt, setNextVisitDueAt] = useState("");
   const [scheduleDate, setScheduleDate] = useState("");
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState<EditForm | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const fetchAll = useCallback(async () => {
     try {
@@ -112,6 +148,74 @@ export default function InspectionLandDetailPage() {
     }
   };
 
+  const startEdit = () => {
+    if (!land) return;
+    setEditForm(toEditForm(land));
+    setIsEditing(true);
+    setError("");
+  };
+
+  const cancelEdit = () => {
+    setIsEditing(false);
+    setEditForm(null);
+  };
+
+  const handleEditChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const { name, value } = e.target;
+    setEditForm((prev) => (prev ? { ...prev, [name]: value } : prev));
+  };
+
+  const saveEdit = async () => {
+    if (!editForm) return;
+    if (
+      !editForm.ownerName.trim() ||
+      !editForm.district.trim() ||
+      !editForm.mandal.trim() ||
+      !editForm.village.trim() ||
+      !editForm.location.trim() ||
+      !editForm.pincode.trim() ||
+      !editForm.latitude.trim() ||
+      !editForm.longitude.trim()
+    ) {
+      setError("Please fill in all required fields");
+      return;
+    }
+    setSaving(true);
+    setError("");
+    try {
+      await inspectionLandsApi.updateLand(landId, {
+        ownerName: editForm.ownerName.trim(),
+        ownerPhone: editForm.ownerPhone.trim() || undefined,
+        surveyNumbers: editForm.surveyNumbers
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+        district: editForm.district.trim(),
+        mandal: editForm.mandal.trim(),
+        village: editForm.village.trim(),
+        location: editForm.location.trim(),
+        pincode: editForm.pincode.trim(),
+        areaValue: editForm.areaValue
+          ? parseFloat(editForm.areaValue)
+          : undefined,
+        areaUnit: editForm.areaUnit.trim() || undefined,
+        latitude: parseFloat(editForm.latitude),
+        longitude: parseFloat(editForm.longitude),
+      });
+      setIsEditing(false);
+      setEditForm(null);
+      await fetchAll();
+    } catch (err: any) {
+      setError(
+        err?.response?.data?.message || "Failed to update inspection land",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="p-8 bg-white font-sans min-h-full flex items-center justify-center">
@@ -166,57 +270,186 @@ export default function InspectionLandDetailPage() {
               {land.landCode || "No land code assigned"}
             </p>
           </div>
-          <span
-            className={`text-xs font-medium px-3 py-1 rounded-full ${
-              land.isActive
-                ? "bg-green-100 text-green-700"
-                : "bg-gray-100 text-gray-700"
-            }`}
-          >
-            {land.isActive ? "Active" : "Inactive"}
-          </span>
+          <div className="flex items-center gap-3">
+            <span
+              className={`text-xs font-medium px-3 py-1 rounded-full ${
+                land.isActive
+                  ? "bg-green-100 text-green-700"
+                  : "bg-gray-100 text-gray-700"
+              }`}
+            >
+              {land.isActive ? "Active" : "Inactive"}
+            </span>
+            {!isEditing && (
+              <button
+                onClick={startEdit}
+                className="flex items-center gap-1.5 text-sm font-medium text-[#1e2667] hover:bg-gray-100 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                Edit
+              </button>
+            )}
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-y-6 gap-x-8">
-          <div>
-            <p className="text-gray-500 text-sm mb-1">Owner Phone:</p>
-            <p className="text-gray-900 font-medium">
-              {land.ownerPhone || "-"}
-            </p>
+        {isEditing && editForm ? (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <input
+                name="ownerName"
+                value={editForm.ownerName}
+                onChange={handleEditChange}
+                placeholder="Owner Name *"
+                className="border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+              />
+              <input
+                name="ownerPhone"
+                value={editForm.ownerPhone}
+                onChange={handleEditChange}
+                placeholder="Owner Phone"
+                className="border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+              />
+              <input
+                name="surveyNumbers"
+                value={editForm.surveyNumbers}
+                onChange={handleEditChange}
+                placeholder="Survey Numbers (comma-separated)"
+                className="border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+              />
+              <input
+                name="district"
+                value={editForm.district}
+                onChange={handleEditChange}
+                placeholder="District *"
+                className="border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+              />
+              <input
+                name="mandal"
+                value={editForm.mandal}
+                onChange={handleEditChange}
+                placeholder="Mandal *"
+                className="border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+              />
+              <input
+                name="village"
+                value={editForm.village}
+                onChange={handleEditChange}
+                placeholder="Village *"
+                className="border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+              />
+              <input
+                name="location"
+                value={editForm.location}
+                onChange={handleEditChange}
+                placeholder="Location *"
+                className="border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+              />
+              <input
+                name="pincode"
+                value={editForm.pincode}
+                onChange={handleEditChange}
+                placeholder="Pincode *"
+                maxLength={6}
+                className="border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+              />
+              <div className="flex gap-2">
+                <input
+                  name="areaValue"
+                  value={editForm.areaValue}
+                  onChange={handleEditChange}
+                  placeholder="Area value"
+                  className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+                />
+                <input
+                  name="areaUnit"
+                  value={editForm.areaUnit}
+                  onChange={handleEditChange}
+                  placeholder="Unit"
+                  className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+                />
+              </div>
+              <input
+                name="latitude"
+                value={editForm.latitude}
+                onChange={handleEditChange}
+                placeholder="Latitude *"
+                className="border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+              />
+              <input
+                name="longitude"
+                value={editForm.longitude}
+                onChange={handleEditChange}
+                placeholder="Longitude *"
+                className="border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+              />
+            </div>
+            <div className="flex gap-3 mt-4">
+              <button
+                onClick={saveEdit}
+                disabled={saving}
+                className="bg-[#16a34a] text-white text-sm font-medium px-6 py-2 rounded-lg hover:bg-opacity-90 transition-opacity cursor-pointer disabled:opacity-50 flex items-center gap-2"
+              >
+                {saving ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Check className="w-4 h-4" />
+                )}
+                Save Changes
+              </button>
+              <button
+                onClick={cancelEdit}
+                disabled={saving}
+                className="bg-gray-200 text-gray-700 text-sm font-medium px-6 py-2 rounded-lg hover:bg-gray-300 transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-2"
+              >
+                <X className="w-4 h-4" />
+                Cancel
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-y-6 gap-x-8">
+            <div>
+              <p className="text-gray-500 text-sm mb-1">Owner Phone:</p>
+              <p className="text-gray-900 font-medium">
+                {land.ownerPhone || "-"}
+              </p>
+            </div>
+            <div>
+              <p className="text-gray-500 text-sm mb-1">Survey Numbers:</p>
+              <p className="text-gray-900 font-medium">
+                {land.surveyNumbers.join(", ") || "-"}
+              </p>
+            </div>
+            <div>
+              <p className="text-gray-500 text-sm mb-1">Location:</p>
+              <p className="text-gray-900 font-medium">
+                {land.village}, {land.mandal}, {land.district}
+              </p>
+            </div>
+            <div>
+              <p className="text-gray-500 text-sm mb-1">Address:</p>
+              <p className="text-gray-900 font-medium">{land.location}</p>
+            </div>
+            <div>
+              <p className="text-gray-500 text-sm mb-1">Pincode:</p>
+              <p className="text-gray-900 font-medium">{land.pincode}</p>
+            </div>
+            <div>
+              <p className="text-gray-500 text-sm mb-1">Area:</p>
+              <p className="text-gray-900 font-medium">
+                {land.areaValue
+                  ? `${land.areaValue} ${land.areaUnit || ""}`
+                  : "-"}
+              </p>
+            </div>
+            <div>
+              <p className="text-gray-500 text-sm mb-1">Coordinates:</p>
+              <p className="text-gray-900 font-medium">
+                {land.latitude}, {land.longitude}
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-gray-500 text-sm mb-1">Survey Numbers:</p>
-            <p className="text-gray-900 font-medium">
-              {land.surveyNumbers.join(", ") || "-"}
-            </p>
-          </div>
-          <div>
-            <p className="text-gray-500 text-sm mb-1">Location:</p>
-            <p className="text-gray-900 font-medium">
-              {land.village}, {land.mandal}, {land.district}
-            </p>
-          </div>
-          <div>
-            <p className="text-gray-500 text-sm mb-1">Address:</p>
-            <p className="text-gray-900 font-medium">{land.location}</p>
-          </div>
-          <div>
-            <p className="text-gray-500 text-sm mb-1">Pincode:</p>
-            <p className="text-gray-900 font-medium">{land.pincode}</p>
-          </div>
-          <div>
-            <p className="text-gray-500 text-sm mb-1">Area:</p>
-            <p className="text-gray-900 font-medium">
-              {land.areaValue ? `${land.areaValue} ${land.areaUnit || ""}` : "-"}
-            </p>
-          </div>
-          <div>
-            <p className="text-gray-500 text-sm mb-1">Coordinates:</p>
-            <p className="text-gray-900 font-medium">
-              {land.latitude}, {land.longitude}
-            </p>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Assignment */}
