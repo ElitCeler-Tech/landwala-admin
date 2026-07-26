@@ -237,6 +237,13 @@ export interface AgentsResponse {
   meta: PaginationMeta;
 }
 
+export interface AgentStatusChange {
+  id: string;
+  kycStatus: string;
+  isActive: boolean;
+  message: string;
+}
+
 // Agents API
 export const agentsApi = {
   getAgents: async (page: number = 1, limit: number = 10) => {
@@ -261,22 +268,30 @@ export const agentsApi = {
   },
 
   approveKyc: async (id: string) => {
-    const response = await api.patch<Agent>(`/admin/agents/${id}/approve-kyc`);
+    const response = await api.patch<AgentStatusChange>(
+      `/admin/agents/${id}/approve-kyc`,
+    );
     return response.data;
   },
 
   rejectKyc: async (id: string) => {
-    const response = await api.patch<Agent>(`/admin/agents/${id}/reject-kyc`);
+    const response = await api.patch<AgentStatusChange>(
+      `/admin/agents/${id}/reject-kyc`,
+    );
     return response.data;
   },
 
   activateAgent: async (id: string) => {
-    const response = await api.patch<Agent>(`/admin/agents/${id}/activate`);
+    const response = await api.patch<AgentStatusChange>(
+      `/admin/agents/${id}/activate`,
+    );
     return response.data;
   },
 
   deactivateAgent: async (id: string) => {
-    const response = await api.patch<Agent>(`/admin/agents/${id}/deactivate`);
+    const response = await api.patch<AgentStatusChange>(
+      `/admin/agents/${id}/deactivate`,
+    );
     return response.data;
   },
 
@@ -833,13 +848,13 @@ export const userActionsApi = {
 // Enquiry Types
 export interface EnquiryUser {
   id: string;
-  email: string;
-  phone: string;
-  countryCode: string;
-  name: string;
+  email: string | null;
+  phone: string | null;
+  countryCode: string | null;
+  name: string | null;
   profilePicture: string | null;
-  location: string;
-  employment: string;
+  location: string | null;
+  employment: string | null;
   isProfileComplete: boolean;
   isVerified: boolean;
   createdAt: string;
@@ -1095,10 +1110,8 @@ export const reportsApi = {
     return response.data;
   },
   getReportById: async (id: string) => {
-    const response = await api.get<{ data: Report }>(
-      `/admin/issue-reports/${id}`,
-    );
-    return response.data.data;
+    const response = await api.get<Report>(`/admin/issue-reports/${id}`);
+    return response.data;
   },
 };
 
@@ -1232,14 +1245,14 @@ export const subscriptionPlansApi = {
   },
 
   getSubscriptionPlanById: async (id: string) => {
-    const response = await api.get<{ data: SubscriptionPlan }>(
+    const response = await api.get<SubscriptionPlan>(
       `/admin/subscription-plans/${id}`,
     );
     return response.data;
   },
 
   createSubscriptionPlan: async (data: CreateSubscriptionPlanPayload) => {
-    const response = await api.post<{ data: SubscriptionPlan }>(
+    const response = await api.post<SubscriptionPlan>(
       "/admin/subscription-plans",
       data,
     );
@@ -1250,7 +1263,7 @@ export const subscriptionPlansApi = {
     id: string,
     data: UpdateSubscriptionPlanPayload,
   ) => {
-    const response = await api.patch<{ data: SubscriptionPlan }>(
+    const response = await api.patch<SubscriptionPlan>(
       `/admin/subscription-plans/${id}`,
       data,
     );

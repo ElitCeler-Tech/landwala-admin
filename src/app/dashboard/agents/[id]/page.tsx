@@ -26,21 +26,22 @@ export default function AgentDetailsPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("KYC Document");
 
-  useEffect(() => {
-    const fetchAgent = async () => {
-      try {
-        const data = await agentsApi.getAgentById(agentId);
-        setAgent(data);
-      } catch (error) {
-        console.error("Failed to fetch agent:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const fetchAgent = async () => {
+    try {
+      const data = await agentsApi.getAgentById(agentId);
+      setAgent(data);
+    } catch (error) {
+      console.error("Failed to fetch agent:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     if (agentId) {
       fetchAgent();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [agentId]);
 
   const formatDate = (dateString: string) => {
@@ -64,8 +65,8 @@ export default function AgentDetailsPage() {
   const handleApproveKyc = async () => {
     setActionLoading("approve");
     try {
-      const updatedAgent = await agentsApi.approveKyc(agentId);
-      setAgent(updatedAgent);
+      await agentsApi.approveKyc(agentId);
+      await fetchAgent();
     } catch (error) {
       console.error("Failed to approve KYC:", error);
     } finally {
@@ -76,8 +77,8 @@ export default function AgentDetailsPage() {
   const handleRejectKyc = async () => {
     setActionLoading("reject");
     try {
-      const updatedAgent = await agentsApi.rejectKyc(agentId);
-      setAgent(updatedAgent);
+      await agentsApi.rejectKyc(agentId);
+      await fetchAgent();
     } catch (error) {
       console.error("Failed to reject KYC:", error);
     } finally {
@@ -88,10 +89,12 @@ export default function AgentDetailsPage() {
   const handleToggleActive = async () => {
     setActionLoading("toggle");
     try {
-      const updatedAgent = agent?.isActive
-        ? await agentsApi.deactivateAgent(agentId)
-        : await agentsApi.activateAgent(agentId);
-      setAgent(updatedAgent);
+      if (agent?.isActive) {
+        await agentsApi.deactivateAgent(agentId);
+      } else {
+        await agentsApi.activateAgent(agentId);
+      }
+      await fetchAgent();
     } catch (error) {
       console.error("Failed to toggle agent status:", error);
     } finally {

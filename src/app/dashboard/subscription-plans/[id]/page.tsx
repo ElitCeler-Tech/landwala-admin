@@ -30,21 +30,14 @@ export default function SubscriptionPlanDetailsPage() {
 
     const fetchPlan = async () => {
       try {
-        // Find the specific plan. The API returns an object with { data: SubscriptionPlan }
-        const response =
-          await subscriptionPlansApi.getSubscriptionPlanById(planId);
-        if (response.data) {
-          setFormData({
-            title: response.data.title,
-            price: response.data.price,
-            durationMonths: response.data.durationMonths,
-            isActive: response.data.isActive,
-            description:
-              response.data.description?.length > 0
-                ? response.data.description
-                : [""],
-          });
-        }
+        const plan = await subscriptionPlansApi.getSubscriptionPlanById(planId);
+        setFormData({
+          title: plan.title,
+          price: plan.price,
+          durationMonths: plan.durationMonths,
+          isActive: plan.isActive,
+          description: plan.description?.length > 0 ? plan.description : [""],
+        });
       } catch (err) {
         console.error("Failed to fetch plan:", err);
         setError("Failed to load plan details.");

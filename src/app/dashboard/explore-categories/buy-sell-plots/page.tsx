@@ -45,10 +45,10 @@ export default function BuySellPlotsPage() {
 
     const filteredData = enquiries.filter(
         (item) =>
-            item.user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.user.phone.includes(searchQuery) ||
-            item.property?.title.toLowerCase().includes(searchQuery.toLowerCase())
+            (item.user.name ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (item.user.email ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (item.user.phone ?? "").includes(searchQuery) ||
+            (item.property?.title ?? "").toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     const formatDate = (dateString: string) => {
@@ -135,14 +135,14 @@ export default function BuySellPlotsPage() {
                                                 href={`/dashboard/users/${item.user.id}`}
                                                 className="hover:text-[#1e2667] hover:underline"
                                             >
-                                                {item.user.name}
+                                                {item.user.name || "N/A"}
                                             </Link>
                                         </td>
-                                        <td className="py-5 text-gray-900">{item.user.phone}</td>
+                                        <td className="py-5 text-gray-900">{item.user.phone || "N/A"}</td>
                                         <td className="py-5 text-gray-600">
-                                            {item.user.email.length > 20
+                                            {item.user.email && item.user.email.length > 20
                                                 ? item.user.email.substring(0, 20) + "..."
-                                                : item.user.email}
+                                                : item.user.email || "N/A"}
                                         </td>
                                         <td className="py-5">
                                             {item.property ? (
