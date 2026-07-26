@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft, FileText, Loader2, ExternalLink } from "lucide-react";
+import { ChevronLeft, FileText, Loader2, ExternalLink, Trash2 } from "lucide-react";
 import clsx from "clsx";
 import { agentsApi, Agent } from "@/lib/api";
 
@@ -18,6 +18,7 @@ const tabs = [
 
 export default function AgentDetailsPage() {
   const params = useParams();
+  const router = useRouter();
   const agentId = params.id as string;
 
   const [agent, setAgent] = useState<Agent | null>(null);
@@ -93,6 +94,25 @@ export default function AgentDetailsPage() {
       setAgent(updatedAgent);
     } catch (error) {
       console.error("Failed to toggle agent status:", error);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (
+      !confirm(
+        "Delete this agent? This cannot be undone from the admin panel.",
+      )
+    ) {
+      return;
+    }
+    setActionLoading("delete");
+    try {
+      await agentsApi.deleteAgent(agentId);
+      router.push("/dashboard/agents");
+    } catch (error) {
+      console.error("Failed to delete agent:", error);
     } finally {
       setActionLoading(null);
     }
@@ -241,6 +261,18 @@ export default function AgentDetailsPage() {
         >
           {actionLoading === "toggle" && <Loader2 className="w-4 h-4 animate-spin" />}
           {agent.isActive ? "Deactivate Agent" : "Activate Agent"}
+        </button>
+        <button
+          onClick={handleDelete}
+          disabled={actionLoading !== null}
+          className="bg-[#b91c1c] text-white text-sm px-6 py-2 rounded-lg hover:bg-opacity-90 transition-opacity cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+        >
+          {actionLoading === "delete" ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Trash2 className="w-4 h-4" />
+          )}
+          Delete Agent
         </button>
       </div>
 

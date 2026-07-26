@@ -24,6 +24,8 @@ import {
   MapPin,
   GalleryHorizontal,
   Receipt,
+  HardHat,
+  Camera,
 } from "lucide-react";
 import clsx from "clsx";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -69,6 +71,27 @@ const sidebarItems: SidebarItem[] = [
     name: "Banners",
     href: "/dashboard/banners",
     icon: GalleryHorizontal,
+  },
+  {
+    name: "Field Executives",
+    icon: HardHat,
+    children: [
+      {
+        name: "Executives",
+        href: "/dashboard/executives",
+        icon: HardHat,
+      },
+      {
+        name: "Inspection Lands",
+        href: "/dashboard/inspection-lands",
+        icon: Map,
+      },
+      {
+        name: "Land Visits",
+        href: "/dashboard/land-visits",
+        icon: Camera,
+      },
+    ],
   },
   {
     name: "Subscription Plans",

@@ -215,6 +215,10 @@ export const agentsApi = {
     const response = await api.patch<Agent>(`/admin/agents/${id}/deactivate`);
     return response.data;
   },
+
+  deleteAgent: async (id: string) => {
+    await api.delete(`/admin/agents/${id}`);
+  },
 };
 
 // Property Types
@@ -1330,6 +1334,340 @@ export const subscriptionPurchasesApi = {
       "/admin/subscription-purchases",
       { params: { page, limit, status } },
     );
+    return response.data;
+  },
+};
+
+// Executive Types (field staff who do GPS-verified land inspections -
+// a role distinct from Agent)
+export interface Executive {
+  id: string;
+  executiveCode: string | null;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  phone: string;
+  email: string;
+  gender: string | null;
+  assignedDistrict: string;
+  assignedMandal: string;
+  assignedVillage: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ExecutivesResponse {
+  data: Executive[];
+  meta: PaginationMeta;
+}
+
+export interface ExecutivePerformance {
+  assignedCount: number;
+  visitedCount: number;
+  visitedThisMonth: number;
+  pendingCount: number;
+  overdueCount: number;
+}
+
+export const executivesApi = {
+  getExecutives: async (
+    page: number = 1,
+    limit: number = 10,
+    search?: string,
+  ) => {
+    const response = await api.get<ExecutivesResponse>("/admin/executives", {
+      params: { page, limit, search },
+    });
+    return response.data;
+  },
+
+  getExecutiveById: async (id: string) => {
+    const response = await api.get<Executive>(`/admin/executives/${id}`);
+    return response.data;
+  },
+
+  createExecutive: async (data: {
+    firstName: string;
+    lastName: string;
+    phone: string;
+    email: string;
+    gender?: string;
+    assignedDistrict: string;
+    assignedMandal: string;
+    assignedVillage: string;
+  }) => {
+    const response = await api.post<{
+      executive: Executive;
+      message: string;
+    }>("/admin/executives", data);
+    return response.data;
+  },
+
+  setStatus: async (id: string, isActive: boolean) => {
+    const response = await api.patch<{
+      id: string;
+      isActive: boolean;
+      message: string;
+    }>(`/admin/executives/${id}/status`, { isActive });
+    return response.data;
+  },
+
+  getPerformance: async (id: string) => {
+    const response = await api.get<ExecutivePerformance>(
+      `/admin/executives/${id}/performance`,
+    );
+    return response.data;
+  },
+};
+
+// Inspection Land Types (lands to be GPS-verified by executives)
+export interface InspectionLand {
+  id: string;
+  landCode: string | null;
+  ownerName: string;
+  ownerPhone: string | null;
+  surveyNumbers: string[];
+  district: string;
+  mandal: string;
+  village: string;
+  location: string;
+  pincode: string;
+  areaValue: number | null;
+  areaUnit: string | null;
+  latitude: number;
+  longitude: number;
+  landProtectionId: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface InspectionLandsResponse {
+  data: InspectionLand[];
+  meta: PaginationMeta;
+}
+
+export const inspectionLandsApi = {
+  getLands: async (page: number = 1, limit: number = 10, search?: string) => {
+    const response = await api.get<InspectionLandsResponse>(
+      "/admin/inspection-lands",
+      { params: { page, limit, search } },
+    );
+    return response.data;
+  },
+
+  getLandById: async (id: string) => {
+    const response = await api.get<InspectionLand>(
+      `/admin/inspection-lands/${id}`,
+    );
+    return response.data;
+  },
+
+  createLand: async (data: {
+    ownerName: string;
+    ownerPhone?: string;
+    surveyNumbers: string[];
+    district: string;
+    mandal: string;
+    village: string;
+    location: string;
+    pincode: string;
+    areaValue?: number;
+    areaUnit?: string;
+    latitude: number;
+    longitude: number;
+    landProtectionId?: string;
+  }) => {
+    const response = await api.post<{
+      land: InspectionLand;
+      message: string;
+    }>("/admin/inspection-lands", data);
+    return response.data;
+  },
+
+  updateLand: async (id: string, data: Partial<InspectionLand>) => {
+    const response = await api.patch<InspectionLand>(
+      `/admin/inspection-lands/${id}`,
+      data,
+    );
+    return response.data;
+  },
+};
+
+// Land Inspection Assignment Types (assigning an InspectionLand to an Executive)
+export interface LandInspectionAssignment {
+  id: string;
+  landId: string;
+  executiveId: string;
+  assignedById: string;
+  isActive: boolean;
+  nextVisitDueAt: string | null;
+  unassignedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  land?: {
+    id: string;
+    landCode: string | null;
+    ownerName: string;
+    district: string;
+    mandal: string;
+    village: string;
+    location: string;
+    latitude: number;
+    longitude: number;
+  };
+  executive?: {
+    id: string;
+    executiveCode: string | null;
+    fullName: string;
+    phone: string;
+    email: string;
+  };
+  assignedBy?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+}
+
+export interface LandInspectionAssignmentsResponse {
+  data: LandInspectionAssignment[];
+  meta: PaginationMeta;
+}
+
+export const landInspectionAssignmentApi = {
+  assign: async (
+    landId: string,
+    executiveId: string,
+    nextVisitDueAt?: string,
+  ) => {
+    const response = await api.post<LandInspectionAssignment>(
+      `/admin/inspection-lands/${landId}/assign`,
+      { executiveId, nextVisitDueAt },
+    );
+    return response.data;
+  },
+
+  reassign: async (
+    assignmentId: string,
+    executiveId: string,
+    nextVisitDueAt?: string,
+  ) => {
+    const response = await api.patch<LandInspectionAssignment>(
+      `/admin/land-inspection-assignments/${assignmentId}/reassign`,
+      { executiveId, nextVisitDueAt },
+    );
+    return response.data;
+  },
+
+  schedule: async (assignmentId: string, nextVisitDueAt: string) => {
+    const response = await api.patch<LandInspectionAssignment>(
+      `/admin/land-inspection-assignments/${assignmentId}/schedule`,
+      { nextVisitDueAt },
+    );
+    return response.data;
+  },
+
+  getAssignments: async (params: {
+    page?: number;
+    limit?: number;
+    executiveId?: string;
+    landId?: string;
+    isActive?: boolean;
+  }) => {
+    const response = await api.get<LandInspectionAssignmentsResponse>(
+      "/admin/land-inspection-assignments",
+      { params },
+    );
+    return response.data;
+  },
+};
+
+// Land Visit Types (GPS-verified inspection visit + admin review)
+export interface VisitPhoto {
+  id: string;
+  category: string;
+  imageUrl: string;
+  latitude: number;
+  longitude: number;
+  distanceMeters: number;
+  capturedAt: string;
+  createdAt: string;
+}
+
+export interface LandVisitTableRow {
+  id: string;
+  landId: string;
+  landCode: string | null;
+  executiveId: string;
+  executiveName: string;
+  visitDate: string;
+  photoCount: number;
+  status: string;
+  reviewStatus: string;
+}
+
+export interface LandVisitsResponse {
+  data: LandVisitTableRow[];
+  meta: PaginationMeta;
+}
+
+export interface LandVisitDetail {
+  id: string;
+  landId: string;
+  landCode: string | null;
+  ownerName: string;
+  executiveId: string;
+  executiveName: string;
+  status: string;
+  startedAt: string;
+  startLatitude: number;
+  startLongitude: number;
+  startDistanceMeters: number;
+  encroachment: boolean | null;
+  boundaryCondition: string | null;
+  illegalConstruction: boolean | null;
+  remarks: string | null;
+  submittedAt: string | null;
+  reviewStatus: string;
+  reviewedById: string | null;
+  reviewedAt: string | null;
+  adminReviewNotes: string | null;
+  photos: VisitPhoto[];
+}
+
+export const landVisitsApi = {
+  getVisits: async (params: {
+    page?: number;
+    limit?: number;
+    executiveId?: string;
+    landId?: string;
+    status?: string;
+    reviewStatus?: string;
+  }) => {
+    const response = await api.get<LandVisitsResponse>("/admin/land-visits", {
+      params,
+    });
+    return response.data;
+  },
+
+  getVisitById: async (id: string) => {
+    const response = await api.get<LandVisitDetail>(
+      `/admin/land-visits/${id}`,
+    );
+    return response.data;
+  },
+
+  reviewVisit: async (
+    id: string,
+    reviewStatus: "REVIEWED" | "FLAGGED",
+    adminReviewNotes?: string,
+  ) => {
+    const response = await api.patch(`/admin/land-visits/${id}/review`, {
+      reviewStatus,
+      adminReviewNotes,
+    });
     return response.data;
   },
 };
