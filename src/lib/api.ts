@@ -931,9 +931,14 @@ export interface EnquiriesResponse {
 
 // Enquiries API
 export const enquiriesApi = {
-  getEnquiries: async (page: number = 1, limit: number = 10) => {
+  getEnquiries: async (
+    page: number = 1,
+    limit: number = 10,
+    type?: "LAYOUT" | "PROPERTY",
+  ) => {
+    const typeParam = type ? `&type=${type}` : "";
     const response = await api.get<EnquiriesResponse>(
-      `/admin/enquiries?page=${page}&limit=${limit}`,
+      `/admin/enquiries?page=${page}&limit=${limit}${typeParam}`,
     );
     return response.data;
   },

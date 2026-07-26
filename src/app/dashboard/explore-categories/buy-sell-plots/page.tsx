@@ -19,6 +19,7 @@ export default function BuySellPlotsPage() {
     const [meta, setMeta] = useState<PaginationMeta | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState("");
+    const limit = 10;
 
     useEffect(() => {
         fetchEnquiries();
@@ -28,12 +29,12 @@ export default function BuySellPlotsPage() {
         setIsLoading(true);
         setError("");
         try {
-            const response = await enquiriesApi.getEnquiries(currentPage, 50);
-            // Filter only PROPERTY type enquiries (where layout is null)
-            const propertyEnquiries = response.data.filter(
-                (enquiry) => enquiry.type === "PROPERTY" && enquiry.property !== null
+            const response = await enquiriesApi.getEnquiries(
+                currentPage,
+                limit,
+                "PROPERTY",
             );
-            setEnquiries(propertyEnquiries);
+            setEnquiries(response.data);
             setMeta(response.meta);
         } catch (err: any) {
             setError(err.response?.data?.message || "Failed to fetch enquiries");
@@ -176,12 +177,17 @@ export default function BuySellPlotsPage() {
 
             <div className="flex justify-between mb-6 items-center mt-6">
                 <span className="text-gray-500 text-sm">
-                    Showing {filteredData.length} property enquiries
+                    {meta
+                        ? `Showing ${Math.min(
+                              (currentPage - 1) * limit + 1,
+                              meta.total,
+                          )}-${Math.min(currentPage * limit, meta.total)} of ${meta.total}`
+                        : "Showing 0"}
                 </span>
                 <div className="flex gap-2">
                     <button
                         onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                        disabled={currentPage === 1}
+                        disabled={!meta?.hasPrevPage}
                         className="p-2 bg-[#1e2667] text-white rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <ChevronLeft className="w-4 h-4" />
