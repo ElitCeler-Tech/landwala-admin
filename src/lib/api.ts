@@ -1444,6 +1444,47 @@ export const subscriptionPurchasesApi = {
   },
 };
 
+// Generic Payment Types (e.g. land protection quote payments - distinct
+// from subscription plan purchases)
+export interface GenericPaymentUser {
+  id: string;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+}
+
+export interface GenericPayment {
+  id: string;
+  userId: string;
+  cfOrderId: string;
+  amount: number;
+  currency: string;
+  note: string | null;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  user: GenericPaymentUser;
+}
+
+export interface GenericPaymentsResponse {
+  data: GenericPayment[];
+  meta: PaginationMeta;
+}
+
+export const genericPaymentsApi = {
+  getAllPayments: async (
+    page: number = 1,
+    limit: number = 20,
+    status?: string,
+  ) => {
+    const response = await api.get<GenericPaymentsResponse>(
+      "/admin/payments",
+      { params: { page, limit, status } },
+    );
+    return response.data;
+  },
+};
+
 // Executive Types (field staff who do GPS-verified land inspections -
 // a role distinct from Agent)
 export interface Executive {
