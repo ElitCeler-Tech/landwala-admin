@@ -1,117 +1,89 @@
 "use client";
 
-import { useState } from "react";
-import {
-    Search,
-    SlidersHorizontal,
-    ChevronLeft,
-    ChevronRight,
-} from "lucide-react";
-
-// Dummy data matching the provided design exactly
-const dummyData = [
-    {
-        id: 1,
-        name: "Rohan Sharma",
-        phone: "9082561771",
-        email: "rohan24@...",
-        location: "Hyderbad",
-        occupation: "Teacher",
-    },
-    {
-        id: 2,
-        name: "Dheer Shah",
-        phone: "9086267189",
-        email: "Dheer24@...",
-        location: "Hyderbad",
-        occupation: "Self Employed",
-    },
-    {
-        id: 3,
-        name: "Rahul Sharma",
-        phone: "9098761771",
-        email: "rahul24@...",
-        location: "Hyderbad",
-        occupation: "IT Manager",
-    },
-    {
-        id: 4,
-        name: "Sahil Gupta",
-        phone: "9078625467",
-        email: "Sahil24@...",
-        location: "Hyderbad",
-        occupation: "Teacher",
-    },
-    {
-        id: 5,
-        name: "Vipul Sen",
-        phone: "9082561791",
-        email: "vipul24@...",
-        location: "Hyderbad",
-        occupation: "Teacher",
-    },
-    {
-        id: 6,
-        name: "Dinesh Vijay",
-        phone: "9082561771",
-        email: "dinesh24@...",
-        location: "Hyderbad",
-        occupation: "Pilot",
-    },
-    {
-        id: 7,
-        name: "Sourav Sharma",
-        phone: "9082561771",
-        email: "sourav23@...",
-        location: "Hyderbad",
-        occupation: "Manager",
-    },
-    {
-        id: 8,
-        name: "Sourav Sharma",
-        phone: "9082561771",
-        email: "sourav23@...",
-        location: "Hyderbad",
-        occupation: "Manager",
-    },
-];
+import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
+import { Search, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { propertiesApi, Property, PaginationMeta } from "@/lib/api";
 
 export default function LatestListingsPage() {
-    const [searchQuery, setSearchQuery] = useState("");
+    const [properties, setProperties] = useState<Property[]>([]);
+    const [meta, setMeta] = useState<PaginationMeta | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [actionLoading, setActionLoading] = useState<string | null>(null);
+    const limit = 10;
 
-    const filteredData = dummyData.filter(
+    const fetchProperties = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const response = await propertiesApi.getProperties(
+                currentPage,
+                limit,
+                true,
+            );
+            setProperties(response.data);
+            setMeta(response.meta);
+        } catch (error) {
+            console.error("Failed to fetch latest listings:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [currentPage]);
+
+    useEffect(() => {
+        fetchProperties();
+    }, [fetchProperties]);
+
+    const handleRemove = async (id: string) => {
+        setActionLoading(id);
+        try {
+            await propertiesApi.toggleLatestListing(id);
+            await fetchProperties();
+        } catch (error) {
+            console.error("Failed to remove from latest listings:", error);
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
+    const filteredData = properties.filter(
         (item) =>
-            item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.phone.includes(searchQuery)
+            item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            item.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            item.locationAddress.toLowerCase().includes(searchQuery.toLowerCase())
     );
+
+    if (isLoading) {
+        return (
+            <div className="p-8 bg-white font-sans min-h-screen flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-[#1e2667]" />
+            </div>
+        );
+    }
 
     return (
         <div className="p-8 pb-4 bg-white font-sans min-h-full flex flex-col">
             <div className="flex justify-between items-end mb-8">
                 <div>
                     <h1 className="text-2xl font-medium text-gray-900 mb-2">
-                        Latest Listing
+                        Latest Listings
                     </h1>
-                    <p className="text-gray-500 italic">Manage all registered Listings</p>
+                    <p className="text-gray-500 italic">
+                        Properties currently marked as latest listings — toggle from a
+                        property&apos;s detail page to add more
+                    </p>
                 </div>
 
-                <div className="flex items-center gap-4">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                        <input
-                            type="text"
-                            placeholder="Search"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg w-64 focus:outline-none focus:ring-1 focus:ring-[#1e2667] text-gray-900"
-                        />
-                    </div>
-                    <button className="flex items-center gap-2 border border-gray-200 px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-50 bg-white cursor-pointer">
-                        <SlidersHorizontal className="w-4 h-4" />
-                        Filters
-                    </button>
+                <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <input
+                        type="text"
+                        placeholder="Search"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg w-64 focus:outline-none focus:ring-1 focus:ring-[#1e2667] text-gray-900"
+                    />
                 </div>
             </div>
 
@@ -121,13 +93,13 @@ export default function LatestListingsPage() {
                         <thead>
                             <tr className="bg-[#f8f9fc]">
                                 <th className="py-4 pl-8 rounded-l-xl font-medium text-gray-600">
-                                    Full Name
+                                    Title
                                 </th>
-                                <th className="py-4 font-medium text-gray-600">Phone Number</th>
-                                <th className="py-4 font-medium text-gray-600">Email</th>
                                 <th className="py-4 font-medium text-gray-600">Location</th>
+                                <th className="py-4 font-medium text-gray-600">Price Range</th>
+                                <th className="py-4 font-medium text-gray-600">Status</th>
                                 <th className="py-4 pr-8 rounded-r-xl font-medium text-gray-600">
-                                    Occupation
+                                    Action
                                 </th>
                             </tr>
                         </thead>
@@ -142,32 +114,75 @@ export default function LatestListingsPage() {
                                     className="hover:bg-gray-50/50 transition-colors border-b border-gray-50 last:border-0"
                                 >
                                     <td className="py-5 pl-8 font-medium text-gray-900">
-                                        {item.name}
+                                        <Link
+                                            href={`/dashboard/plots/${item.id}`}
+                                            className="hover:text-[#1e2667] hover:underline"
+                                        >
+                                            {item.title}
+                                        </Link>
                                     </td>
-                                    <td className="py-5 text-gray-900">{item.phone}</td>
-                                    <td className="py-5 text-gray-600">{item.email}</td>
-                                    <td className="py-5 text-gray-900">{item.location}</td>
-                                    <td className="py-5 pr-8 text-gray-600">{item.occupation}</td>
+                                    <td className="py-5 text-gray-900">
+                                        {item.city}, {item.state}
+                                    </td>
+                                    <td className="py-5 text-gray-600">{item.priceRange}</td>
+                                    <td className="py-5">
+                                        <span
+                                            className={`text-xs font-medium px-3 py-1 rounded-full ${
+                                                item.isActive
+                                                    ? "bg-green-100 text-green-700"
+                                                    : "bg-gray-100 text-gray-700"
+                                            }`}
+                                        >
+                                            {item.isActive ? "Active" : "Inactive"}
+                                        </span>
+                                    </td>
+                                    <td className="py-5 pr-8">
+                                        <button
+                                            onClick={() => handleRemove(item.id)}
+                                            disabled={actionLoading !== null}
+                                            className="bg-red-50 text-red-600 text-xs font-medium px-4 py-2 rounded-lg hover:bg-red-100 transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                                        >
+                                            {actionLoading === item.id && (
+                                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                            )}
+                                            Remove
+                                        </button>
+                                    </td>
                                 </tr>
                             ))}
+                            {filteredData.length === 0 && (
+                                <tr>
+                                    <td colSpan={5} className="py-10 text-center text-gray-500">
+                                        No properties marked as latest listings
+                                    </td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>
             </div>
 
             <div className="flex justify-between mb-6 items-center mt-6">
-                <span className="text-gray-500 text-sm">Showing 01 of 10</span>
+                <span className="text-gray-500 text-sm">
+                    Showing{" "}
+                    {meta
+                        ? `${(currentPage - 1) * limit + 1}-${Math.min(
+                            currentPage * limit,
+                            meta.total
+                        )} of ${meta.total}`
+                        : "0"}
+                </span>
                 <div className="flex gap-2">
                     <button
                         onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                        disabled={currentPage === 1}
+                        disabled={!meta?.hasPrevPage}
                         className="p-2 bg-[#1e2667] text-white rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <ChevronLeft className="w-4 h-4" />
                     </button>
                     <button
                         onClick={() => setCurrentPage((prev) => prev + 1)}
-                        disabled={true} // Dummy pagination
+                        disabled={!meta?.hasNextPage}
                         className="p-2 bg-[#1e2667] text-white rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <ChevronRight className="w-4 h-4" />

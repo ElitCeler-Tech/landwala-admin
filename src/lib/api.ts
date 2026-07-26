@@ -294,10 +294,14 @@ export interface PropertiesResponse {
 
 // Properties API
 export const propertiesApi = {
-  getProperties: async (page: number = 1, limit: number = 10) => {
-    const response = await api.get<PropertiesResponse>(
-      `/admin/properties?page=${page}&limit=${limit}`,
-    );
+  getProperties: async (
+    page: number = 1,
+    limit: number = 10,
+    isLatestListing?: boolean,
+  ) => {
+    const response = await api.get<PropertiesResponse>("/admin/properties", {
+      params: { page, limit, isLatestListing },
+    });
     return response.data;
   },
 
