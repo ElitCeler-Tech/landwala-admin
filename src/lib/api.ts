@@ -35,6 +35,16 @@ export interface AuthResponse {
   message?: string;
 }
 
+export interface UpdateProfileRequest {
+  name?: string;
+  email?: string;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
 // API Methods
 export const authApi = {
   login: async (data: LoginRequest) => {
@@ -45,6 +55,15 @@ export const authApi = {
   register: async (data: RegisterRequest) => {
     const response = await api.post<AuthResponse>("/admin/auth/register", data);
     return response.data;
+  },
+
+  updateProfile: async (data: UpdateProfileRequest) => {
+    const response = await api.patch<AdminUser>("/admin/auth/profile", data);
+    return response.data;
+  },
+
+  changePassword: async (data: ChangePasswordRequest) => {
+    await api.patch("/admin/auth/password", data);
   },
 };
 
