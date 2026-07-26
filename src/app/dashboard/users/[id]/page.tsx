@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { ChevronLeft, FileText, Loader2 } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { ChevronLeft, FileText, Loader2, ShieldCheck, Trash2 } from "lucide-react";
 import clsx from "clsx";
 import {
   userActionsApi,
+  usersApi,
+  User,
   LoanApplication,
   LegalVerification,
   LandRegistration,
@@ -22,8 +24,14 @@ const tabs = [
 
 export default function UserDetailsPage() {
   const params = useParams();
+  const router = useRouter();
   const userId = params.id as string;
   const [activeTab, setActiveTab] = useState("Loan Applications");
+
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [actionError, setActionError] = useState("");
 
   // Data States
   const [loanApplications, setLoanApplications] = useState<LoanApplication[]>(
@@ -42,6 +50,67 @@ export default function UserDetailsPage() {
   const [isLoadingReg, setIsLoadingReg] = useState(false);
   const [isLoadingProt, setIsLoadingProt] = useState(false);
 
+  const fetchUser = useCallback(async () => {
+    setIsLoadingUser(true);
+    try {
+      const data = await usersApi.getUserById(userId);
+      setUser(data);
+    } catch (error) {
+      console.error("Failed to fetch user", error);
+    } finally {
+      setIsLoadingUser(false);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    if (userId) fetchUser();
+  }, [userId, fetchUser]);
+
+  const handleToggleActive = async () => {
+    if (!user) return;
+    setActionLoading("toggle");
+    setActionError("");
+    try {
+      await usersApi.setUserStatus(userId, !user.isActive);
+      await fetchUser();
+    } catch (error) {
+      console.error("Failed to toggle user status:", error);
+      setActionError("Failed to update user status");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleVerify = async () => {
+    setActionLoading("verify");
+    setActionError("");
+    try {
+      await usersApi.verifyUser(userId);
+      await fetchUser();
+    } catch (error) {
+      console.error("Failed to verify user:", error);
+      setActionError("Failed to verify user");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm("Delete this user? This cannot be undone from the admin panel.")) {
+      return;
+    }
+    setActionLoading("delete");
+    setActionError("");
+    try {
+      await usersApi.deleteUser(userId);
+      router.push("/dashboard/users");
+    } catch (error) {
+      console.error("Failed to delete user:", error);
+      setActionError("Failed to delete user");
+      setActionLoading(null);
+    }
+  };
+
   // Fetch Data based on active tab
   useEffect(() => {
     const fetchData = async () => {
@@ -49,11 +118,12 @@ export default function UserDetailsPage() {
       if (activeTab === "Loan Applications" && loanApplications.length === 0) {
         setIsLoadingLoans(true);
         try {
-          const response = await userActionsApi.getLoanApplications(1, 100);
-          const filtered = response.data.filter(
-            (item) => item.user.id === userId
+          const response = await userActionsApi.getLoanApplications(
+            1,
+            100,
+            userId,
           );
-          setLoanApplications(filtered.length > 0 ? filtered : response.data); // Keep using fallback for demo visibility
+          setLoanApplications(response.data);
         } catch (error) {
           console.error("Failed to fetch loans", error);
         } finally {
@@ -68,11 +138,12 @@ export default function UserDetailsPage() {
       ) {
         setIsLoadingLegal(true);
         try {
-          const response = await userActionsApi.getLegalVerifications(1, 100);
-          const filtered = response.data.filter(
-            (item) => item.user.id === userId
+          const response = await userActionsApi.getLegalVerifications(
+            1,
+            100,
+            userId,
           );
-          setLegalVerifications(filtered.length > 0 ? filtered : response.data);
+          setLegalVerifications(response.data);
         } catch (error) {
           console.error("Failed to fetch legal verifications", error);
         } finally {
@@ -87,11 +158,12 @@ export default function UserDetailsPage() {
       ) {
         setIsLoadingReg(true);
         try {
-          const response = await userActionsApi.getLandRegistrations(1, 100);
-          const filtered = response.data.filter(
-            (item) => item.user.id === userId
+          const response = await userActionsApi.getLandRegistrations(
+            1,
+            100,
+            userId,
           );
-          setLandRegistrations(filtered.length > 0 ? filtered : response.data);
+          setLandRegistrations(response.data);
         } catch (error) {
           console.error("Failed to fetch land registrations", error);
         } finally {
@@ -139,60 +211,139 @@ export default function UserDetailsPage() {
         </p>
       </div>
 
-      {/* User Info Card */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
-        <div className="flex items-start gap-6">
-          <div className="w-20 h-20 rounded-full bg-[#1e2667] flex items-center justify-center text-white text-3xl font-medium shrink-0">
-            {userId.slice(0, 1).toUpperCase()}
-          </div>
-          <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-y-4 gap-x-8">
-            <div className="space-y-4">
-              <div>
-                <span className="text-sm font-semibold text-gray-900">
-                  User ID-{" "}
-                </span>
-                <span className="text-sm text-gray-600 truncate block md:inline">
-                  {userId}
-                </span>
-              </div>
-              <div>
-                <span className="text-sm font-semibold text-gray-900">
-                  Name-{" "}
-                </span>
-                <span className="text-sm text-gray-600">Rohan Mehta</span>
-              </div>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <span className="text-sm font-semibold text-gray-900">
-                  Phone number -{" "}
-                </span>
-                <span className="text-sm text-gray-600">+91 9654324323</span>
-              </div>
-              <div>
-                <span className="text-sm font-semibold text-gray-900">
-                  User Type -{" "}
-                </span>
-                <span className="text-sm text-gray-600">Buyer</span>
-              </div>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <span className="text-sm font-semibold text-gray-900">
-                  Registerd on -{" "}
-                </span>
-                <span className="text-sm text-gray-600">Oct 6</span>
-              </div>
-              <div>
-                <span className="text-sm font-semibold text-gray-900">
-                  Status-{" "}
-                </span>
-                <span className="text-sm text-gray-600">Active</span>
-              </div>
-            </div>
-          </div>
+      {actionError && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+          {actionError}
         </div>
+      )}
+
+      {/* User Info Card */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-4">
+        {isLoadingUser ? (
+          <div className="flex justify-center py-6">
+            <Loader2 className="w-8 h-8 animate-spin text-[#1e2667]" />
+          </div>
+        ) : user ? (
+          <div className="flex items-start gap-6">
+            <div className="w-20 h-20 rounded-full bg-[#1e2667] flex items-center justify-center text-white text-3xl font-medium shrink-0">
+              {(user.name || userId).slice(0, 1).toUpperCase()}
+            </div>
+            <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-y-4 gap-x-8">
+              <div className="space-y-4">
+                <div>
+                  <span className="text-sm font-semibold text-gray-900">
+                    User ID-{" "}
+                  </span>
+                  <span className="text-sm text-gray-600 truncate block md:inline">
+                    {userId}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-sm font-semibold text-gray-900">
+                    Name-{" "}
+                  </span>
+                  <span className="text-sm text-gray-600">
+                    {user.name || "-"}
+                  </span>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <span className="text-sm font-semibold text-gray-900">
+                    Phone number -{" "}
+                  </span>
+                  <span className="text-sm text-gray-600">
+                    {user.phone
+                      ? `${user.countryCode || ""} ${user.phone}`
+                      : "-"}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-sm font-semibold text-gray-900">
+                    Email -{" "}
+                  </span>
+                  <span className="text-sm text-gray-600">
+                    {user.email || "-"}
+                  </span>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <span className="text-sm font-semibold text-gray-900">
+                    Registered on -{" "}
+                  </span>
+                  <span className="text-sm text-gray-600">
+                    {new Date(user.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-sm font-semibold text-gray-900">
+                    Status-{" "}
+                  </span>
+                  <span
+                    className={`text-xs font-medium px-2 py-1 rounded-full ${
+                      user.isActive
+                        ? "bg-green-100 text-green-700"
+                        : "bg-gray-100 text-gray-700"
+                    }`}
+                  >
+                    {user.isActive ? "Active" : "Inactive"}
+                  </span>
+                  {user.isVerified && (
+                    <span className="ml-2 text-xs font-medium px-2 py-1 rounded-full bg-blue-100 text-blue-700">
+                      Verified
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <p className="text-gray-500">User not found</p>
+        )}
       </div>
+
+      {/* Action Buttons */}
+      {user && (
+        <div className="flex justify-end gap-3 mb-8">
+          {!user.isVerified && (
+            <button
+              onClick={handleVerify}
+              disabled={actionLoading !== null}
+              className="bg-blue-600 text-white text-sm px-5 py-2 rounded-lg hover:bg-opacity-90 transition-opacity cursor-pointer disabled:opacity-50 flex items-center gap-2"
+            >
+              {actionLoading === "verify" ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <ShieldCheck className="w-4 h-4" />
+              )}
+              Verify User
+            </button>
+          )}
+          <button
+            onClick={handleToggleActive}
+            disabled={actionLoading !== null}
+            className="bg-[#1e2667] text-white text-sm px-5 py-2 rounded-lg hover:bg-opacity-90 transition-opacity cursor-pointer disabled:opacity-50 flex items-center gap-2"
+          >
+            {actionLoading === "toggle" && (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            )}
+            {user.isActive ? "Deactivate User" : "Activate User"}
+          </button>
+          <button
+            onClick={handleDelete}
+            disabled={actionLoading !== null}
+            className="bg-[#b91c1c] text-white text-sm px-5 py-2 rounded-lg hover:bg-opacity-90 transition-opacity cursor-pointer disabled:opacity-50 flex items-center gap-2"
+          >
+            {actionLoading === "delete" ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Trash2 className="w-4 h-4" />
+            )}
+            Delete User
+          </button>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="border-b border-gray-200 mb-8 overflow-x-auto">

@@ -91,13 +91,15 @@ export const dashboardApi = {
 // User Types
 export interface User {
   id: string;
-  email: string;
-  phone: string;
-  countryCode: string;
-  name: string;
+  email: string | null;
+  phone: string | null;
+  countryCode: string | null;
+  name: string | null;
   profilePicture: string | null;
-  location: string;
-  employment: string;
+  location: string | null;
+  employment: string | null;
+  gender?: string | null;
+  dateOfBirth?: string | null;
   provider: string;
   isProfileComplete: boolean;
   isVerified: boolean;
@@ -131,6 +133,31 @@ export const usersApi = {
 
   getUserById: async (id: string) => {
     const response = await api.get<User>(`/admin/users/${id}`);
+    return response.data;
+  },
+
+  setUserStatus: async (id: string, isActive: boolean) => {
+    const response = await api.patch<{
+      id: string;
+      isActive: boolean;
+      message: string;
+    }>(`/admin/users/${id}/status`, { isActive });
+    return response.data;
+  },
+
+  verifyUser: async (id: string) => {
+    const response = await api.patch<{
+      id: string;
+      isVerified: boolean;
+      message: string;
+    }>(`/admin/users/${id}/verify`, {});
+    return response.data;
+  },
+
+  deleteUser: async (id: string) => {
+    const response = await api.delete<{ message: string }>(
+      `/admin/users/${id}`,
+    );
     return response.data;
   },
 };
@@ -608,23 +635,38 @@ export interface LandProtectionAssignmentsResponse {
 
 // User Action APIs
 export const userActionsApi = {
-  getLoanApplications: async (page: number = 1, limit: number = 10) => {
+  getLoanApplications: async (
+    page: number = 1,
+    limit: number = 10,
+    userId?: string,
+  ) => {
     const response = await api.get<LoanApplicationsResponse>(
-      `/admin/loan-applications?page=${page}&limit=${limit}`,
+      "/admin/loan-applications",
+      { params: { page, limit, userId } },
     );
     return response.data;
   },
 
-  getLegalVerifications: async (page: number = 1, limit: number = 10) => {
+  getLegalVerifications: async (
+    page: number = 1,
+    limit: number = 10,
+    userId?: string,
+  ) => {
     const response = await api.get<LegalVerificationsResponse>(
-      `/admin/legal-verifications?page=${page}&limit=${limit}`,
+      "/admin/legal-verifications",
+      { params: { page, limit, userId } },
     );
     return response.data;
   },
 
-  getLandRegistrations: async (page: number = 1, limit: number = 10) => {
+  getLandRegistrations: async (
+    page: number = 1,
+    limit: number = 10,
+    userId?: string,
+  ) => {
     const response = await api.get<LandRegistrationsResponse>(
-      `/admin/land-registrations?page=${page}&limit=${limit}`,
+      "/admin/land-registrations",
+      { params: { page, limit, userId } },
     );
     return response.data;
   },
