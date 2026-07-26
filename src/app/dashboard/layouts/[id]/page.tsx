@@ -323,6 +323,20 @@ export default function LayoutDetailsPage() {
             Back
           </button>
         </Link>
+        <button
+          onClick={async () => {
+            if (!layout) return;
+            try {
+              const updated = await layoutsApi.toggleStatus(layout.id);
+              setLayout(updated);
+            } catch (error) {
+              console.error("Failed to toggle layout status:", error);
+            }
+          }}
+          className="px-8 py-2 rounded-lg text-white font-medium bg-[#1e2667] hover:bg-opacity-90 transition-opacity cursor-pointer"
+        >
+          {layout.isActive ? "Deactivate" : "Activate"}
+        </button>
       </div>
     </div>
   );

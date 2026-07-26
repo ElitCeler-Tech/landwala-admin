@@ -375,6 +375,13 @@ export const propertiesApi = {
     );
     return response.data;
   },
+
+  toggleStatus: async (id: string) => {
+    const response = await api.patch<Property>(
+      `/admin/properties/${id}/toggle-status`,
+    );
+    return response.data;
+  },
 };
 
 // Layout Types
@@ -452,6 +459,13 @@ export const layoutsApi = {
 
   deleteLayout: async (id: string) => {
     const response = await api.delete<void>(`/admin/layouts/${id}`);
+    return response.data;
+  },
+
+  toggleStatus: async (id: string) => {
+    const response = await api.patch<Layout>(
+      `/admin/layouts/${id}/toggle-status`,
+    );
     return response.data;
   },
 

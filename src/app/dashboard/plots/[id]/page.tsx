@@ -473,7 +473,18 @@ export default function PlotDetailsPage() {
             Back
           </button>
         </Link>
-        <button className="px-8 py-2 rounded-lg text-white font-medium bg-[#1e2667] hover:bg-opacity-90 transition-opacity cursor-pointer">
+        <button
+          onClick={async () => {
+            if (!property) return;
+            try {
+              const updated = await propertiesApi.toggleStatus(property.id);
+              setProperty(updated);
+            } catch (error) {
+              console.error("Failed to toggle property status:", error);
+            }
+          }}
+          className="px-8 py-2 rounded-lg text-white font-medium bg-[#1e2667] hover:bg-opacity-90 transition-opacity cursor-pointer"
+        >
           {property.isActive ? "Deactivate" : "Activate"}
         </button>
       </div>
