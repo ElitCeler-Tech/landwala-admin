@@ -1227,3 +1227,60 @@ export const pincodesApi = {
     return response.data;
   },
 };
+
+// Banner Types
+export type BannerItemType = "PROPERTY" | "LAYOUT";
+
+export interface BannerItem {
+  id: string;
+  type: BannerItemType;
+  propertyId: string | null;
+  layoutId: string | null;
+  displayOrder: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  property?: Property | null;
+  layout?: Layout | null;
+}
+
+export interface BannerListResponse {
+  data: BannerItem[];
+  meta: PaginationMeta;
+}
+
+// Banners API (featured properties/layouts shown on the home banner carousel)
+export const bannersApi = {
+  getBanners: async (
+    page: number = 1,
+    limit: number = 50,
+    type?: BannerItemType,
+  ) => {
+    const response = await api.get<BannerListResponse>("/admin/banner", {
+      params: { page, limit, type },
+    });
+    return response.data;
+  },
+
+  addToBanner: async (
+    type: BannerItemType,
+    itemId: string,
+    displayOrder?: number,
+  ) => {
+    const body: {
+      type: BannerItemType;
+      propertyId?: string;
+      layoutId?: string;
+      displayOrder?: number;
+    } = { type, displayOrder };
+    if (type === "PROPERTY") body.propertyId = itemId;
+    else body.layoutId = itemId;
+
+    const response = await api.post<BannerItem>("/admin/banner", body);
+    return response.data;
+  },
+
+  removeFromBanner: async (bannerItemId: string) => {
+    await api.delete(`/admin/banner/${bannerItemId}`);
+  },
+};

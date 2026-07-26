@@ -22,6 +22,7 @@ import {
   Store,
   CreditCard,
   MapPin,
+  GalleryHorizontal,
 } from "lucide-react";
 import clsx from "clsx";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -57,6 +58,11 @@ const sidebarItems: SidebarItem[] = [
     name: "Pincodes",
     href: "/dashboard/pincodes",
     icon: MapPin,
+  },
+  {
+    name: "Banners",
+    href: "/dashboard/banners",
+    icon: GalleryHorizontal,
   },
   {
     name: "Subscription Plans",
