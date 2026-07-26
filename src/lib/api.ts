@@ -671,6 +671,38 @@ export const userActionsApi = {
     return response.data;
   },
 
+  updateLoanApplicationStatus: async (id: string, status: string, remarks?: string) => {
+    const response = await api.patch<{ id: string; status: string; message: string }>(
+      `/admin/loan-applications/${id}/status`,
+      { status, remarks },
+    );
+    return response.data;
+  },
+
+  updateLegalVerificationStatus: async (
+    id: string,
+    status: string,
+    reviewNotes?: string,
+  ) => {
+    const response = await api.patch<{ id: string; status: string; message: string }>(
+      `/admin/legal-verifications/${id}/status`,
+      { status, reviewNotes },
+    );
+    return response.data;
+  },
+
+  updateLandRegistrationStatus: async (
+    id: string,
+    status: string,
+    adminNotes?: string,
+  ) => {
+    const response = await api.patch<{ id: string; status: string; message: string }>(
+      `/admin/land-registrations/${id}/status`,
+      { status, adminNotes },
+    );
+    return response.data;
+  },
+
   getLandProtections: async (
     page: number = 1,
     limit: number = 10,

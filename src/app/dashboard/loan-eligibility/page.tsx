@@ -3,12 +3,20 @@
 import { useState, useEffect } from "react";
 import {
     Search,
-    SlidersHorizontal,
     ChevronLeft,
     ChevronRight,
     Loader2,
 } from "lucide-react";
 import { userActionsApi, LoanApplication, PaginationMeta } from "@/lib/api";
+
+const STATUS_OPTIONS = [
+    "DRAFT",
+    "SUBMITTED",
+    "UNDER_REVIEW",
+    "APPROVED",
+    "REJECTED",
+    "CANCELLED",
+];
 
 export default function LoanEligibilityPage() {
     const [applications, setApplications] = useState<LoanApplication[]>([]);
@@ -16,6 +24,8 @@ export default function LoanEligibilityPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
     const [searchQuery, setSearchQuery] = useState("");
+    const [actionLoading, setActionLoading] = useState<string | null>(null);
+    const [error, setError] = useState("");
     const limit = 10;
 
     useEffect(() => {
@@ -38,6 +48,21 @@ export default function LoanEligibilityPage() {
         fetchApplications();
     }, [currentPage]);
 
+    const handleStatusChange = async (id: string, status: string) => {
+        setActionLoading(id);
+        setError("");
+        try {
+            await userActionsApi.updateLoanApplicationStatus(id, status);
+            setApplications((prev) =>
+                prev.map((app) => (app.id === id ? { ...app, status } : app)),
+            );
+        } catch (err: any) {
+            setError(err?.response?.data?.message || "Failed to update status");
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
     const filteredApplications = applications.filter((app) => {
         const fullName = app.fullName || "";
         const userEmail = app.user?.email || "";
@@ -51,9 +76,16 @@ export default function LoanEligibilityPage() {
         );
     });
 
-    // Helper to handle missing location in type
-    const getLocation = (app: any) => {
-        return app.user?.location || "Hyderbad"; // Default matching screenshot if missing
+    const getStatusBadge = (status: string) => {
+        const styles: Record<string, string> = {
+            APPROVED: "bg-green-100 text-green-700",
+            REJECTED: "bg-red-100 text-red-700",
+            UNDER_REVIEW: "bg-amber-100 text-amber-700",
+            SUBMITTED: "bg-blue-100 text-blue-700",
+            CANCELLED: "bg-gray-100 text-gray-700",
+            DRAFT: "bg-gray-100 text-gray-700",
+        };
+        return styles[status] || "bg-gray-100 text-gray-700";
     };
 
     if (isLoading) {
@@ -76,23 +108,23 @@ export default function LoanEligibilityPage() {
                     </p>
                 </div>
 
-                <div className="flex items-center gap-4">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                        <input
-                            type="text"
-                            placeholder="Search"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg w-64 focus:outline-none focus:ring-1 focus:ring-[#1e2667] text-gray-900"
-                        />
-                    </div>
-                    <button className="flex items-center gap-2 border border-gray-200 px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-50 bg-white cursor-pointer">
-                        <SlidersHorizontal className="w-4 h-4" />
-                        Filters
-                    </button>
+                <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <input
+                        type="text"
+                        placeholder="Search"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg w-64 focus:outline-none focus:ring-1 focus:ring-[#1e2667] text-gray-900"
+                    />
                 </div>
             </div>
+
+            {error && (
+                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+                    {error}
+                </div>
+            )}
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex-1 flex flex-col">
                 <div className="w-full overflow-x-auto">
@@ -104,9 +136,10 @@ export default function LoanEligibilityPage() {
                                 </th>
                                 <th className="py-4 font-medium text-gray-600">Phone Number</th>
                                 <th className="py-4 font-medium text-gray-600">Email</th>
-                                <th className="py-4 font-medium text-gray-600">Location</th>
+                                <th className="py-4 font-medium text-gray-600">Amount</th>
+                                <th className="py-4 font-medium text-gray-600">Status</th>
                                 <th className="py-4 pr-8 rounded-r-xl font-medium text-gray-600">
-                                    Occupation
+                                    Update Status
                                 </th>
                             </tr>
                         </thead>
@@ -125,9 +158,38 @@ export default function LoanEligibilityPage() {
                                     </td>
                                     <td className="py-5 text-gray-900">{app.user?.phone}</td>
                                     <td className="py-5 text-gray-600">{app.user?.email}</td>
-                                    <td className="py-5 text-gray-900">{getLocation(app)}</td>
-                                    <td className="py-5 pr-8 text-gray-600">
-                                        {app.employmentType}
+                                    <td className="py-5 text-gray-900">
+                                        ₹{app.desiredAmount?.toLocaleString() ?? 0}
+                                    </td>
+                                    <td className="py-5">
+                                        <span
+                                            className={`text-xs font-medium px-3 py-1 rounded-full ${getStatusBadge(
+                                                app.status,
+                                            )}`}
+                                        >
+                                            {app.status.replace("_", " ")}
+                                        </span>
+                                    </td>
+                                    <td className="py-5 pr-8">
+                                        <div className="flex items-center gap-2">
+                                            <select
+                                                value={app.status}
+                                                disabled={actionLoading !== null}
+                                                onChange={(e) =>
+                                                    handleStatusChange(app.id, e.target.value)
+                                                }
+                                                className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667] disabled:opacity-50"
+                                            >
+                                                {STATUS_OPTIONS.map((s) => (
+                                                    <option key={s} value={s}>
+                                                        {s.replace("_", " ")}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            {actionLoading === app.id && (
+                                                <Loader2 className="w-4 h-4 animate-spin text-[#1e2667]" />
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
