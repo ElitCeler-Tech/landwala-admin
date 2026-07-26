@@ -103,11 +103,13 @@ export default function UserDetailsPage() {
       if (activeTab === "Land Protections" && landProtections.length === 0) {
         setIsLoadingProt(true);
         try {
-          const response = await userActionsApi.getLandProtections(1, 100);
-          const filtered = response.data.filter(
-            (item) => item.user.id === userId
+          const response = await userActionsApi.getLandProtections(
+            1,
+            100,
+            undefined,
+            userId
           );
-          setLandProtections(filtered.length > 0 ? filtered : response.data);
+          setLandProtections(response.requests);
         } catch (error) {
           console.error("Failed to fetch land protections", error);
         } finally {

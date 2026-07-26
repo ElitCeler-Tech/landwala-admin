@@ -8,6 +8,7 @@ import {
   ChevronRight,
   Loader2,
 } from "lucide-react";
+import Link from "next/link";
 import {
   userActionsApi,
   LandProtectionAssignment,
@@ -185,9 +186,13 @@ export default function AssignLandProtectionsPage() {
                     </span>
                   </td>
                   <td className="py-5 pr-8">
-                    <button className="bg-[#1e2667] text-white text-xs font-medium px-4 py-2 rounded-lg hover:bg-opacity-90 transition-opacity cursor-pointer">
-                      View
-                    </button>
+                    <Link
+                      href={`/dashboard/explore-categories/land-protection/${assignment.landProtectionId}`}
+                    >
+                      <button className="bg-[#1e2667] text-white text-xs font-medium px-4 py-2 rounded-lg hover:bg-opacity-90 transition-opacity cursor-pointer">
+                        View
+                      </button>
+                    </Link>
                   </td>
                 </tr>
               ))}

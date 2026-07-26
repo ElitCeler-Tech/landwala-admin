@@ -526,26 +526,34 @@ export interface LandRegistrationsResponse {
 // Land Protection Types
 export interface LandProtection {
   id: string;
-  user: {
-    id: string;
-    email: string;
-    phone: string;
-    name: string;
-    location?: string;
-    employment?: string;
-  };
   status: string;
   fullName: string;
   phone: string;
+  countryCode: string;
   landLocation: string;
   landArea: string;
   location: string;
+  pincode: string;
+  surveyNumbers?: string[];
+  latitude: number | null;
+  longitude: number | null;
+  quotedAmount: number | null;
+  quoteSentAt: string | null;
+  adminNotes: string | null;
+  isOutOfRange: boolean;
+  adminApproved: boolean;
+  adminApprovedAt: string | null;
+  imageUrls?: string[];
+  layoutUrl?: string | null;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface LandProtectionsResponse {
-  data: LandProtection[];
-  meta: PaginationMeta;
+  requests: LandProtection[];
+  total: number;
+  page: number;
+  limit: number;
 }
 
 export interface LandProtectionAssignment {
@@ -617,9 +625,62 @@ export const userActionsApi = {
     return response.data;
   },
 
-  getLandProtections: async (page: number = 1, limit: number = 10) => {
+  getLandProtections: async (
+    page: number = 1,
+    limit: number = 10,
+    status?: string,
+    userId?: string,
+  ) => {
     const response = await api.get<LandProtectionsResponse>(
-      `/admin/land-protections?page=${page}&limit=${limit}`,
+      "/admin/land-protections",
+      { params: { page, limit, status, userId } },
+    );
+    return response.data;
+  },
+
+  getLandProtectionById: async (id: string) => {
+    const response = await api.get<LandProtection>(
+      `/admin/land-protections/${id}`,
+    );
+    return response.data;
+  },
+
+  sendLandProtectionQuote: async (id: string, quotedAmount: number) => {
+    const response = await api.patch<LandProtection>(
+      `/admin/land-protections/${id}/quote`,
+      { quotedAmount },
+    );
+    return response.data;
+  },
+
+  approveOutOfRange: async (id: string, adminNotes?: string) => {
+    const response = await api.patch<{
+      id: string;
+      adminApproved: boolean;
+      message: string;
+    }>(`/admin/land-protections/${id}/approve-out-of-range`, { adminNotes });
+    return response.data;
+  },
+
+  assignLandProtection: async (id: string, agentId: string) => {
+    const response = await api.post<{ id: string; message: string }>(
+      `/admin/land-protections/${id}/assign`,
+      { agentId },
+    );
+    return response.data;
+  },
+
+  reassignLandProtection: async (id: string, agentId: string) => {
+    const response = await api.post<{ id: string; message: string }>(
+      `/admin/land-protections/${id}/reassign`,
+      { agentId },
+    );
+    return response.data;
+  },
+
+  getLandProtectionAssignmentHistory: async (id: string) => {
+    const response = await api.get<LandProtectionAssignment[]>(
+      `/admin/land-protections/${id}/assignments`,
     );
     return response.data;
   },
