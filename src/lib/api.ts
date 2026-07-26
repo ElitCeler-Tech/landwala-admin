@@ -1284,3 +1284,52 @@ export const bannersApi = {
     await api.delete(`/admin/banner/${bannerItemId}`);
   },
 };
+
+// Subscription Purchase (payment transaction) Types
+export interface SubscriptionPurchaseUser {
+  id: string;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+}
+
+export interface SubscriptionPurchasePlan {
+  id: string;
+  title: string;
+  price: number;
+  durationMonths: number;
+}
+
+export interface SubscriptionPurchase {
+  id: string;
+  userId: string;
+  subscriptionPlanId: string;
+  cfOrderId: string;
+  orderStatus: string;
+  subscriptionStartsAt: string | null;
+  subscriptionEndsAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  user: SubscriptionPurchaseUser;
+  plan: SubscriptionPurchasePlan;
+}
+
+export interface SubscriptionPurchasesResponse {
+  data: SubscriptionPurchase[];
+  meta: PaginationMeta;
+}
+
+// Subscription Purchases (payment transactions) API
+export const subscriptionPurchasesApi = {
+  getAllPurchases: async (
+    page: number = 1,
+    limit: number = 20,
+    status?: string,
+  ) => {
+    const response = await api.get<SubscriptionPurchasesResponse>(
+      "/admin/subscription-purchases",
+      { params: { page, limit, status } },
+    );
+    return response.data;
+  },
+};

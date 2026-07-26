@@ -23,6 +23,7 @@ import {
   CreditCard,
   MapPin,
   GalleryHorizontal,
+  Receipt,
 } from "lucide-react";
 import clsx from "clsx";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -43,6 +44,11 @@ const sidebarItems: SidebarItem[] = [
   { name: "Plots", href: "/dashboard/plots", icon: Grid },
   { name: "Layouts", href: "/dashboard/layouts", icon: Map },
   { name: "Transactions", href: "/dashboard/transactions", icon: FileText },
+  {
+    name: "Payment Transactions",
+    href: "/dashboard/subscription-purchases",
+    icon: Receipt,
+  },
   { name: "Reports", href: "/dashboard/reports", icon: MessageSquare },
   {
     name: "Listing Requests",
