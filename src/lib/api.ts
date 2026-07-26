@@ -81,9 +81,27 @@ export interface DashboardData {
 }
 
 // Dashboard API
+export interface PlotListingsGrowthPoint {
+  date: string;
+  count: number;
+}
+
+export interface PlotListingsGrowthResponse {
+  data: PlotListingsGrowthPoint[];
+  totalLast30Days: number;
+  percentChange: number | null;
+}
+
 export const dashboardApi = {
   getDashboard: async () => {
     const response = await api.get<DashboardData>("/admin/dashboard");
+    return response.data;
+  },
+
+  getPlotListingsGrowth: async () => {
+    const response = await api.get<PlotListingsGrowthResponse>(
+      "/admin/dashboard/plot-listings-growth",
+    );
     return response.data;
   },
 };

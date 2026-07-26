@@ -6,6 +6,7 @@ import {
   Shield,
   FileText,
   MoveUpRight,
+  MoveDownRight,
   Calendar,
   Loader2,
   UserCheck,
@@ -23,32 +24,29 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { dashboardApi, DashboardData } from "@/lib/api";
-
-const plotListingsData = [
-  { name: "Jan 1", value: 0 },
-  { name: "Jan 8", value: 100 },
-  { name: "Jan 15", value: 50 },
-  { name: "Jan 24", value: 150 },
-  { name: "Jan 31", value: 150 },
-  { name: "Feb 1", value: 300 },
-  { name: "Feb 8", value: 150 },
-  { name: "Feb 15", value: 200 },
-  { name: "Feb 22", value: 250 },
-  { name: "Feb 28", value: 150 },
-];
+import {
+  dashboardApi,
+  DashboardData,
+  PlotListingsGrowthResponse,
+} from "@/lib/api";
 
 export default function Dashboard() {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(
     null,
   );
+  const [growthData, setGrowthData] =
+    useState<PlotListingsGrowthResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const data = await dashboardApi.getDashboard();
+        const [data, growth] = await Promise.all([
+          dashboardApi.getDashboard(),
+          dashboardApi.getPlotListingsGrowth(),
+        ]);
         setDashboardData(data);
+        setGrowthData(growth);
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
       } finally {
@@ -58,6 +56,14 @@ export default function Dashboard() {
 
     fetchDashboard();
   }, []);
+
+  const plotListingsData = (growthData?.data ?? []).map((point) => ({
+    name: new Date(point.date).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    }),
+    value: point.count,
+  }));
 
   if (isLoading) {
     return (
@@ -276,11 +282,25 @@ export default function Dashboard() {
               </h2>
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-2xl text-black font-bold">
-                  {dashboardData?.latestListings.total || 0}
+                  {growthData?.totalLast30Days ?? 0}
                 </span>
-                <span className="bg-green-100 text-green-700 text-xs font-semibold px-2 py-0.5 rounded flex items-center gap-1">
-                  16.8% <MoveUpRight className="w-3 h-3" />
-                </span>
+                {growthData?.percentChange !== null &&
+                  growthData?.percentChange !== undefined && (
+                    <span
+                      className={`text-xs font-semibold px-2 py-0.5 rounded flex items-center gap-1 ${
+                        growthData.percentChange >= 0
+                          ? "bg-green-100 text-green-700"
+                          : "bg-red-100 text-red-700"
+                      }`}
+                    >
+                      {Math.abs(growthData.percentChange)}%
+                      {growthData.percentChange >= 0 ? (
+                        <MoveUpRight className="w-3 h-3" />
+                      ) : (
+                        <MoveDownRight className="w-3 h-3" />
+                      )}
+                    </span>
+                  )}
               </div>
             </div>
             <div className="relative">
