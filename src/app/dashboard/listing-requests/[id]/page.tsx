@@ -82,7 +82,7 @@ export default function ListingRequestDetailsPage() {
         </div>
         <div className="ml-auto">
           <span className="text-sm font-medium px-4 py-2 rounded-full capitalize bg-blue-100 text-blue-700">
-            Pending Approval
+            Agent Referral
           </span>
         </div>
       </div>
@@ -94,7 +94,7 @@ export default function ListingRequestDetailsPage() {
             <h2 className="text-lg font-medium text-gray-900 mb-4 pb-4 border-b border-gray-100 flex items-center justify-between">
               <span>Property Information</span>
               <Link
-                href={`/dashboard/properties/${request.propertyId}`}
+                href={`/dashboard/plots/${request.propertyId}`}
                 className="text-sm font-medium text-[#1e2667] hover:underline flex items-center gap-1"
               >
                 View Property <ExternalLink className="w-4 h-4" />
@@ -268,16 +268,13 @@ export default function ListingRequestDetailsPage() {
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <h2 className="text-lg font-medium text-gray-900 mb-4 pb-4 border-b border-gray-100">
-              Actions
+              About This Request
             </h2>
-            <div className="space-y-3">
-              <button className="w-full bg-[#1e2667] text-white py-2.5 rounded-lg font-medium hover:bg-opacity-90 transition-opacity cursor-pointer">
-                Approve Request
-              </button>
-              <button className="w-full bg-white border border-red-200 text-red-600 py-2.5 rounded-lg font-medium hover:bg-red-50 transition-colors cursor-pointer">
-                Reject Request
-              </button>
-            </div>
+            <p className="text-sm text-gray-500">
+              This agent flagged the property above as worth listing. It has
+              no separate approve/reject workflow — manage the property
+              itself (activate, edit, etc.) from its own page.
+            </p>
           </div>
         </div>
       </div>

@@ -161,7 +161,7 @@ export default function ListingRequestsPage() {
                       )}
                       <div>
                         <Link
-                          href={`/dashboard/properties/${req.propertyId}`}
+                          href={`/dashboard/plots/${req.propertyId}`}
                           className="font-medium text-gray-900 hover:text-[#1e2667] line-clamp-2"
                         >
                           {req.property?.title || "Unknown Property"}

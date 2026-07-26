@@ -1075,10 +1075,10 @@ export const listingRequestsApi = {
     return response.data;
   },
   getListingRequestById: async (id: string) => {
-    const response = await api.get<{ data: ListingRequest }>(
+    const response = await api.get<ListingRequest>(
       `/admin/listing-requests/${id}`,
     );
-    return response.data.data;
+    return response.data;
   },
 };
 
