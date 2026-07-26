@@ -964,6 +964,29 @@ export interface LeaderboardResponse {
   meta: PaginationMeta;
 }
 
+export interface CommissionAssignmentItem {
+  id: string;
+  propertyId: string;
+  propertyTitle: string | null;
+  totalCommissionAmount: number;
+  currency: string;
+  plotSize: string;
+  status: string;
+  assignedAt: string;
+  revokedAt: string | null;
+}
+
+export interface AgentCommissionDetail {
+  agentId: string;
+  agentCode: string;
+  agentName: string;
+  phone: string;
+  email: string;
+  totalCommissionAssigned: number;
+  assignmentCount: number;
+  assignments: CommissionAssignmentItem[];
+}
+
 export const transactionsApi = {
   createCommission: async (data: CreateCommissionPayload) => {
     const response = await api.post<Commission>(
@@ -985,6 +1008,19 @@ export const transactionsApi = {
       `/admin/transactions/commissions/leaderboard?page=${page}&limit=${limit}`,
     );
     return response.data;
+  },
+
+  getAgentCommissionDetail: async (agentId: string) => {
+    const response = await api.get<AgentCommissionDetail>(
+      `/admin/transactions/commissions/${agentId}`,
+    );
+    return response.data;
+  },
+
+  revokeCommission: async (commissionId: string) => {
+    await api.patch(
+      `/admin/transactions/commissions/assignments/${commissionId}/revoke`,
+    );
   },
 };
 
