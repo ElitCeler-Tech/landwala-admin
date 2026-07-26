@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Loader2,
   Plus,
+  Pencil,
   X,
 } from "lucide-react";
 import { subAdminsApi, SubAdmin, PaginationMeta } from "@/lib/api";
@@ -30,6 +31,12 @@ export default function SubAdminsPage() {
   });
 
   const PERMISSION_OPTIONS = ["VIEW", "CREATE", "UPDATE", "DELETE"];
+
+  // Edit permissions modal
+  const [editingAdmin, setEditingAdmin] = useState<SubAdmin | null>(null);
+  const [editPermissions, setEditPermissions] = useState<string[]>([]);
+  const [isEditSubmitting, setIsEditSubmitting] = useState(false);
+  const [editError, setEditError] = useState("");
 
   const fetchSubAdmins = async () => {
     setIsLoading(true);
@@ -84,6 +91,44 @@ export default function SubAdminsPage() {
       alert("Error: Could not create sub admin.");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const openEditModal = (admin: SubAdmin) => {
+    setEditingAdmin(admin);
+    setEditPermissions(admin.permissions);
+    setEditError("");
+  };
+
+  const toggleEditPermission = (permission: string) => {
+    setEditPermissions((prev) =>
+      prev.includes(permission)
+        ? prev.filter((p) => p !== permission)
+        : [...prev, permission],
+    );
+  };
+
+  const handleUpdatePermissions = async () => {
+    if (!editingAdmin) return;
+    if (editPermissions.length === 0) {
+      setEditError("Select at least one permission");
+      return;
+    }
+    setIsEditSubmitting(true);
+    setEditError("");
+    try {
+      await subAdminsApi.updateSubAdminPermissions(
+        editingAdmin.id,
+        editPermissions,
+      );
+      setEditingAdmin(null);
+      await fetchSubAdmins();
+    } catch (error: any) {
+      setEditError(
+        error?.response?.data?.message || "Failed to update permissions",
+      );
+    } finally {
+      setIsEditSubmitting(false);
     }
   };
 
@@ -154,8 +199,11 @@ export default function SubAdminsPage() {
                 <th className="py-4 font-medium text-gray-600 w-[15%]">
                   Last Login
                 </th>
-                <th className="py-4 font-medium text-gray-600 w-[15%] rounded-r-xl pr-8">
+                <th className="py-4 font-medium text-gray-600 w-[15%]">
                   Created On
+                </th>
+                <th className="py-4 font-medium text-gray-600 w-[10%] rounded-r-xl pr-8">
+                  Actions
                 </th>
               </tr>
             </thead>
@@ -218,18 +266,27 @@ export default function SubAdminsPage() {
                         )
                       : "Never"}
                   </td>
-                  <td className="py-5 text-gray-500 pr-8">
+                  <td className="py-5 text-gray-500">
                     {new Date(admin.createdAt).toLocaleDateString("en-US", {
                       day: "2-digit",
                       month: "short",
                       year: "numeric",
                     })}
                   </td>
+                  <td className="py-5 pr-8">
+                    <button
+                      onClick={() => openEditModal(admin)}
+                      className="flex items-center gap-1.5 text-sm font-medium text-[#1e2667] hover:bg-gray-100 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                      Edit
+                    </button>
+                  </td>
                 </tr>
               ))}
               {filteredSubAdmins.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="py-10 text-center text-gray-500">
+                  <td colSpan={7} className="py-10 text-center text-gray-500">
                     No sub-admins found
                   </td>
                 </tr>
@@ -381,6 +438,91 @@ export default function SubAdminsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT PERMISSIONS MODAL */}
+      {editingAdmin && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Edit Permissions
+                </h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  {editingAdmin.name} ({editingAdmin.email})
+                </p>
+              </div>
+              <button
+                onClick={() => setEditingAdmin(null)}
+                className="text-gray-400 hover:bg-gray-100 hover:text-gray-600 p-2 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5">
+              {editError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+                  {editError}
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Permissions
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  {PERMISSION_OPTIONS.map((perm) => (
+                    <label
+                      key={perm}
+                      className={`flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-colors ${
+                        editPermissions.includes(perm)
+                          ? "border-[#1e2667] bg-indigo-50/50"
+                          : "border-gray-200 hover:bg-gray-50"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={editPermissions.includes(perm)}
+                        onChange={() => toggleEditPermission(perm)}
+                        className="w-4 h-4 text-[#1e2667] rounded border-gray-300 focus:ring-[#1e2667]"
+                      />
+                      <span className="text-sm font-medium text-gray-700">
+                        {perm}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-4 mt-2 border-t border-gray-100 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setEditingAdmin(null)}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleUpdatePermissions}
+                  disabled={isEditSubmitting}
+                  className="flex-1 px-4 py-2 bg-[#1e2667] text-white rounded-lg font-medium hover:bg-opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  {isEditSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Changes"
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

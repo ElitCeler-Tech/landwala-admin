@@ -1080,11 +1080,21 @@ export const subAdminsApi = {
     return response.data;
   },
   createSubAdmin: async (data: CreateSubAdminPayload) => {
-    const response = await api.post<{ data: SubAdmin }>(
-      `/admin/sub-admins`,
-      data,
+    const response = await api.post<SubAdmin>(`/admin/sub-admins`, data);
+    return response.data;
+  },
+
+  getSubAdminById: async (id: string) => {
+    const response = await api.get<SubAdmin>(`/admin/sub-admins/${id}`);
+    return response.data;
+  },
+
+  updateSubAdminPermissions: async (id: string, permissions: string[]) => {
+    const response = await api.patch<SubAdmin>(
+      `/admin/sub-admins/${id}/permissions`,
+      { permissions },
     );
-    return response.data.data;
+    return response.data;
   },
 };
 
