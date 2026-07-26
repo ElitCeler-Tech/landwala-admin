@@ -48,6 +48,11 @@ const sidebarItems: SidebarItem[] = [
     icon: FileText,
   },
   {
+    name: "Property Submissions",
+    href: "/dashboard/property-submissions",
+    icon: Home,
+  },
+  {
     name: "Subscription Plans",
     href: "/dashboard/subscription-plans",
     icon: CreditCard,

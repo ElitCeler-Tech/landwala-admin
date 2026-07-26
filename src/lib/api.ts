@@ -1019,3 +1019,91 @@ export const subscriptionPlansApi = {
     return response.data;
   },
 };
+
+// Property Submissions Types
+export interface PropertySubmissionUser {
+  id: string;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  countryCode: string | null;
+}
+
+export interface PropertySubmissionAgent {
+  id: string;
+  agentCode: string | null;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  email: string;
+  phone: string;
+}
+
+export interface PropertySubmission {
+  id: string;
+  userId: string | null;
+  title: string;
+  size: string;
+  unit: string | null;
+  category: string | null;
+  facing: string;
+  price: string | null;
+  priceNegotiable: string | null;
+  listingType: string | null;
+  plotLocation: string | null;
+  location: string | null;
+  pincode: string | null;
+  description?: string | null;
+  imageUrls: string[];
+  layoutImageUrls: string[];
+  documentUrls: string[];
+  status: string;
+  submittedBy: "USER" | "AGENT";
+  user?: PropertySubmissionUser | null;
+  agent?: PropertySubmissionAgent | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PropertySubmissionsResponse {
+  data: PropertySubmission[];
+  meta: PaginationMeta;
+}
+
+// Property Submissions API
+export const propertySubmissionsApi = {
+  getSubmissions: async (
+    page: number = 1,
+    limit: number = 10,
+    status?: string,
+  ) => {
+    const response = await api.get<PropertySubmissionsResponse>(
+      "/admin/property-submissions",
+      { params: { page, limit, status } },
+    );
+    return response.data;
+  },
+
+  getSubmissionById: async (id: string) => {
+    const response = await api.get<PropertySubmission>(
+      `/admin/property-submissions/${id}`,
+    );
+    return response.data;
+  },
+
+  approveSubmission: async (id: string) => {
+    const response = await api.patch<{
+      submission: PropertySubmission;
+      message: string;
+    }>(`/admin/property-submissions/${id}/approve`, {});
+    return response.data;
+  },
+
+  rejectSubmission: async (id: string) => {
+    const response = await api.patch<{ message: string }>(
+      `/admin/property-submissions/${id}/reject`,
+      {},
+    );
+    return response.data;
+  },
+};
