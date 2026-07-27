@@ -12,6 +12,7 @@ export default function TransactionsPage() {
   const [activeTab, setActiveTab] = useState("Commission Summary");
   const [commissions, setCommissions] = useState<CommissionSummary[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [meta, setMeta] = useState({
     total: 0,
@@ -69,6 +70,13 @@ export default function TransactionsPage() {
     return `₹ ${amount.toLocaleString()}`;
   };
 
+  const filteredCommissions = commissions.filter((item) =>
+    item.agentName.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
+  const filteredLeaderboard = leaderboard.filter((item) =>
+    item.agentName.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
+
   return (
     <div className="p-8 pb-4 bg-white font-sans min-h-full flex flex-col">
       {/* Header Section */}
@@ -94,7 +102,9 @@ export default function TransactionsPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search"
+              placeholder="Search by agent name"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-[#1e2667] w-64"
             />
           </div>
@@ -149,12 +159,12 @@ export default function TransactionsPage() {
                   <tr>
                     <td colSpan={4} className="text-center py-8 text-gray-500">Loading commissions...</td>
                   </tr>
-                ) : commissions.length === 0 ? (
+                ) : filteredCommissions.length === 0 ? (
                   <tr>
                     <td colSpan={4} className="text-center py-8 text-gray-500">No commissions found.</td>
                   </tr>
                 ) : (
-                  commissions.map((item, i) => (
+                  filteredCommissions.map((item, i) => (
                     <tr
                       key={i}
                       className="hover:bg-gray-50/50 transition-colors border-b border-gray-50 last:border-0"
@@ -208,12 +218,12 @@ export default function TransactionsPage() {
                   <tr>
                     <td colSpan={4} className="text-center py-8 text-gray-500">Loading leaderboard...</td>
                   </tr>
-                ) : leaderboard.length === 0 ? (
+                ) : filteredLeaderboard.length === 0 ? (
                   <tr>
                     <td colSpan={4} className="text-center py-8 text-gray-500">No data found.</td>
                   </tr>
                 ) : (
-                  leaderboard.map((item, i) => (
+                  filteredLeaderboard.map((item, i) => (
                     <tr
                       key={i}
                       className="hover:bg-gray-50/50 transition-colors border-b border-gray-50 last:border-0"

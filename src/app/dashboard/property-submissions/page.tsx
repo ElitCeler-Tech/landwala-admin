@@ -33,6 +33,7 @@ export default function PropertySubmissionsPage() {
           currentPage,
           limit,
           statusFilter === "all" ? undefined : statusFilter,
+          searchQuery || undefined,
         );
         setSubmissions(response.data);
         setMeta(response.meta);
@@ -44,7 +45,7 @@ export default function PropertySubmissionsPage() {
     };
 
     fetchSubmissions();
-  }, [currentPage, statusFilter]);
+  }, [currentPage, statusFilter, searchQuery]);
 
   const getStatusBadge = (status: string) => {
     const statusStyles: Record<string, string> = {
@@ -65,12 +66,6 @@ export default function PropertySubmissionsPage() {
     }
     return "-";
   };
-
-  const filteredSubmissions = submissions.filter(
-    (s) =>
-      s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      getSubmitterName(s).toLowerCase().includes(searchQuery.toLowerCase()),
-  );
 
   if (isLoading) {
     return (
@@ -99,7 +94,10 @@ export default function PropertySubmissionsPage() {
               type="text"
               placeholder="Search"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
               className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg w-64 focus:outline-none focus:ring-1 focus:ring-[#1e2667] text-gray-900"
             />
           </div>
@@ -157,7 +155,7 @@ export default function PropertySubmissionsPage() {
               <tr>
                 <td className="h-4"></td>
               </tr>
-              {filteredSubmissions.map((submission) => (
+              {submissions.map((submission) => (
                 <tr
                   key={submission.id}
                   className="hover:bg-gray-50/50 transition-colors border-b border-gray-50 last:border-0"
@@ -195,7 +193,7 @@ export default function PropertySubmissionsPage() {
                   </td>
                 </tr>
               ))}
-              {filteredSubmissions.length === 0 && (
+              {submissions.length === 0 && (
                 <tr>
                   <td colSpan={7} className="py-10 text-center text-gray-500">
                     No property submissions found

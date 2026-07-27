@@ -161,9 +161,10 @@ export interface UsersResponse {
 
 // Users API
 export const usersApi = {
-  getUsers: async (page: number = 1, limit: number = 10) => {
+  getUsers: async (page: number = 1, limit: number = 10, search?: string) => {
+    const searchParam = search ? `&search=${encodeURIComponent(search)}` : "";
     const response = await api.get<UsersResponse>(
-      `/admin/users?page=${page}&limit=${limit}`,
+      `/admin/users?page=${page}&limit=${limit}${searchParam}`,
     );
     return response.data;
   },
@@ -246,9 +247,10 @@ export interface AgentStatusChange {
 
 // Agents API
 export const agentsApi = {
-  getAgents: async (page: number = 1, limit: number = 10) => {
+  getAgents: async (page: number = 1, limit: number = 10, search?: string) => {
+    const searchParam = search ? `&search=${encodeURIComponent(search)}` : "";
     const response = await api.get<AgentsResponse>(
-      `/admin/agents?page=${page}&limit=${limit}`,
+      `/admin/agents?page=${page}&limit=${limit}${searchParam}`,
     );
     return response.data;
   },
@@ -733,10 +735,11 @@ export const userActionsApi = {
     page: number = 1,
     limit: number = 10,
     userId?: string,
+    search?: string,
   ) => {
     const response = await api.get<LandRegistrationsResponse>(
       "/admin/land-registrations",
-      { params: { page, limit, userId } },
+      { params: { page, limit, userId, search } },
     );
     return response.data;
   },
@@ -778,10 +781,11 @@ export const userActionsApi = {
     limit: number = 10,
     status?: string,
     userId?: string,
+    search?: string,
   ) => {
     const response = await api.get<LandProtectionsResponse>(
       "/admin/land-protections",
-      { params: { page, limit, status, userId } },
+      { params: { page, limit, status, userId, search } },
     );
     return response.data;
   },
@@ -950,10 +954,12 @@ export const enquiriesApi = {
     page: number = 1,
     limit: number = 10,
     type?: "LAYOUT" | "PROPERTY",
+    search?: string,
   ) => {
     const typeParam = type ? `&type=${type}` : "";
+    const searchParam = search ? `&search=${encodeURIComponent(search)}` : "";
     const response = await api.get<EnquiriesResponse>(
-      `/admin/enquiries?page=${page}&limit=${limit}${typeParam}`,
+      `/admin/enquiries?page=${page}&limit=${limit}${typeParam}${searchParam}`,
     );
     return response.data;
   },
@@ -1103,9 +1109,10 @@ export interface ReportsResponse {
 
 // Reports API
 export const reportsApi = {
-  getReports: async (page: number = 1, limit: number = 10) => {
+  getReports: async (page: number = 1, limit: number = 10, search?: string) => {
+    const searchParam = search ? `&search=${encodeURIComponent(search)}` : "";
     const response = await api.get<ReportsResponse>(
-      `/admin/issue-reports?page=${page}&limit=${limit}`,
+      `/admin/issue-reports?page=${page}&limit=${limit}${searchParam}`,
     );
     return response.data;
   },
@@ -1182,9 +1189,14 @@ export interface CreateSubAdminPayload {
 
 // Sub Admins API
 export const subAdminsApi = {
-  getSubAdmins: async (page: number = 1, limit: number = 10) => {
+  getSubAdmins: async (
+    page: number = 1,
+    limit: number = 10,
+    search?: string,
+  ) => {
+    const searchParam = search ? `&search=${encodeURIComponent(search)}` : "";
     const response = await api.get<SubAdminsResponse>(
-      `/admin/sub-admins?page=${page}&limit=${limit}`,
+      `/admin/sub-admins?page=${page}&limit=${limit}${searchParam}`,
     );
     return response.data;
   },
@@ -1334,10 +1346,11 @@ export const propertySubmissionsApi = {
     page: number = 1,
     limit: number = 10,
     status?: string,
+    search?: string,
   ) => {
     const response = await api.get<PropertySubmissionsResponse>(
       "/admin/property-submissions",
-      { params: { page, limit, status } },
+      { params: { page, limit, status, search } },
     );
     return response.data;
   },

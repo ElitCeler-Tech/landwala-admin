@@ -1,13 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Search,
-  SlidersHorizontal,
-  ChevronLeft,
-  ChevronRight,
-  Loader2,
-} from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { usersApi, User, PaginationMeta } from "@/lib/api";
 
@@ -23,7 +17,11 @@ export default function UsersPage() {
     const fetchUsers = async () => {
       setIsLoading(true);
       try {
-        const response = await usersApi.getUsers(currentPage, limit);
+        const response = await usersApi.getUsers(
+          currentPage,
+          limit,
+          searchQuery || undefined,
+        );
         setUsers(response.data);
         setMeta(response.meta);
       } catch (error) {
@@ -34,18 +32,12 @@ export default function UsersPage() {
     };
 
     fetchUsers();
-  }, [currentPage]);
+  }, [currentPage, searchQuery]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
-
-  const filteredUsers = users.filter(
-    (user) =>
-      (user.name?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
-      (user.email?.toLowerCase() || "").includes(searchQuery.toLowerCase()),
-  );
 
   if (isLoading) {
     return (
@@ -72,14 +64,13 @@ export default function UsersPage() {
               type="text"
               placeholder="Search"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
               className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg w-64 focus:outline-none focus:ring-1 focus:ring-[#1e2667] text-gray-900"
             />
           </div>
-          <button className="flex items-center gap-2 border border-gray-200 px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-50 bg-white cursor-pointer">
-            <SlidersHorizontal className="w-4 h-4" />
-            Filters
-          </button>
         </div>
       </div>
 
@@ -107,7 +98,7 @@ export default function UsersPage() {
               <tr>
                 <td className="h-4"></td>
               </tr>
-              {filteredUsers.map((user) => (
+              {users.map((user) => (
                 <tr
                   key={user.id}
                   className="hover:bg-gray-50/50 transition-colors border-b border-gray-50 last:border-0"

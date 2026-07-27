@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
     Search,
-    SlidersHorizontal,
     ChevronLeft,
     ChevronRight,
     Loader2,
@@ -23,7 +22,7 @@ export default function LayoutEnquiriesPage() {
 
     useEffect(() => {
         fetchEnquiries();
-    }, [currentPage]);
+    }, [currentPage, searchQuery]);
 
     const fetchEnquiries = async () => {
         setIsLoading(true);
@@ -33,6 +32,7 @@ export default function LayoutEnquiriesPage() {
                 currentPage,
                 limit,
                 "LAYOUT",
+                searchQuery || undefined,
             );
             setEnquiries(response.data);
             setMeta(response.meta);
@@ -42,14 +42,6 @@ export default function LayoutEnquiriesPage() {
             setIsLoading(false);
         }
     };
-
-    const filteredData = enquiries.filter(
-        (item) =>
-            (item.user.name ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-            (item.user.email ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-            (item.user.phone ?? "").includes(searchQuery) ||
-            (item.layout?.title ?? "").toLowerCase().includes(searchQuery.toLowerCase())
-    );
 
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString("en-IN", {
@@ -79,14 +71,13 @@ export default function LayoutEnquiriesPage() {
                             type="text"
                             placeholder="Search by name, email, phone..."
                             value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onChange={(e) => {
+                                setSearchQuery(e.target.value);
+                                setCurrentPage(1);
+                            }}
                             className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg w-72 focus:outline-none focus:ring-1 focus:ring-[#1e2667] text-gray-900"
                         />
                     </div>
-                    <button className="flex items-center gap-2 border border-gray-200 px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-50 bg-white cursor-pointer">
-                        <SlidersHorizontal className="w-4 h-4" />
-                        Filters
-                    </button>
                 </div>
             </div>
 
@@ -99,7 +90,7 @@ export default function LayoutEnquiriesPage() {
                     <div className="flex-1 flex items-center justify-center text-red-500">
                         {error}
                     </div>
-                ) : filteredData.length === 0 ? (
+                ) : enquiries.length === 0 ? (
                     <div className="flex-1 flex items-center justify-center text-gray-500">
                         No layout enquiries found
                     </div>
@@ -125,7 +116,7 @@ export default function LayoutEnquiriesPage() {
                                 <tr>
                                     <td className="h-4"></td>
                                 </tr>
-                                {filteredData.map((item) => (
+                                {enquiries.map((item) => (
                                     <tr
                                         key={item.id}
                                         className="hover:bg-gray-50/50 transition-colors border-b border-gray-50 last:border-0"

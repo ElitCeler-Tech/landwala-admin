@@ -37,6 +37,8 @@ export default function LandProtectionPage() {
           currentPage,
           limit,
           statusFilter === "all" ? undefined : statusFilter,
+          undefined,
+          searchQuery || undefined,
         );
         setProtections(response.requests);
         setMeta({
@@ -55,7 +57,7 @@ export default function LandProtectionPage() {
     };
 
     fetchProtections();
-  }, [currentPage, statusFilter]);
+  }, [currentPage, statusFilter, searchQuery]);
 
   const getStatusBadge = (status: string) => {
     const statusStyles: Record<string, string> = {
@@ -68,18 +70,6 @@ export default function LandProtectionPage() {
     };
     return statusStyles[status] || "bg-gray-100 text-gray-700";
   };
-
-  const filteredProtections = protections.filter((item) => {
-    const fullName = item.fullName || "";
-    const phone = item.phone || "";
-    const query = searchQuery.toLowerCase();
-
-    return (
-      fullName.toLowerCase().includes(query) ||
-      phone.includes(searchQuery) ||
-      item.location.toLowerCase().includes(query)
-    );
-  });
 
   if (isLoading) {
     return (
@@ -109,7 +99,10 @@ export default function LandProtectionPage() {
               type="text"
               placeholder="Search"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
               className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg w-64 focus:outline-none focus:ring-1 focus:ring-[#1e2667] text-gray-900"
             />
           </div>
@@ -157,7 +150,7 @@ export default function LandProtectionPage() {
               <tr>
                 <td className="h-4"></td>
               </tr>
-              {filteredProtections.map((item) => (
+              {protections.map((item) => (
                 <tr
                   key={item.id}
                   className="hover:bg-gray-50/50 transition-colors border-b border-gray-50 last:border-0"
@@ -200,7 +193,7 @@ export default function LandProtectionPage() {
                   </td>
                 </tr>
               ))}
-              {filteredProtections.length === 0 && (
+              {protections.length === 0 && (
                 <tr>
                   <td colSpan={7} className="py-10 text-center text-gray-500">
                     No land protection requests found

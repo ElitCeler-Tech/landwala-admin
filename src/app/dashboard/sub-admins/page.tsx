@@ -41,7 +41,11 @@ export default function SubAdminsPage() {
   const fetchSubAdmins = async () => {
     setIsLoading(true);
     try {
-      const response = await subAdminsApi.getSubAdmins(currentPage, limit);
+      const response = await subAdminsApi.getSubAdmins(
+        currentPage,
+        limit,
+        searchQuery || undefined,
+      );
       setSubAdmins(response.data);
       setMeta(response.meta);
     } catch (error) {
@@ -53,7 +57,8 @@ export default function SubAdminsPage() {
 
   useEffect(() => {
     fetchSubAdmins();
-  }, [currentPage]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, searchQuery]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -132,14 +137,6 @@ export default function SubAdminsPage() {
     }
   };
 
-  const filteredSubAdmins = subAdmins.filter((admin) => {
-    const searchLower = searchQuery.toLowerCase();
-    return (
-      admin.name.toLowerCase().includes(searchLower) ||
-      admin.email.toLowerCase().includes(searchLower)
-    );
-  });
-
   if (isLoading && subAdmins.length === 0) {
     return (
       <div className="p-8 bg-white font-sans min-h-full flex items-center justify-center">
@@ -167,7 +164,10 @@ export default function SubAdminsPage() {
               type="text"
               placeholder="Search by name or email..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
               className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg w-64 focus:outline-none focus:ring-1 focus:ring-[#1e2667] text-gray-900 text-sm"
             />
           </div>
@@ -211,7 +211,7 @@ export default function SubAdminsPage() {
               <tr>
                 <td className="h-4"></td>
               </tr>
-              {filteredSubAdmins.map((admin) => (
+              {subAdmins.map((admin) => (
                 <tr
                   key={admin.id}
                   className="hover:bg-gray-50/50 transition-colors border-b border-gray-50 last:border-0"
@@ -284,7 +284,7 @@ export default function SubAdminsPage() {
                   </td>
                 </tr>
               ))}
-              {filteredSubAdmins.length === 0 && (
+              {subAdmins.length === 0 && (
                 <tr>
                   <td colSpan={7} className="py-10 text-center text-gray-500">
                     No sub-admins found

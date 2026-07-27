@@ -27,7 +27,9 @@ export default function LandRegistrationsPage() {
             try {
                 const response = await userActionsApi.getLandRegistrations(
                     currentPage,
-                    limit
+                    limit,
+                    undefined,
+                    searchQuery || undefined,
                 );
                 setRegistrations(response.data);
                 setMeta(response.meta);
@@ -39,7 +41,7 @@ export default function LandRegistrationsPage() {
         };
 
         fetchRegistrations();
-    }, [currentPage]);
+    }, [currentPage, searchQuery]);
 
     const handleStatusChange = async (id: string, status: string) => {
         setActionLoading(id);
@@ -55,19 +57,6 @@ export default function LandRegistrationsPage() {
             setActionLoading(null);
         }
     };
-
-    const filteredRegistrations = registrations.filter((item) => {
-        const name = item.name || "";
-        const email = item.user?.email || "";
-        const phone = item.phone || "";
-        const query = searchQuery.toLowerCase();
-
-        return (
-            name.toLowerCase().includes(query) ||
-            email.toLowerCase().includes(query) ||
-            phone.includes(searchQuery)
-        );
-    });
 
     const getStatusBadge = (status: string) => {
         const styles: Record<string, string> = {
@@ -105,7 +94,10 @@ export default function LandRegistrationsPage() {
                         type="text"
                         placeholder="Search"
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={(e) => {
+                            setSearchQuery(e.target.value);
+                            setCurrentPage(1);
+                        }}
                         className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg w-64 focus:outline-none focus:ring-1 focus:ring-[#1e2667] text-gray-900"
                     />
                 </div>
@@ -139,7 +131,7 @@ export default function LandRegistrationsPage() {
                             <tr>
                                 <td className="h-4"></td>
                             </tr>
-                            {filteredRegistrations.map((item) => (
+                            {registrations.map((item) => (
                                 <tr
                                     key={item.id}
                                     className="hover:bg-gray-50/50 transition-colors border-b border-gray-50 last:border-0"

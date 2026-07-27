@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import {
   Search,
-  SlidersHorizontal,
   ChevronLeft,
   ChevronRight,
   Loader2,
@@ -86,10 +85,6 @@ export default function ListingRequestsPage() {
               className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg w-64 focus:outline-none focus:ring-1 focus:ring-[#1e2667] text-gray-900"
             />
           </div>
-          <button className="flex items-center gap-2 border border-gray-200 px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-50 bg-white cursor-pointer">
-            <SlidersHorizontal className="w-4 h-4" />
-            Filters
-          </button>
         </div>
       </div>
 

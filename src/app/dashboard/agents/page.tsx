@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import {
   Search,
-  SlidersHorizontal,
   ChevronLeft,
   ChevronRight,
   Plus,
@@ -24,7 +23,11 @@ export default function AgentsPage() {
     const fetchAgents = async () => {
       setIsLoading(true);
       try {
-        const response = await agentsApi.getAgents(currentPage, limit);
+        const response = await agentsApi.getAgents(
+          currentPage,
+          limit,
+          searchQuery || undefined,
+        );
         setAgents(response.data);
         setMeta(response.meta);
       } catch (error) {
@@ -35,7 +38,7 @@ export default function AgentsPage() {
     };
 
     fetchAgents();
-  }, [currentPage]);
+  }, [currentPage, searchQuery]);
 
   const getAssignedLocations = (agent: Agent) => {
     const locations = [
@@ -56,13 +59,6 @@ export default function AgentsPage() {
     };
     return statusStyles[status.toLowerCase()] || "bg-gray-100 text-gray-700";
   };
-
-  const filteredAgents = agents.filter(
-    (agent) =>
-      agent.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      agent.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      agent.phone.includes(searchQuery)
-  );
 
   if (isLoading) {
     return (
@@ -97,14 +93,13 @@ export default function AgentsPage() {
               type="text"
               placeholder="Search"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
               className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg w-64 focus:outline-none focus:ring-1 focus:ring-[#1e2667] text-gray-900"
             />
           </div>
-          <button className="flex items-center gap-2 border border-gray-200 px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-50 bg-white cursor-pointer">
-            <SlidersHorizontal className="w-4 h-4" />
-            Filters
-          </button>
         </div>
       </div>
 
@@ -138,7 +133,7 @@ export default function AgentsPage() {
               <tr>
                 <td className="h-4"></td>
               </tr>
-              {filteredAgents.map((agent) => (
+              {agents.map((agent) => (
                 <tr
                   key={agent.id}
                   className="hover:bg-gray-50/50 transition-colors border-b border-gray-50 last:border-0"
@@ -169,7 +164,7 @@ export default function AgentsPage() {
                   </td>
                 </tr>
               ))}
-              {filteredAgents.length === 0 && (
+              {agents.length === 0 && (
                 <tr>
                   <td colSpan={6} className="py-10 text-center text-gray-500">
                     No agents found

@@ -1,13 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Search,
-  SlidersHorizontal,
-  ChevronLeft,
-  ChevronRight,
-  Loader2,
-} from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { reportsApi, Report, PaginationMeta } from "@/lib/api";
 import { useReportsStore } from "@/store/useReportsStore";
@@ -26,7 +20,11 @@ export default function ReportsPage() {
     const fetchReports = async () => {
       setIsLoading(true);
       try {
-        const response = await reportsApi.getReports(currentPage, limit);
+        const response = await reportsApi.getReports(
+          currentPage,
+          limit,
+          searchQuery || undefined,
+        );
         setReports(response.data);
         setMeta(response.meta);
       } catch (error) {
@@ -37,21 +35,7 @@ export default function ReportsPage() {
     };
 
     fetchReports();
-  }, [currentPage]);
-
-  const filteredReports = reports.filter((report) => {
-    const searchLower = searchQuery.toLowerCase();
-    const reporterName =
-      report.reportedBy === "USER"
-        ? report.user?.name || report.user?.email || ""
-        : report.agent?.fullName || report.agent?.email || "";
-
-    return (
-      report.title.toLowerCase().includes(searchLower) ||
-      report.description.toLowerCase().includes(searchLower) ||
-      reporterName.toLowerCase().includes(searchLower)
-    );
-  });
+  }, [currentPage, searchQuery]);
 
   const getStatusBadge = (status: string) => {
     const statusStyles: Record<string, string> = {
@@ -107,14 +91,13 @@ export default function ReportsPage() {
               type="text"
               placeholder="Search reports..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
               className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg w-64 focus:outline-none focus:ring-1 focus:ring-[#1e2667] text-gray-900"
             />
           </div>
-          <button className="flex items-center gap-2 border border-gray-200 px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-50 bg-white cursor-pointer">
-            <SlidersHorizontal className="w-4 h-4" />
-            Filters
-          </button>
         </div>
       </div>
 
@@ -149,7 +132,7 @@ export default function ReportsPage() {
               <tr>
                 <td className="h-4"></td>
               </tr>
-              {filteredReports.map((report) => {
+              {reports.map((report) => {
                 const reporterInfo = getReporterInfo(report);
                 return (
                   <tr
@@ -216,7 +199,7 @@ export default function ReportsPage() {
                   </tr>
                 );
               })}
-              {filteredReports.length === 0 && (
+              {reports.length === 0 && (
                 <tr>
                   <td colSpan={6} className="py-10 text-center text-gray-500">
                     No reports found
