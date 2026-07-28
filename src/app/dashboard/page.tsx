@@ -1,20 +1,31 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import {
   Users,
+  UserCheck,
+  Briefcase,
+  Home,
+  Clock,
+  CheckCircle2,
+  Tag,
+  MessageSquare,
+  TrendingUp,
+  Landmark,
+  Scale,
+  FileSignature,
   Shield,
-  FileText,
+  IndianRupee,
+  Wallet,
+  PiggyBank,
+  Loader2,
   MoveUpRight,
   MoveDownRight,
-  Calendar,
-  Loader2,
-  UserCheck,
-  MessageSquare,
-  LandPlot,
-  TrendingUp,
-  Tag,
-  Scale,
+  MapPin,
+  Award,
+  UserCog,
+  AlertTriangle,
 } from "lucide-react";
 import {
   AreaChart,
@@ -23,47 +34,160 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
 } from "recharts";
 import {
   dashboardApi,
-  DashboardData,
-  PlotListingsGrowthResponse,
+  DashboardOverview,
+  RecentActivityItem,
+  AreaDistributionZone,
+  TopAgent,
+  DashboardDateRange,
 } from "@/lib/api";
 
-export default function Dashboard() {
-  const [dashboardData, setDashboardData] = useState<DashboardData | null>(
-    null,
+const RANGE_OPTIONS: { value: DashboardDateRange; label: string }[] = [
+  { value: "today", label: "Today" },
+  { value: "week", label: "This Week" },
+  { value: "month", label: "This Month" },
+  { value: "custom", label: "Custom" },
+];
+
+const DONUT_COLORS = ["#1e2667", "#22c55e", "#e5e7eb"];
+
+function formatCurrency(amount: number) {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
+function formatRelativeTime(iso: string) {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
+interface StatCardDef {
+  title: string;
+  value: string | number;
+  icon: React.ElementType;
+  href: string;
+  accent: string;
+}
+
+function StatCard({ title, value, icon: Icon, href, accent }: StatCardDef) {
+  return (
+    <Link
+      href={href}
+      className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center gap-3 hover:border-[#1e2667]/30 hover:shadow-md transition-all cursor-pointer"
+    >
+      <div className={`p-2.5 rounded-lg ${accent} shrink-0`}>
+        <Icon className="w-4 h-4 text-[#1e2667]" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-gray-500 text-xs font-medium truncate">{title}</p>
+        <h3 className="text-xl font-bold text-gray-900 leading-tight">
+          {value}
+        </h3>
+      </div>
+    </Link>
   );
-  const [growthData, setGrowthData] =
-    useState<PlotListingsGrowthResponse | null>(null);
+}
+
+export default function Dashboard() {
+  const [overview, setOverview] = useState<DashboardOverview | null>(null);
+  const [revenueGrowth, setRevenueGrowth] = useState<
+    { date: string; amount: number }[]
+  >([]);
+  const [recentActivity, setRecentActivity] = useState<RecentActivityItem[]>(
+    [],
+  );
+  const [areaDistribution, setAreaDistribution] = useState<
+    AreaDistributionZone[]
+  >([]);
+  const [topAgents, setTopAgents] = useState<TopAgent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const [range, setRange] = useState<DashboardDateRange>("month");
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo, setCustomTo] = useState("");
+
+  const fetchOverview = useCallback(async () => {
+    if (range === "custom" && (!customFrom || !customTo)) return;
+    try {
+      const data = await dashboardApi.getOverview(range, customFrom, customTo);
+      setOverview(data);
+      setLoadError(null);
+    } catch (error) {
+      console.error("Failed to fetch dashboard overview:", error);
+      setLoadError(
+        "Couldn't load dashboard data from the server. Numbers below may be stale or blank.",
+      );
+    }
+  }, [range, customFrom, customTo]);
 
   useEffect(() => {
-    const fetchDashboard = async () => {
+    const fetchAll = async () => {
+      setIsLoading(true);
       try {
-        const [data, growth] = await Promise.all([
-          dashboardApi.getDashboard(),
-          dashboardApi.getPlotListingsGrowth(),
+        const [revenue, activity, area, agents] = await Promise.all([
+          dashboardApi.getRevenueGrowth(),
+          dashboardApi.getRecentActivity(8),
+          dashboardApi.getAreaDistribution(),
+          dashboardApi.getTopAgents(5),
         ]);
-        setDashboardData(data);
-        setGrowthData(growth);
+        setRevenueGrowth(revenue.data);
+        setRecentActivity(activity);
+        setAreaDistribution(area);
+        setTopAgents(agents);
+        setLoadError(null);
+        await fetchOverview();
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
+        setLoadError(
+          "Couldn't load dashboard data from the server. Numbers below may be stale or blank.",
+        );
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchDashboard();
+    fetchAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const plotListingsData = (growthData?.data ?? []).map((point) => ({
+  useEffect(() => {
+    fetchOverview();
+  }, [fetchOverview]);
+
+  const revenueChartData = revenueGrowth.map((point) => ({
     name: new Date(point.date).toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
     }),
-    value: point.count,
+    value: point.amount,
   }));
+
+  const totalActive = overview?.activeListings ?? 0;
+  const totalSold = overview?.soldProperties ?? 0;
+  const totalOther = Math.max(
+    (overview?.totalProperties ?? 0) - totalActive - totalSold,
+    0,
+  );
+  const donutData = [
+    { name: "Active", value: totalActive },
+    { name: "Sold", value: totalSold },
+    { name: "Other", value: totalOther },
+  ].filter((d) => d.value > 0);
 
   if (isLoading) {
     return (
@@ -73,248 +197,195 @@ export default function Dashboard() {
     );
   }
 
-  // Helper to format checks for display
-  const renderStatCard = (
-    title: string,
-    value: string | number,
-    icon: React.ElementType,
-    subStats?: {
-      label: string;
-      value: string | number | undefined;
-      color?: string;
-    }[],
-    className?: string,
-  ) => (
-    <div
-      className={`bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col h-full ${className || ""}`}
-    >
-      <div className="flex justify-between items-start mb-4">
-        <div>
-          <p className="text-gray-500 text-sm font-medium mb-1">{title}</p>
-          <h3 className="text-3xl font-bold text-gray-900">{value}</h3>
-        </div>
-        <div className="p-2 bg-gray-50 rounded-lg">
-          {icon &&
-            React.createElement(icon, { className: "w-5 h-5 text-[#1e2667]" })}
-        </div>
-      </div>
-
-      {subStats && subStats.length > 0 && (
-        <div className="mt-auto space-y-2 pt-4 border-t border-gray-50">
-          {subStats.map(
-            (stat, idx) =>
-              stat.value !== undefined && (
-                <div
-                  key={idx}
-                  className="flex justify-between items-center text-sm"
-                >
-                  <span className="text-gray-500">{stat.label}</span>
-                  <span
-                    className={`font-semibold ${stat.color || "text-gray-900"}`}
-                  >
-                    {stat.value}
-                  </span>
-                </div>
-              ),
-          )}
-        </div>
-      )}
-    </div>
-  );
+  const statCards: StatCardDef[] = [
+    {
+      title: "Total Users",
+      value: overview?.totalUsers ?? 0,
+      icon: Users,
+      href: "/dashboard/users",
+      accent: "bg-blue-50",
+    },
+    {
+      title: "Total Agents",
+      value: overview?.totalAgents ?? 0,
+      icon: UserCheck,
+      href: "/dashboard/agents",
+      accent: "bg-indigo-50",
+    },
+    {
+      title: "Total Employees",
+      value: overview?.totalEmployees ?? 0,
+      icon: Briefcase,
+      href: "/dashboard/executives",
+      accent: "bg-violet-50",
+    },
+    {
+      title: "Total Properties",
+      value: overview?.totalProperties ?? 0,
+      icon: Home,
+      href: "/dashboard/plots",
+      accent: "bg-emerald-50",
+    },
+    {
+      title: "Pending Approval",
+      value: overview?.propertiesPendingApproval ?? 0,
+      icon: Clock,
+      href: "/dashboard/property-submissions",
+      accent: "bg-amber-50",
+    },
+    {
+      title: "Active Listings",
+      value: overview?.activeListings ?? 0,
+      icon: CheckCircle2,
+      href: "/dashboard/plots",
+      accent: "bg-green-50",
+    },
+    {
+      title: "Sold Properties",
+      value: overview?.soldProperties ?? 0,
+      icon: Tag,
+      href: "/dashboard/plots",
+      accent: "bg-rose-50",
+    },
+    {
+      title: "Today's Leads",
+      value: overview?.todaysLeads ?? 0,
+      icon: MessageSquare,
+      href: "/dashboard/enquiries",
+      accent: "bg-cyan-50",
+    },
+    {
+      title: "Total Leads",
+      value: overview?.totalLeads ?? 0,
+      icon: TrendingUp,
+      href: "/dashboard/enquiries",
+      accent: "bg-teal-50",
+    },
+    {
+      title: "Loan Requests",
+      value: overview?.loanRequests ?? 0,
+      icon: Landmark,
+      href: "/dashboard/loan-eligibility",
+      accent: "bg-sky-50",
+    },
+    {
+      title: "Legal Verification",
+      value: overview?.legalVerificationRequests ?? 0,
+      icon: Scale,
+      href: "/dashboard/legal-verification",
+      accent: "bg-orange-50",
+    },
+    {
+      title: "Registration Requests",
+      value: overview?.registrationRequests ?? 0,
+      icon: FileSignature,
+      href: "/dashboard/explore-categories/land-registrations",
+      accent: "bg-fuchsia-50",
+    },
+    {
+      title: "Land Protection",
+      value: overview?.landProtectionRequests ?? 0,
+      icon: Shield,
+      href: "/dashboard/explore-categories/land-protection",
+      accent: "bg-pink-50",
+    },
+    {
+      title: "Revenue Today",
+      value: formatCurrency(overview?.revenueToday ?? 0),
+      icon: IndianRupee,
+      href: "/dashboard/subscription-purchases",
+      accent: "bg-lime-50",
+    },
+    {
+      title: "Monthly Revenue",
+      value: formatCurrency(overview?.monthlyRevenue ?? 0),
+      icon: Wallet,
+      href: "/dashboard/subscription-purchases",
+      accent: "bg-yellow-50",
+    },
+    {
+      title: "Total Revenue",
+      value: formatCurrency(overview?.totalRevenue ?? 0),
+      icon: PiggyBank,
+      href: "/dashboard/subscription-purchases",
+      accent: "bg-purple-50",
+    },
+  ];
 
   return (
-    <div className="p-8 font-sans bg-white min-h-full">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">
-        Dashboard Overview
-      </h1>
+    <div className="p-6 font-sans bg-white min-h-full">
+      {loadError && (
+        <div className="flex items-center gap-2 bg-red-50 border border-red-100 text-red-700 text-sm px-4 py-3 rounded-lg mb-4">
+          <AlertTriangle className="w-4 h-4 shrink-0" />
+          {loadError}
+        </div>
+      )}
+      <div className="flex flex-wrap justify-between items-center gap-3 mb-5">
+        <h1 className="text-xl font-bold text-gray-900">Dashboard Overview</h1>
 
-      {/* Bento Grid Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {/* Row 1 */}
-        {renderStatCard(
-          "Total Users",
-          dashboardData?.totalUsers || 0,
-          Users,
-          [],
-          "bg-blue-50/50",
-        )}
-
-        {renderStatCard(
-          "Total Agents",
-          dashboardData?.totalAgents.total || 0,
-          UserCheck,
-          [
-            {
-              label: "Active",
-              value: dashboardData?.totalAgents.active,
-              color: "text-green-600",
-            },
-            {
-              label: "Pending KYC",
-              value: dashboardData?.totalAgents.pendingKyc,
-              color: "text-amber-600",
-            },
-          ],
-          "lg:col-span-2 bg-indigo-50/50",
-        )}
-
-        {renderStatCard(
-          "Layout Enquiries",
-          dashboardData?.layoutEnquiries || 0,
-          MessageSquare,
-          [],
-          "bg-purple-50/50",
-        )}
-
-        {/* Row 2 */}
-        {renderStatCard(
-          "Latest Listings",
-          dashboardData?.latestListings.total || 0,
-          Tag,
-          [
-            {
-              label: "Active",
-              value: dashboardData?.latestListings.active,
-              color: "text-green-600",
-            },
-            {
-              label: "Featured",
-              value: dashboardData?.latestListings.featured,
-              color: "text-purple-600",
-            },
-          ],
-          "lg:col-span-2 bg-emerald-50/50",
-        )}
-
-        {renderStatCard(
-          "Buy Plots Interest",
-          dashboardData?.buyPlots.total || 0,
-          LandPlot,
-          [],
-          "bg-teal-50/50",
-        )}
-
-        {renderStatCard(
-          "Sell Requests",
-          dashboardData?.sellPlots.total || 0,
-          TrendingUp,
-          [
-            {
-              label: "Pending",
-              value: dashboardData?.sellPlots.pending,
-              color: "text-amber-600",
-            },
-            {
-              label: "Approved",
-              value: dashboardData?.sellPlots.approved,
-              color: "text-green-600",
-            },
-          ],
-          "bg-cyan-50/50",
-        )}
-
-        {/* Row 3 */}
-        {renderStatCard(
-          "Legal Verification",
-          dashboardData?.legalVerification.total || 0,
-          Scale,
-          [
-            {
-              label: "Pending",
-              value: dashboardData?.legalVerification.pending,
-              color: "text-amber-600",
-            },
-            {
-              label: "Verified",
-              value: dashboardData?.legalVerification.verified,
-              color: "text-green-600",
-            },
-          ],
-          "bg-orange-50/50",
-        )}
-
-        {renderStatCard(
-          "Land Protection",
-          dashboardData?.landProtection.total || 0,
-          Shield,
-          [
-            {
-              label: "Pending",
-              value: dashboardData?.landProtection.pending,
-              color: "text-amber-600",
-            },
-            {
-              label: "Contacted",
-              value: dashboardData?.landProtection.contacted,
-              color: "text-blue-600",
-            },
-          ],
-          "bg-rose-50/50",
-        )}
-
-        {renderStatCard(
-          "Loan Applications",
-          dashboardData?.loanApplications.total || 0,
-          FileText,
-          [
-            {
-              label: "Pending",
-              value: dashboardData?.loanApplications.pending,
-              color: "text-amber-600",
-            },
-            {
-              label: "Approved",
-              value: dashboardData?.loanApplications.approved,
-              color: "text-green-600",
-            },
-          ],
-          "lg:col-span-2 bg-sky-50/50",
-        )}
+        <div className="flex items-center gap-2">
+          {RANGE_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => setRange(opt.value)}
+              className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors cursor-pointer ${
+                range === opt.value
+                  ? "bg-[#1e2667] text-white border-[#1e2667]"
+                  : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+          {range === "custom" && (
+            <div className="flex items-center gap-2 ml-1">
+              <input
+                type="date"
+                value={customFrom}
+                onChange={(e) => setCustomFrom(e.target.value)}
+                className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+              />
+              <span className="text-gray-400 text-xs">to</span>
+              <input
+                type="date"
+                value={customTo}
+                onChange={(e) => setCustomTo(e.target.value)}
+                className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+              />
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 h-[400px]">
-        {/* Line Chart */}
-        <div className="col-span-3 bg-white p-6 rounded-xl shadow-sm border border-gray-100 h-full flex flex-col">
-          <div className="flex justify-between items-center mb-6">
+      {/* Stat Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 mb-6">
+        {statCards.map((card) => (
+          <StatCard key={card.title} {...card} />
+        ))}
+      </div>
+
+      {/* Revenue chart + property donut */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+        <div className="lg:col-span-2 bg-white p-5 rounded-xl shadow-sm border border-gray-100 h-[320px] flex flex-col">
+          <div className="flex justify-between items-start mb-4">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">
-                Plot Listings Growth
+              <h2 className="text-base font-semibold text-gray-900">
+                Revenue Overview
               </h2>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-2xl text-black font-bold">
-                  {growthData?.totalLast30Days ?? 0}
-                </span>
-                {growthData?.percentChange !== null &&
-                  growthData?.percentChange !== undefined && (
-                    <span
-                      className={`text-xs font-semibold px-2 py-0.5 rounded flex items-center gap-1 ${
-                        growthData.percentChange >= 0
-                          ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-700"
-                      }`}
-                    >
-                      {Math.abs(growthData.percentChange)}%
-                      {growthData.percentChange >= 0 ? (
-                        <MoveUpRight className="w-3 h-3" />
-                      ) : (
-                        <MoveDownRight className="w-3 h-3" />
-                      )}
-                    </span>
-                  )}
-              </div>
+              <p className="text-xs text-gray-500 mt-0.5">Last 30 days</p>
             </div>
-            <div className="relative">
-              <button className="text-xs text-gray-500 border rounded px-3 py-1 flex items-center gap-2 cursor-pointer">
-                <Calendar className="w-3 h-3" /> Last 30 Days
-              </button>
-            </div>
+            <span className="text-lg font-bold text-gray-900">
+              {formatCurrency(
+                revenueGrowth.reduce((sum, r) => sum + r.amount, 0),
+              )}
+            </span>
           </div>
           <div className="flex-1 w-full min-h-0">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={plotListingsData}>
+              <AreaChart data={revenueChartData}>
                 <defs>
-                  <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#1e2667" stopOpacity={0.1} />
+                  <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#1e2667" stopOpacity={0.15} />
                     <stop offset="95%" stopColor="#1e2667" stopOpacity={0} />
                   </linearGradient>
                 </defs>
@@ -327,20 +398,217 @@ export default function Dashboard() {
                   dataKey="name"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: "#9ca3af", fontSize: 12 }}
-                  interval={2}
+                  tick={{ fill: "#9ca3af", fontSize: 11 }}
+                  interval={4}
                 />
-                <Tooltip />
+                <Tooltip
+                  formatter={(value: number) => formatCurrency(value)}
+                />
                 <Area
                   type="monotone"
                   dataKey="value"
                   stroke="#1e2667"
                   fillOpacity={1}
-                  fill="url(#colorValue)"
+                  fill="url(#colorRevenue)"
                   strokeWidth={2}
                 />
               </AreaChart>
             </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 h-[320px] flex flex-col">
+          <h2 className="text-base font-semibold text-gray-900 mb-2">
+            Property Listings
+          </h2>
+          <div className="flex-1 min-h-0 flex items-center justify-center">
+            {donutData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={donutData}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius={55}
+                    outerRadius={85}
+                    paddingAngle={2}
+                  >
+                    {donutData.map((entry, index) => (
+                      <Cell
+                        key={entry.name}
+                        fill={DONUT_COLORS[index % DONUT_COLORS.length]}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-sm text-gray-400">No property data yet</p>
+            )}
+          </div>
+          <div className="flex justify-center gap-4 pt-2">
+            {donutData.map((d, i) => (
+              <div key={d.name} className="flex items-center gap-1.5 text-xs">
+                <span
+                  className="w-2 h-2 rounded-full"
+                  style={{ background: DONUT_COLORS[i % DONUT_COLORS.length] }}
+                />
+                <span className="text-gray-600">
+                  {d.name} ({d.value})
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Area-wise distribution */}
+      <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 mb-6">
+        <div className="flex items-center gap-2 mb-4">
+          <MapPin className="w-4 h-4 text-[#1e2667]" />
+          <h2 className="text-base font-semibold text-gray-900">
+            Area-wise Property Distribution (Hyderabad)
+          </h2>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          {areaDistribution.length === 0 && (
+            <p className="text-sm text-gray-400 col-span-full">
+              No geo-tagged properties yet
+            </p>
+          )}
+          {areaDistribution.map((zone) => (
+            <div
+              key={zone.zone}
+              className="border border-gray-100 rounded-lg p-3 bg-gray-50/50"
+            >
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-semibold text-gray-800">
+                  {zone.zone}
+                </span>
+                <span className="text-sm font-bold text-[#1e2667]">
+                  {zone.total}
+                </span>
+              </div>
+              <div className="space-y-1">
+                {zone.byCategory.slice(0, 4).map((c) => (
+                  <div
+                    key={c.category}
+                    className="flex justify-between text-xs text-gray-500"
+                  >
+                    <span className="truncate">{c.category}</span>
+                    <span className="font-medium text-gray-700">
+                      {c.count}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Recent activity + Top agents */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+          <h2 className="text-base font-semibold text-gray-900 mb-4">
+            Recent Activities
+          </h2>
+          <div className="space-y-3">
+            {recentActivity.length === 0 && (
+              <p className="text-sm text-gray-400">No recent activity</p>
+            )}
+            {recentActivity.map((item, idx) => (
+              <div
+                key={`${item.type}-${idx}`}
+                className="flex items-start justify-between gap-3 pb-3 border-b border-gray-50 last:border-0 last:pb-0"
+              >
+                <p className="text-sm text-gray-700">{item.message}</p>
+                <span className="text-xs text-gray-400 shrink-0">
+                  {formatRelativeTime(item.occurredAt)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+          <div className="flex items-center gap-2 mb-4">
+            <Award className="w-4 h-4 text-[#1e2667]" />
+            <h2 className="text-base font-semibold text-gray-900">
+              Top Performing Agents
+            </h2>
+          </div>
+          {topAgents.length === 0 ? (
+            <p className="text-sm text-gray-400">
+              No active agent assignments yet
+            </p>
+          ) : (
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="text-xs text-gray-400">
+                  <th className="pb-2 font-medium">Agent</th>
+                  <th className="pb-2 font-medium">Properties</th>
+                  <th className="pb-2 font-medium">Leads</th>
+                  <th className="pb-2 font-medium">Conversion</th>
+                </tr>
+              </thead>
+              <tbody>
+                {topAgents.map((agent) => (
+                  <tr
+                    key={agent.agentId}
+                    className="border-t border-gray-50 text-gray-700"
+                  >
+                    <td className="py-2 font-medium text-gray-900">
+                      {agent.name}
+                    </td>
+                    <td className="py-2">{agent.properties}</td>
+                    <td className="py-2">{agent.leads}</td>
+                    <td className="py-2">
+                      {agent.conversionRate !== null
+                        ? `${agent.conversionRate}%`
+                        : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+
+      {/* Executive section */}
+      <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+        <div className="flex items-center gap-2 mb-4">
+          <UserCog className="w-4 h-4 text-[#1e2667]" />
+          <h2 className="text-base font-semibold text-gray-900">Executives</h2>
+          <Link
+            href="/dashboard/executives"
+            className="ml-auto text-xs text-[#1e2667] hover:underline font-medium"
+          >
+            View all
+          </Link>
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="border border-gray-100 rounded-lg p-3 text-center">
+            <p className="text-2xl font-bold text-gray-900">
+              {overview?.totalEmployees ?? 0}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">Total</p>
+          </div>
+          <div className="border border-gray-100 rounded-lg p-3 text-center">
+            <p className="text-2xl font-bold text-green-600 flex items-center justify-center gap-1">
+              {overview?.activeEmployees ?? 0}
+              <MoveUpRight className="w-3 h-3" />
+            </p>
+            <p className="text-xs text-gray-500 mt-1">Active</p>
+          </div>
+          <div className="border border-gray-100 rounded-lg p-3 text-center">
+            <p className="text-2xl font-bold text-gray-400 flex items-center justify-center gap-1">
+              {overview?.inactiveEmployees ?? 0}
+              <MoveDownRight className="w-3 h-3" />
+            </p>
+            <p className="text-xs text-gray-500 mt-1">Inactive</p>
           </div>
         </div>
       </div>

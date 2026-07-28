@@ -8,9 +8,16 @@ import {
     Map,
     Store,
     ChevronRight,
+    Layers,
 } from "lucide-react";
 
 const CATEGORY_LINKS = [
+    {
+        name: "Manage Categories",
+        description: "Create, edit, and reorder Explore-screen categories",
+        href: "/dashboard/explore-categories/manage",
+        icon: Layers,
+    },
     {
         name: "Land Protection",
         description: "View and quote land protection requests",

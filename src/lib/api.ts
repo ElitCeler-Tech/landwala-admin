@@ -111,6 +111,71 @@ export interface PlotListingsGrowthResponse {
   percentChange: number | null;
 }
 
+export type DashboardDateRange = "today" | "week" | "month" | "custom";
+
+export interface PropertyCategoryBreakdown {
+  category: string;
+  total: number;
+  active: number;
+  sold: number;
+}
+
+export interface RoleCount {
+  role: string;
+  count: number;
+}
+
+export interface DashboardOverview {
+  totalUsers: number;
+  totalAgents: number;
+  totalEmployees: number;
+  activeEmployees: number;
+  inactiveEmployees: number;
+  totalProperties: number;
+  propertiesPendingApproval: number;
+  activeListings: number;
+  soldProperties: number;
+  todaysLeads: number;
+  totalLeads: number;
+  loanRequests: number;
+  legalVerificationRequests: number;
+  registrationRequests: number;
+  landProtectionRequests: number;
+  revenueToday: number;
+  monthlyRevenue: number;
+  totalRevenue: number;
+  propertiesByCategory: PropertyCategoryBreakdown[];
+  roleCounts: RoleCount[];
+  appliedRange: { from: string; to: string };
+}
+
+export interface RecentActivityItem {
+  type:
+    | "USER_REGISTERED"
+    | "PROPERTY_UPLOADED"
+    | "AGENT_JOINED"
+    | "PROPERTY_APPROVED"
+    | "LEGAL_REQUEST_RECEIVED"
+    | "INSPECTION_COMPLETED";
+  message: string;
+  occurredAt: string;
+}
+
+export interface AreaDistributionZone {
+  zone: "North" | "South" | "East" | "West" | "Unclassified";
+  total: number;
+  byCategory: { category: string; count: number }[];
+}
+
+export interface TopAgent {
+  agentId: string;
+  name: string;
+  properties: number;
+  leads: number;
+  conversionRate: number | null;
+  totalCommissionAmount: number;
+}
+
 export const dashboardApi = {
   getDashboard: async () => {
     const response = await api.get<DashboardData>("/admin/dashboard");
@@ -121,6 +186,47 @@ export const dashboardApi = {
     const response = await api.get<PlotListingsGrowthResponse>(
       "/admin/dashboard/plot-listings-growth",
     );
+    return response.data;
+  },
+
+  getOverview: async (range: DashboardDateRange = "month", from?: string, to?: string) => {
+    const params = new URLSearchParams({ range });
+    if (range === "custom" && from && to) {
+      params.set("from", from);
+      params.set("to", to);
+    }
+    const response = await api.get<DashboardOverview>(
+      `/admin/dashboard/overview?${params.toString()}`,
+    );
+    return response.data;
+  },
+
+  getRecentActivity: async (limit: number = 8) => {
+    const response = await api.get<RecentActivityItem[]>(
+      `/admin/dashboard/recent-activity?limit=${limit}`,
+    );
+    return response.data;
+  },
+
+  getAreaDistribution: async () => {
+    const response = await api.get<AreaDistributionZone[]>(
+      "/admin/dashboard/area-distribution",
+    );
+    return response.data;
+  },
+
+  getTopAgents: async (limit: number = 5) => {
+    const response = await api.get<TopAgent[]>(
+      `/admin/dashboard/top-agents?limit=${limit}`,
+    );
+    return response.data;
+  },
+
+  getRevenueGrowth: async () => {
+    const response = await api.get<{
+      data: { date: string; amount: number }[];
+      totalLast30Days: number;
+    }>("/admin/dashboard/revenue-growth");
     return response.data;
   },
 };
@@ -337,6 +443,10 @@ export interface Property {
   isFeatured: boolean;
   isExploreNearby: boolean;
   isLatestListing: boolean;
+  isSold: boolean;
+  soldAt: string | null;
+  isPremium: boolean;
+  isArchived: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -418,6 +528,41 @@ export const propertiesApi = {
     );
     return response.data;
   },
+
+  toggleSold: async (id: string) => {
+    const response = await api.patch<Property>(
+      `/admin/properties/${id}/toggle-sold`,
+    );
+    return response.data;
+  },
+
+  togglePremium: async (id: string) => {
+    const response = await api.patch<Property>(
+      `/admin/properties/${id}/toggle-premium`,
+    );
+    return response.data;
+  },
+
+  archiveProperty: async (id: string) => {
+    const response = await api.patch<Property>(
+      `/admin/properties/${id}/archive`,
+    );
+    return response.data;
+  },
+
+  restoreProperty: async (id: string) => {
+    const response = await api.patch<Property>(
+      `/admin/properties/${id}/restore`,
+    );
+    return response.data;
+  },
+
+  getArchivedProperties: async (page: number = 1, limit: number = 10) => {
+    const response = await api.get<PropertiesResponse>("/admin/properties", {
+      params: { page, limit, isArchived: true },
+    });
+    return response.data;
+  },
 };
 
 // Layout Types
@@ -452,6 +597,8 @@ export interface Layout {
   availableSlots: number;
   notAvailableSlots: number;
   isActive: boolean;
+  approvalType: string | null;
+  isPremium: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -592,6 +739,10 @@ export interface LegalVerification {
   saleAgreementUrl: string;
   taxReceiptUrl: string;
   ecUrl: string;
+  assignedLawyerName: string | null;
+  assignedLawyerPhone: string | null;
+  assignedLawyerEmail: string | null;
+  lawyerAssignedAt: string | null;
   createdAt: string;
   submittedAt: string;
 }
@@ -760,6 +911,19 @@ export const userActionsApi = {
     const response = await api.patch<{ id: string; status: string; message: string }>(
       `/admin/legal-verifications/${id}/status`,
       { status, reviewNotes },
+    );
+    return response.data;
+  },
+
+  assignLawyer: async (
+    id: string,
+    name: string,
+    phone?: string,
+    email?: string,
+  ) => {
+    const response = await api.patch<{ id: string; status: string; message: string }>(
+      `/admin/legal-verifications/${id}/assign-lawyer`,
+      { name, phone, email },
     );
     return response.data;
   },
@@ -955,11 +1119,13 @@ export const enquiriesApi = {
     limit: number = 10,
     type?: "LAYOUT" | "PROPERTY",
     search?: string,
+    userId?: string,
   ) => {
     const typeParam = type ? `&type=${type}` : "";
     const searchParam = search ? `&search=${encodeURIComponent(search)}` : "";
+    const userIdParam = userId ? `&userId=${userId}` : "";
     const response = await api.get<EnquiriesResponse>(
-      `/admin/enquiries?page=${page}&limit=${limit}${typeParam}${searchParam}`,
+      `/admin/enquiries?page=${page}&limit=${limit}${typeParam}${searchParam}${userIdParam}`,
     );
     return response.data;
   },
@@ -1118,6 +1284,22 @@ export const reportsApi = {
   },
   getReportById: async (id: string) => {
     const response = await api.get<Report>(`/admin/issue-reports/${id}`);
+    return response.data;
+  },
+  updateStatus: async (
+    id: string,
+    status: "pending" | "in_progress" | "resolved" | "closed",
+  ) => {
+    const response = await api.patch<{ id: string; status: string; message: string }>(
+      `/admin/issue-reports/${id}/status`,
+      { status },
+    );
+    return response.data;
+  },
+  deleteReport: async (id: string) => {
+    const response = await api.delete<{ id: string; message: string }>(
+      `/admin/issue-reports/${id}`,
+    );
     return response.data;
   },
 };
@@ -1290,6 +1472,123 @@ export const subscriptionPlansApi = {
   },
 };
 
+// Explore Categories (admin-managed) Types
+export interface ExploreCategory {
+  id: string;
+  name: string;
+  iconKey: string | null;
+  displayOrder: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ExploreCategoriesResponse {
+  data: ExploreCategory[];
+  meta: PaginationMeta;
+}
+
+export interface CreateExploreCategoryPayload {
+  name: string;
+  iconKey?: string;
+  displayOrder?: number;
+  isActive?: boolean;
+}
+
+export type UpdateExploreCategoryPayload = Partial<CreateExploreCategoryPayload>;
+
+// Explore Categories (admin-managed) API
+export const exploreCategoryManagementApi = {
+  getCategories: async (page: number = 1, limit: number = 50) => {
+    const response = await api.get<ExploreCategoriesResponse>(
+      `/admin/explore-category-management?page=${page}&limit=${limit}`,
+    );
+    return response.data;
+  },
+
+  createCategory: async (data: CreateExploreCategoryPayload) => {
+    const response = await api.post<ExploreCategory>(
+      "/admin/explore-category-management",
+      data,
+    );
+    return response.data;
+  },
+
+  updateCategory: async (id: string, data: UpdateExploreCategoryPayload) => {
+    const response = await api.patch<ExploreCategory>(
+      `/admin/explore-category-management/${id}`,
+      data,
+    );
+    return response.data;
+  },
+
+  deleteCategory: async (id: string) => {
+    const response = await api.delete<void>(
+      `/admin/explore-category-management/${id}`,
+    );
+    return response.data;
+  },
+};
+
+// Bank Partners (admin-managed) Types
+export interface BankPartner {
+  id: string;
+  name: string;
+  logoKey: string | null;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  interestInfo: string | null;
+  displayOrder: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BankPartnersResponse {
+  data: BankPartner[];
+  meta: PaginationMeta;
+}
+
+export interface CreateBankPartnerPayload {
+  name: string;
+  logoKey?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  interestInfo?: string;
+  displayOrder?: number;
+  isActive?: boolean;
+}
+
+export type UpdateBankPartnerPayload = Partial<CreateBankPartnerPayload>;
+
+// Bank Partners (admin-managed) API
+export const bankPartnersApi = {
+  getPartners: async (page: number = 1, limit: number = 50) => {
+    const response = await api.get<BankPartnersResponse>(
+      `/admin/bank-partners?page=${page}&limit=${limit}`,
+    );
+    return response.data;
+  },
+
+  createPartner: async (data: CreateBankPartnerPayload) => {
+    const response = await api.post<BankPartner>("/admin/bank-partners", data);
+    return response.data;
+  },
+
+  updatePartner: async (id: string, data: UpdateBankPartnerPayload) => {
+    const response = await api.patch<BankPartner>(
+      `/admin/bank-partners/${id}`,
+      data,
+    );
+    return response.data;
+  },
+
+  deletePartner: async (id: string) => {
+    const response = await api.delete<void>(`/admin/bank-partners/${id}`);
+    return response.data;
+  },
+};
+
 // Property Submissions Types
 export interface PropertySubmissionUser {
   id: string;
@@ -1347,10 +1646,11 @@ export const propertySubmissionsApi = {
     limit: number = 10,
     status?: string,
     search?: string,
+    userId?: string,
   ) => {
     const response = await api.get<PropertySubmissionsResponse>(
       "/admin/property-submissions",
-      { params: { page, limit, status, search } },
+      { params: { page, limit, status, search, userId } },
     );
     return response.data;
   },
@@ -1535,10 +1835,11 @@ export const subscriptionPurchasesApi = {
     page: number = 1,
     limit: number = 20,
     status?: string,
+    userId?: string,
   ) => {
     const response = await api.get<SubscriptionPurchasesResponse>(
       "/admin/subscription-purchases",
-      { params: { page, limit, status } },
+      { params: { page, limit, status, userId } },
     );
     return response.data;
   },
@@ -1576,10 +1877,11 @@ export const genericPaymentsApi = {
     page: number = 1,
     limit: number = 20,
     status?: string,
+    userId?: string,
   ) => {
     const response = await api.get<GenericPaymentsResponse>(
       "/admin/payments",
-      { params: { page, limit, status } },
+      { params: { page, limit, status, userId } },
     );
     return response.data;
   },
@@ -1599,6 +1901,12 @@ export interface Executive {
   assignedDistrict: string;
   assignedMandal: string;
   assignedVillage: string;
+  role: string | null;
+  department: string | null;
+  managerId: string | null;
+  managerName: string | null;
+  salary: number | null;
+  performanceRating: number | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -1615,6 +1923,21 @@ export interface ExecutivePerformance {
   visitedThisMonth: number;
   pendingCount: number;
   overdueCount: number;
+}
+
+export interface ExecutiveDocument {
+  id: string;
+  name: string;
+  fileUrl: string;
+  createdAt: string;
+}
+
+export interface UpdateExecutiveProfilePayload {
+  role?: string;
+  department?: string;
+  managerId?: string;
+  salary?: number;
+  performanceRating?: number;
 }
 
 export const executivesApi = {
@@ -1663,6 +1986,73 @@ export const executivesApi = {
   getPerformance: async (id: string) => {
     const response = await api.get<ExecutivePerformance>(
       `/admin/executives/${id}/performance`,
+    );
+    return response.data;
+  },
+
+  updateProfile: async (id: string, data: UpdateExecutiveProfilePayload) => {
+    const response = await api.patch<Executive>(
+      `/admin/executives/${id}`,
+      data,
+    );
+    return response.data;
+  },
+
+  getDocuments: async (id: string) => {
+    const response = await api.get<ExecutiveDocument[]>(
+      `/admin/executives/${id}/documents`,
+    );
+    return response.data;
+  },
+
+  uploadDocument: async (id: string, name: string, file: File) => {
+    const formData = new FormData();
+    formData.append("name", name);
+    formData.append("file", file);
+    const response = await api.post<ExecutiveDocument>(
+      `/admin/executives/${id}/documents`,
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } },
+    );
+    return response.data;
+  },
+
+  deleteDocument: async (id: string, documentId: string) => {
+    const response = await api.delete<void>(
+      `/admin/executives/${id}/documents/${documentId}`,
+    );
+    return response.data;
+  },
+};
+
+// Executive Attendance Types
+export interface AttendanceRecord {
+  id: string;
+  executiveId: string;
+  checkInAt: string;
+  checkInLat: number;
+  checkInLng: number;
+  checkOutAt: string | null;
+  checkOutLat: number | null;
+  checkOutLng: number | null;
+  createdAt: string;
+}
+
+export interface AdminAttendanceRecord extends AttendanceRecord {
+  executiveName: string;
+  executiveCode: string | null;
+}
+
+export interface AttendanceRecordsResponse {
+  data: AdminAttendanceRecord[];
+  meta: PaginationMeta;
+}
+
+export const executiveAttendanceApi = {
+  getForExecutive: async (executiveId: string, page: number = 1, limit: number = 30) => {
+    const response = await api.get<AttendanceRecordsResponse>(
+      "/admin/executive-attendance",
+      { params: { executiveId, page, limit } },
     );
     return response.data;
   },

@@ -11,14 +11,17 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { inspectionLandsApi, InspectionLand } from "@/lib/api";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 
 export default function InspectionLandsPage() {
   const [lands, setLands] = useState<InspectionLand[]>([]);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isFetching, setIsFetching] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const searchQuery = useDebouncedValue(searchInput, 350);
   const limit = 10;
 
   const [error, setError] = useState("");
@@ -40,7 +43,7 @@ export default function InspectionLandsPage() {
   });
 
   const fetchLands = useCallback(async () => {
-    setIsLoading(true);
+    setIsFetching(true);
     try {
       const response = await inspectionLandsApi.getLands(
         currentPage,
@@ -53,9 +56,14 @@ export default function InspectionLandsPage() {
     } catch (err) {
       console.error("Failed to fetch inspection lands:", err);
     } finally {
-      setIsLoading(false);
+      setIsFetching(false);
+      setIsInitialLoading(false);
     }
   }, [currentPage, searchQuery]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   useEffect(() => {
     fetchLands();
@@ -146,11 +154,8 @@ export default function InspectionLandsPage() {
             <input
               type="text"
               placeholder="Search"
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setCurrentPage(1);
-              }}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg w-64 focus:outline-none focus:ring-1 focus:ring-[#1e2667] text-gray-900"
             />
           </div>
@@ -284,11 +289,17 @@ export default function InspectionLandsPage() {
       )}
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex-1 flex flex-col">
-        {isLoading ? (
+        {isInitialLoading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="w-8 h-8 animate-spin text-[#1e2667]" />
           </div>
         ) : (
+          <div className="relative">
+            {isFetching && (
+              <div className="absolute inset-0 bg-white/60 flex items-center justify-center rounded-xl z-10">
+                <Loader2 className="w-6 h-6 animate-spin text-[#1e2667]" />
+              </div>
+            )}
           <div className="w-full overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -357,6 +368,7 @@ export default function InspectionLandsPage() {
                 )}
               </tbody>
             </table>
+          </div>
           </div>
         )}
       </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import {
   LayoutDashboard,
@@ -14,10 +14,8 @@ import {
   ChevronUp,
   Map,
   MessageSquare,
-  LayoutGrid,
   Home,
   ShieldCheck,
-  Layers,
   LucideIcon,
   Store,
   CreditCard,
@@ -26,6 +24,12 @@ import {
   Receipt,
   HardHat,
   Camera,
+  PlusCircle,
+  Scale,
+  Landmark,
+  Megaphone,
+  LogOut,
+  Layers,
 } from "lucide-react";
 import clsx from "clsx";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -40,83 +44,59 @@ type SidebarItem = {
 
 const sidebarItems: SidebarItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Users", href: "/dashboard/users", icon: Users },
-  { name: "Agents", href: "/dashboard/agents", icon: UserCog },
-  { name: "Sub Admins", href: "/dashboard/sub-admins", icon: ShieldCheck },
-  { name: "Plots", href: "/dashboard/plots", icon: Grid },
-  { name: "Layouts", href: "/dashboard/layouts", icon: Map },
-  { name: "Transactions", href: "/dashboard/transactions", icon: FileText },
   {
-    name: "Payment Transactions",
-    href: "/dashboard/subscription-purchases",
-    icon: Receipt,
-  },
-  { name: "Reports", href: "/dashboard/reports", icon: MessageSquare },
-  {
-    name: "Listing Requests",
-    href: "/dashboard/listing-requests",
-    icon: FileText,
+    name: "User Management",
+    icon: Users,
+    children: [{ name: "Users", href: "/dashboard/users", icon: Users }],
   },
   {
-    name: "Property Submissions",
-    href: "/dashboard/property-submissions",
-    icon: Home,
-  },
-  {
-    name: "Pincodes",
-    href: "/dashboard/pincodes",
-    icon: MapPin,
-  },
-  {
-    name: "Banners",
-    href: "/dashboard/banners",
-    icon: GalleryHorizontal,
-  },
-  {
-    name: "Field Executives",
-    icon: HardHat,
+    name: "Agent Management",
+    icon: UserCog,
     children: [
-      {
-        name: "Executives",
-        href: "/dashboard/executives",
-        icon: HardHat,
-      },
-      {
-        name: "Inspection Lands",
-        href: "/dashboard/inspection-lands",
-        icon: Map,
-      },
-      {
-        name: "Land Visits",
-        href: "/dashboard/land-visits",
-        icon: Camera,
-      },
+      { name: "Agents", href: "/dashboard/agents", icon: UserCog },
+      { name: "Commissions", href: "/dashboard/transactions", icon: Receipt },
     ],
   },
   {
-    name: "Subscription Plans",
-    href: "/dashboard/subscription-plans",
-    icon: CreditCard,
+    name: "Property Management",
+    icon: Home,
+    children: [
+      { name: "Add Property", href: "/dashboard/plots/create", icon: PlusCircle },
+      { name: "All Properties", href: "/dashboard/plots", icon: Grid },
+      {
+        name: "Pending / Sell Requests",
+        href: "/dashboard/property-submissions",
+        icon: FileText,
+      },
+      { name: "Latest Listings", href: "/dashboard/latest-listings", icon: Home },
+      { name: "Layouts", href: "/dashboard/layouts", icon: Map },
+      { name: "Archived Properties", href: "/dashboard/plots/archived", icon: FileText },
+    ],
   },
-
   {
-    name: "Explore Categories",
-    icon: Layers,
+    name: "Land Protection",
+    icon: ShieldCheck,
     children: [
       {
-        name: "Land Protection",
+        name: "Requests",
         href: "/dashboard/explore-categories/land-protection",
         icon: ShieldCheck,
       },
       {
-        name: "Assign - Land Protections",
+        name: "Assign Employee",
         href: "/dashboard/assign-land-protections",
         icon: UserCog,
       },
+    ],
+  },
+  {
+    name: "Buy / Sell Plots",
+    icon: Store,
+    children: [
       {
-        name: "Land Registrations",
-        href: "/dashboard/explore-categories/land-registrations",
-        icon: FileText,
+        name: "All Listings",
+        href: "/dashboard/explore-categories/buy-sell-plots",
+        icon: Store,
       },
       {
         name: "Layout Enquiries",
@@ -124,38 +104,82 @@ const sidebarItems: SidebarItem[] = [
         icon: Map,
       },
       {
-        name: "Buy/Sell Plots",
-        href: "/dashboard/explore-categories/buy-sell-plots",
-        icon: Store,
+        name: "Manage Categories",
+        href: "/dashboard/explore-categories/manage",
+        icon: Layers,
       },
     ],
   },
   {
-    name: "Quick Actions",
-    icon: LayoutGrid,
+    name: "Services",
+    icon: FileText,
     children: [
       {
-        name: "Loan Eligibility",
-        href: "/dashboard/loan-eligibility",
+        name: "Land Registration",
+        href: "/dashboard/explore-categories/land-registrations",
         icon: FileText,
-      },
-      {
-        name: "Latest Listings",
-        href: "/dashboard/latest-listings",
-        icon: Home,
       },
       {
         name: "Legal Verification",
         href: "/dashboard/legal-verification",
-        icon: ShieldCheck,
+        icon: Scale,
+      },
+      {
+        name: "Loan Eligibility",
+        href: "/dashboard/loan-eligibility",
+        icon: Landmark,
+      },
+      {
+        name: "Bank Partners",
+        href: "/dashboard/loan-eligibility/bank-partners",
+        icon: Landmark,
       },
     ],
   },
+  {
+    name: "Executive Management",
+    icon: HardHat,
+    children: [
+      { name: "Add Executive", href: "/dashboard/executives/create", icon: PlusCircle },
+      { name: "All Executives", href: "/dashboard/executives", icon: HardHat },
+      { name: "Assigned Tasks", href: "/dashboard/inspection-lands", icon: Map },
+      { name: "Site Visits", href: "/dashboard/land-visits", icon: Camera },
+    ],
+  },
+  { name: "Leads", href: "/dashboard/enquiries", icon: MessageSquare },
+  { name: "Listing Requests", href: "/dashboard/listing-requests", icon: FileText },
+  {
+    name: "Payments",
+    icon: CreditCard,
+    children: [
+      {
+        name: "Subscription Plans",
+        href: "/dashboard/subscription-plans",
+        icon: CreditCard,
+      },
+      {
+        name: "Payment Transactions",
+        href: "/dashboard/subscription-purchases",
+        icon: Receipt,
+      },
+    ],
+  },
+  {
+    name: "Marketing",
+    icon: Megaphone,
+    children: [
+      { name: "Banners", href: "/dashboard/banners", icon: GalleryHorizontal },
+    ],
+  },
+  { name: "Pincodes", href: "/dashboard/pincodes", icon: MapPin },
+  { name: "Reports", href: "/dashboard/reports", icon: MessageSquare },
+  { name: "Roles & Permissions", href: "/dashboard/sub-admins", icon: ShieldCheck },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { user } = useAuthStore();
+  const router = useRouter();
+  const { user, logout } = useAuthStore();
   const [openSections, setOpenSections] = useState<string[]>([]);
 
   const userName = user?.name || "Admin";
@@ -167,6 +191,11 @@ export function Sidebar() {
         ? prev.filter((item) => item !== name)
         : [...prev, name],
     );
+  };
+
+  const handleLogout = () => {
+    logout();
+    router.push("/login");
   };
 
   return (
@@ -183,14 +212,9 @@ export function Sidebar() {
         </div>
       </div>
 
-      <nav className="flex-1 px-4 space-y-2 mt-4 overflow-y-auto">
+      <nav className="flex-1 px-4 space-y-1 mt-2 overflow-y-auto">
         {sidebarItems.map((item) => {
           const isExpanded = openSections.includes(item.name);
-          // Check if any child is active to highlight the parent if needed,
-          // but usually we just highlight the child.
-          // For the parent "Quick Actions", it might be highlighted if expanded?
-          // The image shows it dark blue when expanded.
-
           const hasChildren = item.children && item.children.length > 0;
 
           if (hasChildren) {
@@ -204,7 +228,7 @@ export function Sidebar() {
                 <button
                   onClick={() => toggleSection(item.name)}
                   className={clsx(
-                    "w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium transition-colors cursor-pointer",
+                    "w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer",
                     isChildActive
                       ? "bg-[#1e2667] text-white"
                       : "text-gray-500 hover:bg-gray-50 hover:text-gray-900",
@@ -235,15 +259,10 @@ export function Sidebar() {
                           key={child.name}
                           href={child.href || "#"}
                           className={clsx(
-                            "flex items-center gap-3 pl-11 pr-4 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer",
+                            "flex items-center gap-3 pl-11 pr-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer",
                             isChildPageActive
-                              ? "bg-gray-100 text-[#1e2667]" // Sub-items style? or just text color?
-                              : // Image shows the sub-items on white background (or light gray) with gray text,
-                                // maybe specific active state?
-                                // Let's assume standard logic: active = text-primary.
-                                // In the image, "Blue" background is for the parent.
-                                // The children seem to be on the white background.
-                                "text-gray-500 hover:text-gray-900 hover:bg-gray-50",
+                              ? "bg-gray-100 text-[#1e2667]"
+                              : "text-gray-500 hover:text-gray-900 hover:bg-gray-50",
                           )}
                         >
                           {child.icon && <child.icon className="w-4 h-4" />}
@@ -267,7 +286,7 @@ export function Sidebar() {
               key={item.name}
               href={item.href || "#"}
               className={clsx(
-                "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors cursor-pointer",
+                "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer",
                 isActive
                   ? "bg-[#1e2667] text-white"
                   : "text-gray-500 hover:bg-gray-50 hover:text-gray-900",
@@ -278,6 +297,14 @@ export function Sidebar() {
             </Link>
           );
         })}
+
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors cursor-pointer mt-2"
+        >
+          <LogOut className="w-5 h-5" />
+          Logout
+        </button>
       </nav>
 
       <div className="p-4 mt-auto border-t border-gray-100">

@@ -1,15 +1,19 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft, Loader2 } from "lucide-react";
+import { ChevronLeft, Loader2, Upload, Trash2, FileText, MapPin } from "lucide-react";
 import {
   executivesApi,
+  executiveAttendanceApi,
   landInspectionAssignmentApi,
   Executive,
   ExecutivePerformance,
+  ExecutiveDocument,
+  AdminAttendanceRecord,
   LandInspectionAssignment,
+  UpdateExecutiveProfilePayload,
 } from "@/lib/api";
 
 export default function ExecutiveDetailsPage() {
@@ -26,10 +30,28 @@ export default function ExecutiveDetailsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
+  const [otherExecutives, setOtherExecutives] = useState<Executive[]>([]);
+  const [hrForm, setHrForm] = useState<UpdateExecutiveProfilePayload>({});
+  const [isSavingHr, setIsSavingHr] = useState(false);
+  const [hrError, setHrError] = useState("");
+
+  const [documents, setDocuments] = useState<ExecutiveDocument[]>([]);
+  const [docName, setDocName] = useState("");
+  const [isUploadingDoc, setIsUploadingDoc] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [attendance, setAttendance] = useState<AdminAttendanceRecord[]>([]);
+
   const fetchAll = useCallback(async () => {
     try {
-      const [executiveData, performanceData, assignmentsData] =
-        await Promise.all([
+      const [
+        executiveData,
+        performanceData,
+        assignmentsData,
+        docsData,
+        allExecs,
+        attendanceData,
+      ] = await Promise.all([
           executivesApi.getExecutiveById(executiveId),
           executivesApi.getPerformance(executiveId),
           landInspectionAssignmentApi.getAssignments({
@@ -37,10 +59,25 @@ export default function ExecutiveDetailsPage() {
             isActive: true,
             limit: 50,
           }),
+          executivesApi.getDocuments(executiveId),
+          executivesApi.getExecutives(1, 100),
+          executiveAttendanceApi.getForExecutive(executiveId, 1, 30),
         ]);
       setExecutive(executiveData);
       setPerformance(performanceData);
       setAssignments(assignmentsData.data);
+      setDocuments(docsData);
+      setOtherExecutives(
+        allExecs.data.filter((e) => e.id !== executiveId),
+      );
+      setAttendance(attendanceData.data);
+      setHrForm({
+        role: executiveData.role || undefined,
+        department: executiveData.department || undefined,
+        managerId: executiveData.managerId || undefined,
+        salary: executiveData.salary ?? undefined,
+        performanceRating: executiveData.performanceRating ?? undefined,
+      });
     } catch (error) {
       console.error("Failed to fetch executive details:", error);
     } finally {
@@ -53,6 +90,51 @@ export default function ExecutiveDetailsPage() {
       fetchAll();
     }
   }, [executiveId, fetchAll]);
+
+  const handleSaveHrProfile = async () => {
+    setIsSavingHr(true);
+    setHrError("");
+    try {
+      const updated = await executivesApi.updateProfile(executiveId, hrForm);
+      setExecutive(updated);
+    } catch (error) {
+      console.error("Failed to update HR profile:", error);
+      setHrError("Failed to save changes");
+    } finally {
+      setIsSavingHr(false);
+    }
+  };
+
+  const handleUploadDocument = async () => {
+    const file = fileInputRef.current?.files?.[0];
+    if (!file) return;
+    setIsUploadingDoc(true);
+    try {
+      await executivesApi.uploadDocument(
+        executiveId,
+        docName || file.name,
+        file,
+      );
+      const docsData = await executivesApi.getDocuments(executiveId);
+      setDocuments(docsData);
+      setDocName("");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    } catch (error) {
+      console.error("Failed to upload document:", error);
+    } finally {
+      setIsUploadingDoc(false);
+    }
+  };
+
+  const handleDeleteDocument = async (documentId: string) => {
+    if (!confirm("Delete this document?")) return;
+    try {
+      await executivesApi.deleteDocument(executiveId, documentId);
+      setDocuments((prev) => prev.filter((d) => d.id !== documentId));
+    } catch (error) {
+      console.error("Failed to delete document:", error);
+    }
+  };
 
   const handleToggleActive = async () => {
     if (!executive) return;
@@ -220,6 +302,243 @@ export default function ExecutiveDetailsPage() {
           </div>
         </div>
       )}
+
+      {/* HR Profile */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 mb-6">
+        <h2 className="text-lg font-medium text-gray-900 mb-6">HR Profile</h2>
+        {hrError && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+            {hrError}
+          </div>
+        )}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div>
+            <label className="text-sm font-medium text-gray-700 block mb-1">
+              Role
+            </label>
+            <input
+              type="text"
+              value={hrForm.role || ""}
+              onChange={(e) => setHrForm({ ...hrForm, role: e.target.value })}
+              placeholder="e.g. Field Executive"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-gray-700 block mb-1">
+              Department
+            </label>
+            <input
+              type="text"
+              value={hrForm.department || ""}
+              onChange={(e) =>
+                setHrForm({ ...hrForm, department: e.target.value })
+              }
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-gray-700 block mb-1">
+              Manager
+            </label>
+            <select
+              value={hrForm.managerId || ""}
+              onChange={(e) =>
+                setHrForm({ ...hrForm, managerId: e.target.value || undefined })
+              }
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+            >
+              <option value="">None</option>
+              {otherExecutives.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.fullName}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-gray-700 block mb-1">
+              Salary
+            </label>
+            <input
+              type="number"
+              value={hrForm.salary ?? ""}
+              onChange={(e) =>
+                setHrForm({
+                  ...hrForm,
+                  salary: e.target.value ? Number(e.target.value) : undefined,
+                })
+              }
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-gray-700 block mb-1">
+              Performance Rating (0-5)
+            </label>
+            <input
+              type="number"
+              min={0}
+              max={5}
+              step={0.1}
+              value={hrForm.performanceRating ?? ""}
+              onChange={(e) =>
+                setHrForm({
+                  ...hrForm,
+                  performanceRating: e.target.value
+                    ? Number(e.target.value)
+                    : undefined,
+                })
+              }
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+            />
+          </div>
+        </div>
+        <div className="flex justify-end mt-6">
+          <button
+            onClick={handleSaveHrProfile}
+            disabled={isSavingHr}
+            className="flex items-center gap-2 bg-[#1e2667] text-white text-sm px-5 py-2 rounded-lg hover:bg-opacity-90 transition-opacity cursor-pointer disabled:opacity-50"
+          >
+            {isSavingHr && <Loader2 className="w-4 h-4 animate-spin" />}
+            Save HR Profile
+          </button>
+        </div>
+      </div>
+
+      {/* Documents */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 mb-6">
+        <h2 className="text-lg font-medium text-gray-900 mb-6">Documents</h2>
+        <div className="flex items-end gap-3 mb-6">
+          <div className="flex-1">
+            <label className="text-sm font-medium text-gray-700 block mb-1">
+              Document Name
+            </label>
+            <input
+              type="text"
+              value={docName}
+              onChange={(e) => setDocName(e.target.value)}
+              placeholder="e.g. ID Proof"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+            />
+          </div>
+          <input type="file" ref={fileInputRef} className="text-sm" />
+          <button
+            onClick={handleUploadDocument}
+            disabled={isUploadingDoc}
+            className="flex items-center gap-2 bg-[#1e2667] text-white text-sm px-4 py-2 rounded-lg hover:bg-opacity-90 transition-opacity cursor-pointer disabled:opacity-50 shrink-0"
+          >
+            {isUploadingDoc ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Upload className="w-4 h-4" />
+            )}
+            Upload
+          </button>
+        </div>
+
+        {documents.length > 0 ? (
+          <div className="space-y-2">
+            {documents.map((doc) => (
+              <div
+                key={doc.id}
+                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+              >
+                <a
+                  href={doc.fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-sm text-gray-900 hover:text-[#1e2667]"
+                >
+                  <FileText className="w-4 h-4" />
+                  {doc.name}
+                </a>
+                <button
+                  onClick={() => handleDeleteDocument(doc.id)}
+                  className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg cursor-pointer transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-400">No documents uploaded</p>
+        )}
+      </div>
+
+      {/* Attendance */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 mb-6">
+        <h2 className="text-lg font-medium text-gray-900 mb-6">Attendance</h2>
+        {attendance.length > 0 ? (
+          <div className="w-full overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-[#f8f9fc] text-sm">
+                  <th className="py-3 pl-4 rounded-l-lg font-medium text-gray-600">
+                    Check In
+                  </th>
+                  <th className="py-3 font-medium text-gray-600">
+                    Check In Location
+                  </th>
+                  <th className="py-3 font-medium text-gray-600">
+                    Check Out
+                  </th>
+                  <th className="py-3 pr-4 rounded-r-lg font-medium text-gray-600">
+                    Check Out Location
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="text-sm text-gray-600">
+                {attendance.map((record) => (
+                  <tr key={record.id} className="border-b border-gray-50 last:border-0">
+                    <td className="py-3 pl-4 font-medium text-gray-900">
+                      {new Date(record.checkInAt).toLocaleString()}
+                    </td>
+                    <td className="py-3">
+                      <a
+                        href={`https://www.google.com/maps?q=${record.checkInLat},${record.checkInLng}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-[#1e2667] hover:underline"
+                      >
+                        <MapPin className="w-3.5 h-3.5" />
+                        {record.checkInLat.toFixed(4)}, {record.checkInLng.toFixed(4)}
+                      </a>
+                    </td>
+                    <td className="py-3">
+                      {record.checkOutAt
+                        ? new Date(record.checkOutAt).toLocaleString()
+                        : (
+                          <span className="text-xs font-medium px-2 py-1 rounded-full bg-green-100 text-green-700">
+                            Still checked in
+                          </span>
+                        )}
+                    </td>
+                    <td className="py-3 pr-4">
+                      {record.checkOutLat != null && record.checkOutLng != null ? (
+                        <a
+                          href={`https://www.google.com/maps?q=${record.checkOutLat},${record.checkOutLng}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-[#1e2667] hover:underline"
+                        >
+                          <MapPin className="w-3.5 h-3.5" />
+                          {record.checkOutLat.toFixed(4)}, {record.checkOutLng.toFixed(4)}
+                        </a>
+                      ) : (
+                        "-"
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-400">No attendance records yet</p>
+        )}
+      </div>
 
       {/* Currently assigned lands */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">

@@ -328,6 +328,91 @@ export default function PlotDetailsPage() {
               />
             </button>
           </div>
+
+          {/* Sold Toggle */}
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div>
+              <p className="font-medium text-gray-900">Sold</p>
+              <p className="text-xs text-gray-500">Mark as sold</p>
+            </div>
+            <button
+              onClick={async () => {
+                if (!property) return;
+                try {
+                  const updated = await propertiesApi.toggleSold(property.id);
+                  setProperty(updated);
+                } catch (error) {
+                  console.error("Failed to toggle sold:", error);
+                }
+              }}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#1e2667] focus:ring-offset-2 ${property.isSold ? "bg-[#1e2667]" : "bg-gray-200"
+                }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${property.isSold ? "translate-x-6" : "translate-x-1"
+                  }`}
+              />
+            </button>
+          </div>
+
+          {/* Premium Toggle */}
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div>
+              <p className="font-medium text-gray-900">Premium</p>
+              <p className="text-xs text-gray-500">Mark as premium listing</p>
+            </div>
+            <button
+              onClick={async () => {
+                if (!property) return;
+                try {
+                  const updated = await propertiesApi.togglePremium(property.id);
+                  setProperty(updated);
+                } catch (error) {
+                  console.error("Failed to toggle premium:", error);
+                }
+              }}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#1e2667] focus:ring-offset-2 ${property.isPremium ? "bg-[#1e2667]" : "bg-gray-200"
+                }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${property.isPremium ? "translate-x-6" : "translate-x-1"
+                  }`}
+              />
+            </button>
+          </div>
+
+          {/* Archive / Restore */}
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div>
+              <p className="font-medium text-gray-900">
+                {property.isArchived ? "Archived" : "Archive"}
+              </p>
+              <p className="text-xs text-gray-500">
+                {property.isArchived
+                  ? "Hidden from public listings"
+                  : "Hide from public listings"}
+              </p>
+            </div>
+            <button
+              onClick={async () => {
+                if (!property) return;
+                try {
+                  const updated = property.isArchived
+                    ? await propertiesApi.restoreProperty(property.id)
+                    : await propertiesApi.archiveProperty(property.id);
+                  setProperty(updated);
+                } catch (error) {
+                  console.error("Failed to archive/restore property:", error);
+                }
+              }}
+              className={`text-xs font-medium px-3 py-1.5 rounded-lg cursor-pointer ${property.isArchived
+                  ? "bg-green-100 text-green-700 hover:bg-green-200"
+                  : "bg-red-100 text-red-700 hover:bg-red-200"
+                }`}
+            >
+              {property.isArchived ? "Restore" : "Archive"}
+            </button>
+          </div>
         </div>
       </div>
 

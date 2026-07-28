@@ -37,6 +37,7 @@ interface LayoutFormData {
   minPrice: string;
   maxPrice: string;
   priceUnit: string;
+  approvalType: string;
 }
 
 export default function CreateLayoutPage() {
@@ -55,7 +56,9 @@ export default function CreateLayoutPage() {
     minPrice: "",
     maxPrice: "",
     priceUnit: "Cr",
+    approvalType: "",
   });
+  const [isPremium, setIsPremium] = useState(false);
 
   const [files, setFiles] = useState<{
     image: File | null;
@@ -136,6 +139,7 @@ export default function CreateLayoutPage() {
           submitData.append(key, value);
         }
       });
+      submitData.append("isPremium", String(isPremium));
 
       if (slots.length > 0) {
         submitData.append("slots", JSON.stringify(slots));
@@ -329,6 +333,33 @@ export default function CreateLayoutPage() {
                     <option value="L">Lakh (L)</option>
                     <option value="K">Thousand (K)</option>
                   </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-900">
+                    Approval Type
+                  </label>
+                  <select
+                    name="approvalType"
+                    value={formData.approvalType}
+                    onChange={handleInputChange}
+                    className="w-full bg-gray-50 border-none rounded-lg px-4 py-3 text-sm focus:ring-1 focus:ring-[#1e2667] outline-none text-gray-900"
+                  >
+                    <option value="">None</option>
+                    <option value="HMDA">HMDA</option>
+                    <option value="DTCP">DTCP</option>
+                    <option value="RERA">RERA</option>
+                  </select>
+                </div>
+                <div className="space-y-2 flex items-end pb-1">
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-900 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={isPremium}
+                      onChange={(e) => setIsPremium(e.target.checked)}
+                      className="w-4 h-4"
+                    />
+                    Premium Layout
+                  </label>
                 </div>
               </div>
             </div>

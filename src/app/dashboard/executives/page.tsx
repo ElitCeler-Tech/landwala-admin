@@ -10,18 +10,25 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { executivesApi, Executive, PaginationMeta } from "@/lib/api";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 
 export default function ExecutivesPage() {
   const [executives, setExecutives] = useState<Executive[]>([]);
   const [meta, setMeta] = useState<PaginationMeta | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isFetching, setIsFetching] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const searchQuery = useDebouncedValue(searchInput, 350);
   const limit = 10;
 
   useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  useEffect(() => {
     const fetchExecutives = async () => {
-      setIsLoading(true);
+      setIsFetching(true);
       try {
         const response = await executivesApi.getExecutives(
           currentPage,
@@ -33,7 +40,8 @@ export default function ExecutivesPage() {
       } catch (error) {
         console.error("Failed to fetch executives:", error);
       } finally {
-        setIsLoading(false);
+        setIsFetching(false);
+        setIsInitialLoading(false);
       }
     };
 
@@ -51,7 +59,7 @@ export default function ExecutivesPage() {
     return locations || "Not assigned";
   };
 
-  if (isLoading) {
+  if (isInitialLoading) {
     return (
       <div className="p-8 bg-white font-sans min-h-full flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-[#1e2667]" />
@@ -84,18 +92,20 @@ export default function ExecutivesPage() {
             <input
               type="text"
               placeholder="Search"
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setCurrentPage(1);
-              }}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg w-64 focus:outline-none focus:ring-1 focus:ring-[#1e2667] text-gray-900"
             />
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex-1 flex flex-col">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex-1 flex flex-col relative">
+        {isFetching && (
+          <div className="absolute inset-0 bg-white/60 flex items-center justify-center rounded-xl z-10">
+            <Loader2 className="w-6 h-6 animate-spin text-[#1e2667]" />
+          </div>
+        )}
         <div className="w-full overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>

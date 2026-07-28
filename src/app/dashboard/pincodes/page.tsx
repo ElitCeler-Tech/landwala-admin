@@ -14,14 +14,17 @@ import {
   Upload,
 } from "lucide-react";
 import { pincodesApi, PincodeItem } from "@/lib/api";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 
 export default function PincodesPage() {
   const [items, setItems] = useState<PincodeItem[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isFetching, setIsFetching] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const searchQuery = useDebouncedValue(searchInput, 350);
   const limit = 20;
 
   const [error, setError] = useState("");
@@ -44,7 +47,7 @@ export default function PincodesPage() {
   const [editArea, setEditArea] = useState("");
 
   const fetchPincodes = useCallback(async () => {
-    setIsLoading(true);
+    setIsFetching(true);
     try {
       const response = await pincodesApi.getPincodes(
         searchQuery || undefined,
@@ -57,9 +60,14 @@ export default function PincodesPage() {
     } catch (err) {
       console.error("Failed to fetch pincodes:", err);
     } finally {
-      setIsLoading(false);
+      setIsFetching(false);
+      setIsInitialLoading(false);
     }
   }, [currentPage, searchQuery]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   useEffect(() => {
     fetchPincodes();
@@ -204,11 +212,8 @@ export default function PincodesPage() {
             <input
               type="text"
               placeholder="Search pincode or location"
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setCurrentPage(1);
-              }}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg w-64 focus:outline-none focus:ring-1 focus:ring-[#1e2667] text-gray-900"
             />
           </div>
@@ -318,13 +323,13 @@ export default function PincodesPage() {
         </div>
       )}
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex-1 flex flex-col">
-        {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 animate-spin text-[#1e2667]" />
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex-1 flex flex-col relative">
+        {isFetching && (
+          <div className="absolute inset-0 bg-white/60 flex items-center justify-center rounded-xl z-10">
+            <Loader2 className="w-6 h-6 animate-spin text-[#1e2667]" />
           </div>
-        ) : (
-          <div className="w-full overflow-x-auto">
+        )}
+        <div className="w-full overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-[#f8f9fc]">
@@ -443,8 +448,7 @@ export default function PincodesPage() {
                 )}
               </tbody>
             </table>
-          </div>
-        )}
+        </div>
       </div>
 
       <div className="flex justify-between mb-6 items-center mt-6">

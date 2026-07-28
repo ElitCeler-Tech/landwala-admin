@@ -2,11 +2,24 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Loader2, ArrowLeft, ImageIcon, ExternalLink } from "lucide-react";
+import {
+  Loader2,
+  ArrowLeft,
+  ImageIcon,
+  ExternalLink,
+  Trash2,
+} from "lucide-react";
 import Link from "next/link";
 import { reportsApi, Report } from "@/lib/api";
 import Image from "next/image";
 import { useReportsStore } from "@/store/useReportsStore";
+
+const REPORT_STATUSES = [
+  "pending",
+  "in_progress",
+  "resolved",
+  "closed",
+] as const;
 
 export default function ReportDetailsPage() {
   const params = useParams();
@@ -15,6 +28,8 @@ export default function ReportDetailsPage() {
 
   const [report, setReport] = useState<Report | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const { getReportDetail } = useReportsStore();
 
@@ -75,6 +90,34 @@ export default function ReportDetailsPage() {
       in_progress: "bg-blue-100 text-blue-700",
     };
     return statusStyles[status.toLowerCase()] || "bg-gray-100 text-gray-700";
+  };
+
+  const handleStatusChange = async (
+    status: (typeof REPORT_STATUSES)[number],
+  ) => {
+    if (!report || status === report.status) return;
+    setIsUpdatingStatus(true);
+    try {
+      await reportsApi.updateStatus(report.id, status);
+      setReport({ ...report, status });
+    } catch (error) {
+      console.error("Failed to update report status:", error);
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!report) return;
+    if (!window.confirm("Delete this report? This cannot be undone.")) return;
+    setIsDeleting(true);
+    try {
+      await reportsApi.deleteReport(report.id);
+      router.push("/dashboard/reports");
+    } catch (error) {
+      console.error("Failed to delete report:", error);
+      setIsDeleting(false);
+    }
   };
 
   const reporterInfo =
@@ -275,6 +318,47 @@ export default function ReportDetailsPage() {
                   })}
                 </p>
               </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h2 className="text-lg font-medium text-gray-900 mb-4 pb-4 border-b border-gray-100">
+              Actions
+            </h2>
+
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-gray-500 mb-2">Update Status</p>
+                <select
+                  value={report.status}
+                  disabled={isUpdatingStatus}
+                  onChange={(e) =>
+                    handleStatusChange(
+                      e.target.value as (typeof REPORT_STATUSES)[number],
+                    )
+                  }
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-900 capitalize focus:outline-none focus:ring-1 focus:ring-[#1e2667] disabled:opacity-50"
+                >
+                  {REPORT_STATUSES.map((status) => (
+                    <option key={status} value={status} className="capitalize">
+                      {status.replace("_", " ")}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="w-full flex items-center justify-center gap-2 bg-red-50 text-red-600 font-medium px-4 py-2 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                {isDeleting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Trash2 className="w-4 h-4" />
+                )}
+                Delete Report
+              </button>
             </div>
           </div>
         </div>

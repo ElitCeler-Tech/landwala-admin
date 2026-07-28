@@ -10,22 +10,30 @@ import {
     Map,
 } from "lucide-react";
 import { enquiriesApi, Enquiry, PaginationMeta } from "@/lib/api";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 
 export default function LayoutEnquiriesPage() {
-    const [searchQuery, setSearchQuery] = useState("");
+    const [searchInput, setSearchInput] = useState("");
+    const searchQuery = useDebouncedValue(searchInput, 350);
     const [currentPage, setCurrentPage] = useState(1);
     const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
     const [meta, setMeta] = useState<PaginationMeta | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isInitialLoading, setIsInitialLoading] = useState(true);
+    const [isFetching, setIsFetching] = useState(false);
     const [error, setError] = useState("");
     const limit = 10;
 
     useEffect(() => {
+        setCurrentPage(1);
+    }, [searchQuery]);
+
+    useEffect(() => {
         fetchEnquiries();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentPage, searchQuery]);
 
     const fetchEnquiries = async () => {
-        setIsLoading(true);
+        setIsFetching(true);
         setError("");
         try {
             const response = await enquiriesApi.getEnquiries(
@@ -39,7 +47,8 @@ export default function LayoutEnquiriesPage() {
         } catch (err: any) {
             setError(err.response?.data?.message || "Failed to fetch enquiries");
         } finally {
-            setIsLoading(false);
+            setIsFetching(false);
+            setIsInitialLoading(false);
         }
     };
 
@@ -70,19 +79,21 @@ export default function LayoutEnquiriesPage() {
                         <input
                             type="text"
                             placeholder="Search by name, email, phone..."
-                            value={searchQuery}
-                            onChange={(e) => {
-                                setSearchQuery(e.target.value);
-                                setCurrentPage(1);
-                            }}
+                            value={searchInput}
+                            onChange={(e) => setSearchInput(e.target.value)}
                             className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg w-72 focus:outline-none focus:ring-1 focus:ring-[#1e2667] text-gray-900"
                         />
                     </div>
                 </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex-1 flex flex-col">
-                {isLoading ? (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex-1 flex flex-col relative">
+                {isFetching && !isInitialLoading && (
+                    <div className="absolute inset-0 bg-white/60 flex items-center justify-center rounded-xl z-10">
+                        <Loader2 className="w-6 h-6 animate-spin text-[#1e2667]" />
+                    </div>
+                )}
+                {isInitialLoading ? (
                     <div className="flex-1 flex items-center justify-center">
                         <Loader2 className="w-8 h-8 animate-spin text-[#1e2667]" />
                     </div>

@@ -6,6 +6,8 @@ import {
     ChevronLeft,
     ChevronRight,
     Loader2,
+    Scale,
+    X,
 } from "lucide-react";
 import {
     userActionsApi,
@@ -24,6 +26,10 @@ export default function LegalVerificationPage() {
     const [actionLoading, setActionLoading] = useState<string | null>(null);
     const [error, setError] = useState("");
     const limit = 10;
+
+    const [assignTargetId, setAssignTargetId] = useState<string | null>(null);
+    const [lawyerForm, setLawyerForm] = useState({ name: "", phone: "", email: "" });
+    const [isAssigning, setIsAssigning] = useState(false);
 
     useEffect(() => {
         const fetchVerifications = async () => {
@@ -57,6 +63,50 @@ export default function LegalVerificationPage() {
             setError(err?.response?.data?.message || "Failed to update status");
         } finally {
             setActionLoading(null);
+        }
+    };
+
+    const openAssignModal = (item: LegalVerification) => {
+        setAssignTargetId(item.id);
+        setLawyerForm({
+            name: item.assignedLawyerName || "",
+            phone: item.assignedLawyerPhone || "",
+            email: item.assignedLawyerEmail || "",
+        });
+        setError("");
+    };
+
+    const handleAssignLawyer = async () => {
+        if (!assignTargetId || !lawyerForm.name.trim()) {
+            setError("Lawyer name is required");
+            return;
+        }
+        setIsAssigning(true);
+        setError("");
+        try {
+            await userActionsApi.assignLawyer(
+                assignTargetId,
+                lawyerForm.name,
+                lawyerForm.phone,
+                lawyerForm.email,
+            );
+            setVerifications((prev) =>
+                prev.map((item) =>
+                    item.id === assignTargetId
+                        ? {
+                              ...item,
+                              assignedLawyerName: lawyerForm.name,
+                              assignedLawyerPhone: lawyerForm.phone,
+                              assignedLawyerEmail: lawyerForm.email,
+                          }
+                        : item,
+                ),
+            );
+            setAssignTargetId(null);
+        } catch (err: any) {
+            setError(err?.response?.data?.message || "Failed to assign lawyer");
+        } finally {
+            setIsAssigning(false);
         }
     };
 
@@ -133,6 +183,9 @@ export default function LegalVerificationPage() {
                                 <th className="py-4 font-medium text-gray-600">Phone Number</th>
                                 <th className="py-4 font-medium text-gray-600">Email</th>
                                 <th className="py-4 font-medium text-gray-600">Status</th>
+                                <th className="py-4 font-medium text-gray-600">
+                                    Assigned Lawyer
+                                </th>
                                 <th className="py-4 pr-8 rounded-r-xl font-medium text-gray-600">
                                     Update Status
                                 </th>
@@ -161,6 +214,24 @@ export default function LegalVerificationPage() {
                                         >
                                             {item.status.replace("_", " ")}
                                         </span>
+                                    </td>
+                                    <td className="py-5">
+                                        {item.assignedLawyerName ? (
+                                            <button
+                                                onClick={() => openAssignModal(item)}
+                                                className="text-sm text-gray-900 hover:text-[#1e2667] cursor-pointer"
+                                            >
+                                                {item.assignedLawyerName}
+                                            </button>
+                                        ) : (
+                                            <button
+                                                onClick={() => openAssignModal(item)}
+                                                className="flex items-center gap-1.5 text-xs font-medium text-[#1e2667] hover:underline cursor-pointer"
+                                            >
+                                                <Scale className="w-3.5 h-3.5" />
+                                                Assign Lawyer
+                                            </button>
+                                        )}
                                     </td>
                                     <td className="py-5 pr-8">
                                         <div className="flex items-center gap-2">
@@ -217,6 +288,89 @@ export default function LegalVerificationPage() {
                     </button>
                 </div>
             </div>
+
+            {assignTargetId && (
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-lg font-medium text-gray-900">
+                                Assign Lawyer
+                            </h2>
+                            <button
+                                onClick={() => setAssignTargetId(null)}
+                                className="p-1 text-gray-400 hover:text-gray-600 cursor-pointer"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        {error && (
+                            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+                                {error}
+                            </div>
+                        )}
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="text-sm font-medium text-gray-700 block mb-1">
+                                    Lawyer Name
+                                </label>
+                                <input
+                                    type="text"
+                                    value={lawyerForm.name}
+                                    onChange={(e) =>
+                                        setLawyerForm({ ...lawyerForm, name: e.target.value })
+                                    }
+                                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-700 block mb-1">
+                                    Phone
+                                </label>
+                                <input
+                                    type="text"
+                                    value={lawyerForm.phone}
+                                    onChange={(e) =>
+                                        setLawyerForm({ ...lawyerForm, phone: e.target.value })
+                                    }
+                                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-700 block mb-1">
+                                    Email
+                                </label>
+                                <input
+                                    type="email"
+                                    value={lawyerForm.email}
+                                    onChange={(e) =>
+                                        setLawyerForm({ ...lawyerForm, email: e.target.value })
+                                    }
+                                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end gap-3 mt-6">
+                            <button
+                                onClick={() => setAssignTargetId(null)}
+                                className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleAssignLawyer}
+                                disabled={isAssigning}
+                                className="flex items-center gap-2 bg-[#1e2667] text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-opacity cursor-pointer text-sm font-medium disabled:opacity-50"
+                            >
+                                {isAssigning && <Loader2 className="w-4 h-4 animate-spin" />}
+                                Assign
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

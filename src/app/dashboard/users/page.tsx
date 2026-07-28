@@ -5,17 +5,31 @@ import { Search, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { usersApi, User, PaginationMeta } from "@/lib/api";
 
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
+
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [meta, setMeta] = useState<PaginationMeta | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isFetching, setIsFetching] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const limit = 8;
+  const [limit, setLimit] = useState(10);
+
+  // Debounce the search box so a keystroke doesn't immediately trigger a
+  // refetch that unmounts/remounts the input before the next character.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchQuery(searchInput);
+      setCurrentPage(1);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   useEffect(() => {
     const fetchUsers = async () => {
-      setIsLoading(true);
+      setIsFetching(true);
       try {
         const response = await usersApi.getUsers(
           currentPage,
@@ -27,19 +41,30 @@ export default function UsersPage() {
       } catch (error) {
         console.error("Failed to fetch users:", error);
       } finally {
-        setIsLoading(false);
+        setIsFetching(false);
+        setIsInitialLoading(false);
       }
     };
 
     fetchUsers();
-  }, [currentPage, searchQuery]);
+  }, [currentPage, limit, searchQuery]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
 
-  if (isLoading) {
+  const totalPages = meta ? Math.max(Math.ceil(meta.total / limit), 1) : 1;
+
+  const getPageNumbers = () => {
+    const pages: number[] = [];
+    const start = Math.max(1, currentPage - 2);
+    const end = Math.min(totalPages, start + 4);
+    for (let p = Math.max(1, end - 4); p <= end; p++) pages.push(p);
+    return pages;
+  };
+
+  if (isInitialLoading) {
     return (
       <div className="p-8 bg-white font-sans min-h-full flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-[#1e2667]" />
@@ -63,18 +88,20 @@ export default function UsersPage() {
             <input
               type="text"
               placeholder="Search"
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setCurrentPage(1);
-              }}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg w-64 focus:outline-none focus:ring-1 focus:ring-[#1e2667] text-gray-900"
             />
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex-1 flex flex-col">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex-1 flex flex-col relative">
+        {isFetching && (
+          <div className="absolute inset-0 bg-white/60 flex items-center justify-center rounded-xl z-10">
+            <Loader2 className="w-6 h-6 animate-spin text-[#1e2667]" />
+          </div>
+        )}
         <div className="w-full overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-full">
             <thead>
@@ -98,6 +125,13 @@ export default function UsersPage() {
               <tr>
                 <td className="h-4"></td>
               </tr>
+              {users.length === 0 && !isFetching && (
+                <tr>
+                  <td colSpan={6} className="py-10 text-center text-gray-400">
+                    No users found
+                  </td>
+                </tr>
+              )}
               {users.map((user) => (
                 <tr
                   key={user.id}
@@ -119,8 +153,8 @@ export default function UsersPage() {
                       {user.name || "Unknown"}
                     </div>
                   </td>
-                  <td className="py-5 text-gray-500">{user.email}</td>
-                  <td className="py-5 text-gray-500">{user.phone}</td>
+                  <td className="py-5 text-gray-500">{user.email || "—"}</td>
+                  <td className="py-5 text-gray-500">{user.phone || "—"}</td>
                   <td className="py-5 text-gray-500">{user.location}</td>
                   <td className="py-5 text-gray-500">
                     {formatDate(user.createdAt)}
@@ -140,16 +174,35 @@ export default function UsersPage() {
       </div>
 
       <div className="flex justify-between mb-6 items-center mt-6">
-        <span className="text-gray-500 text-sm">
-          Showing{" "}
-          {meta
-            ? `${(currentPage - 1) * limit + 1}-${Math.min(
-                currentPage * limit,
-                meta.total,
-              )} of ${meta.total}`
-            : "0"}
-        </span>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-4">
+          <span className="text-gray-500 text-sm">
+            Showing{" "}
+            {meta && meta.total > 0
+              ? `${(currentPage - 1) * limit + 1}-${Math.min(
+                  currentPage * limit,
+                  meta.total,
+                )} of ${meta.total}`
+              : "0"}
+          </span>
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <span>Rows per page</span>
+            <select
+              value={limit}
+              onChange={(e) => {
+                setLimit(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="border border-gray-200 rounded-lg px-2 py-1 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+            >
+              {PAGE_SIZE_OPTIONS.map((size) => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
           <button
             onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
             disabled={!meta?.hasPrevPage}
@@ -157,6 +210,19 @@ export default function UsersPage() {
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
+          {getPageNumbers().map((p) => (
+            <button
+              key={p}
+              onClick={() => setCurrentPage(p)}
+              className={`w-8 h-8 rounded-lg text-sm cursor-pointer ${
+                p === currentPage
+                  ? "bg-[#1e2667] text-white"
+                  : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              {p}
+            </button>
+          ))}
           <button
             onClick={() => setCurrentPage((prev) => prev + 1)}
             disabled={!meta?.hasNextPage}

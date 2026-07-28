@@ -37,6 +37,7 @@ interface LayoutFormData {
   minPrice: string;
   maxPrice: string;
   priceUnit: string;
+  approvalType: string;
 }
 
 export default function EditLayoutPage() {
@@ -59,7 +60,9 @@ export default function EditLayoutPage() {
     minPrice: "",
     maxPrice: "",
     priceUnit: "Cr",
+    approvalType: "",
   });
+  const [isPremium, setIsPremium] = useState(false);
 
   const [existingImage, setExistingImage] = useState<string | null>(null);
   const [existingLayoutImage, setExistingLayoutImage] = useState<string | null>(
@@ -102,7 +105,9 @@ export default function EditLayoutPage() {
           minPrice: data.minPrice.toString() || "",
           maxPrice: data.maxPrice.toString() || "",
           priceUnit: data.priceUnit || "Cr",
+          approvalType: data.approvalType || "",
         });
+        setIsPremium(data.isPremium || false);
 
         setExistingImage(data.imageUrl);
         setExistingLayoutImage(data.layoutImageUrl);
@@ -195,6 +200,7 @@ export default function EditLayoutPage() {
           submitData.append(key, value);
         }
       });
+      submitData.append("isPremium", String(isPremium));
 
       // Note: We do NOT append slots here anymore because the backend rejects them.
       // Slots are handled via separate API calls below.
@@ -448,6 +454,33 @@ export default function EditLayoutPage() {
                     <option value="L">Lakh (L)</option>
                     <option value="K">Thousand (K)</option>
                   </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-900">
+                    Approval Type
+                  </label>
+                  <select
+                    name="approvalType"
+                    value={formData.approvalType}
+                    onChange={handleInputChange}
+                    className="w-full bg-gray-50 border-none rounded-lg px-4 py-3 text-sm focus:ring-1 focus:ring-[#1e2667] outline-none text-gray-900"
+                  >
+                    <option value="">None</option>
+                    <option value="HMDA">HMDA</option>
+                    <option value="DTCP">DTCP</option>
+                    <option value="RERA">RERA</option>
+                  </select>
+                </div>
+                <div className="space-y-2 flex items-end pb-1">
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-900 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={isPremium}
+                      onChange={(e) => setIsPremium(e.target.checked)}
+                      className="w-4 h-4"
+                    />
+                    Premium Layout
+                  </label>
                 </div>
               </div>
             </div>
