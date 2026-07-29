@@ -8,8 +8,16 @@ import {
   Loader2,
   Plus,
 } from "lucide-react";
+import clsx from "clsx";
 import Link from "next/link";
-import { propertiesApi, Property, PaginationMeta } from "@/lib/api";
+import {
+  propertiesApi,
+  Property,
+  PaginationMeta,
+  PROPERTY_CATEGORIES,
+} from "@/lib/api";
+
+const categoryTabs = ["All", ...PROPERTY_CATEGORIES];
 
 export default function PlotsPage() {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -17,13 +25,19 @@ export default function PlotsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeCategory, setActiveCategory] = useState<string>("All");
   const limit = 8;
 
   useEffect(() => {
     const fetchProperties = async () => {
       setIsLoading(true);
       try {
-        const response = await propertiesApi.getProperties(currentPage, limit);
+        const response = await propertiesApi.getProperties(
+          currentPage,
+          limit,
+          undefined,
+          activeCategory === "All" ? undefined : activeCategory
+        );
         setProperties(response.data);
         setMeta(response.meta);
       } catch (error) {
@@ -34,7 +48,12 @@ export default function PlotsPage() {
     };
 
     fetchProperties();
-  }, [currentPage]);
+  }, [currentPage, activeCategory]);
+
+  const handleCategoryChange = (category: string) => {
+    setActiveCategory(category);
+    setCurrentPage(1);
+  };
 
   const getPlotSize = (property: Property) => {
     const sizeField = property.overviewFields.find(
@@ -95,6 +114,24 @@ export default function PlotsPage() {
             />
           </div>
         </div>
+      </div>
+
+      {/* Category Tabs */}
+      <div className="flex gap-4 mb-6 flex-wrap">
+        {categoryTabs.map((category) => (
+          <button
+            key={category}
+            onClick={() => handleCategoryChange(category)}
+            className={clsx(
+              "px-6 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer",
+              activeCategory === category
+                ? "bg-[#1e2667] text-white"
+                : "bg-[#eaeaec] text-[#1e2667] hover:bg-gray-200"
+            )}
+          >
+            {category}
+          </button>
+        ))}
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex-1 flex flex-col">

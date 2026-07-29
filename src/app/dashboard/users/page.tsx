@@ -49,11 +49,6 @@ export default function UsersPage() {
     fetchUsers();
   }, [currentPage, limit, searchQuery]);
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-  };
-
   const totalPages = meta ? Math.max(Math.ceil(meta.total / limit), 1) : 1;
 
   const getPageNumbers = () => {
@@ -112,9 +107,6 @@ export default function UsersPage() {
                 <th className="py-4 font-medium text-gray-600">Email</th>
                 <th className="py-4 font-medium text-gray-600">Phone</th>
                 <th className="py-4 font-medium text-gray-600">Location</th>
-                <th className="py-4 font-medium text-gray-600">
-                  Registered Date
-                </th>
                 <th className="py-4 pr-8 rounded-r-xl font-medium text-gray-600">
                   Action
                 </th>
@@ -127,7 +119,7 @@ export default function UsersPage() {
               </tr>
               {users.length === 0 && !isFetching && (
                 <tr>
-                  <td colSpan={6} className="py-10 text-center text-gray-400">
+                  <td colSpan={5} className="py-10 text-center text-gray-400">
                     No users found
                   </td>
                 </tr>
@@ -156,9 +148,6 @@ export default function UsersPage() {
                   <td className="py-5 text-gray-500">{user.email || "—"}</td>
                   <td className="py-5 text-gray-500">{user.phone || "—"}</td>
                   <td className="py-5 text-gray-500">{user.location}</td>
-                  <td className="py-5 text-gray-500">
-                    {formatDate(user.createdAt)}
-                  </td>
                   <td className="py-5 pr-8">
                     <Link href={`/dashboard/users/${user.id}`}>
                       <button className="bg-[#1e2667] text-white text-xs font-medium px-6 py-2 rounded-lg hover:bg-opacity-90 transition-opacity w-20 cursor-pointer">

@@ -162,7 +162,8 @@ export interface RecentActivityItem {
 }
 
 export interface AreaDistributionZone {
-  zone: "North" | "South" | "East" | "West" | "Unclassified";
+  /** The property's city/locality, or "Unspecified" if not set */
+  zone: string;
   total: number;
   byCategory: { category: string; count: number }[];
 }
@@ -422,6 +423,7 @@ export interface Property {
   title: string;
   subtitle: string;
   description: string;
+  category: string | null;
   minPrice: number;
   maxPrice: number;
   priceUnit: string;
@@ -456,15 +458,28 @@ export interface PropertiesResponse {
   meta: PaginationMeta;
 }
 
+// Frozen list of property categories - must stay in sync with the backend's
+// PROPERTY_CATEGORIES (landwalaa-backend/src/modules/property-submission/dto/create-property-submission.dto.ts)
+export const PROPERTY_CATEGORIES = [
+  "Open Plots",
+  "Residential House",
+  "Apartments",
+  "Villas",
+  "Farmhouse",
+  "Agriculture Land",
+  "Farmlands",
+] as const;
+
 // Properties API
 export const propertiesApi = {
   getProperties: async (
     page: number = 1,
     limit: number = 10,
     isLatestListing?: boolean,
+    category?: string,
   ) => {
     const response = await api.get<PropertiesResponse>("/admin/properties", {
-      params: { page, limit, isLatestListing },
+      params: { page, limit, isLatestListing, category },
     });
     return response.data;
   },
@@ -1314,10 +1329,15 @@ export interface ListingRequestAgent {
   email: string;
 }
 
+export type ListingRequestStatus = "PENDING" | "APPROVED" | "REJECTED";
+
 export interface ListingRequest {
   id: string;
   agentId: string;
   propertyId: string;
+  status: ListingRequestStatus;
+  reviewedById: string | null;
+  reviewedAt: string | null;
   agent: ListingRequestAgent;
   property: Property;
   createdAt: string;
@@ -1339,6 +1359,13 @@ export const listingRequestsApi = {
   getListingRequestById: async (id: string) => {
     const response = await api.get<ListingRequest>(
       `/admin/listing-requests/${id}`,
+    );
+    return response.data;
+  },
+  updateStatus: async (id: string, status: "APPROVED" | "REJECTED") => {
+    const response = await api.patch<ListingRequest>(
+      `/admin/listing-requests/${id}/status`,
+      { status },
     );
     return response.data;
   },

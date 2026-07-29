@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import {
+  ArrowLeft,
   Search,
   ChevronLeft,
   ChevronRight,
@@ -70,14 +71,22 @@ export default function ExecutivesPage() {
   return (
     <div className="p-8 pb-4 bg-white font-sans min-h-full flex flex-col">
       <div className="flex justify-between items-end mb-8">
-        <div>
-          <h1 className="text-2xl font-medium text-gray-900 mb-2">
-            Field Executives
-          </h1>
-          <p className="text-gray-500 italic">
-            Executives perform GPS-verified land inspections — separate from
-            Agents
-          </p>
+        <div className="flex items-center gap-4">
+          <Link
+            href="/dashboard"
+            className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </Link>
+          <div>
+            <h1 className="text-2xl font-medium text-gray-900 mb-2">
+              Field Executives
+            </h1>
+            <p className="text-gray-500 italic">
+              Executives perform GPS-verified land inspections — separate
+              from Agents
+            </p>
+          </div>
         </div>
 
         <div className="flex items-center gap-4">

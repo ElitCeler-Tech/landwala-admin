@@ -8,6 +8,15 @@ import { listingRequestsApi, ListingRequest } from "@/lib/api";
 import Image from "next/image";
 import { useListingRequestsStore } from "@/store/useListingRequestsStore";
 
+const getStatusBadge = (status: string) => {
+  const statusStyles: Record<string, string> = {
+    approved: "bg-green-100 text-green-700",
+    pending: "bg-amber-100 text-amber-700",
+    rejected: "bg-red-100 text-red-700",
+  };
+  return statusStyles[status.toLowerCase()] || "bg-gray-100 text-gray-700";
+};
+
 export default function ListingRequestDetailsPage() {
   const params = useParams();
   const router = useRouter();
@@ -15,8 +24,15 @@ export default function ListingRequestDetailsPage() {
 
   const [request, setRequest] = useState<ListingRequest | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<
+    "APPROVED" | "REJECTED" | null
+  >(null);
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
-  const { getRequestDetail } = useListingRequestsStore();
+  const { getRequestDetail, setRequestDetail } = useListingRequestsStore();
 
   useEffect(() => {
     const fetchRequest = async () => {
@@ -41,6 +57,33 @@ export default function ListingRequestDetailsPage() {
       fetchRequest();
     }
   }, [id, getRequestDetail]);
+
+  const handleUpdateStatus = async (status: "APPROVED" | "REJECTED") => {
+    setActionLoading(status);
+    setMessage(null);
+    try {
+      const updated = await listingRequestsApi.updateStatus(id, status);
+      setRequest(updated);
+      setRequestDetail(id, updated);
+      setMessage({
+        type: "success",
+        text:
+          status === "APPROVED"
+            ? "Listing request accepted"
+            : "Listing request ignored",
+      });
+    } catch (error: any) {
+      console.error("Failed to update listing request status:", error);
+      setMessage({
+        type: "error",
+        text:
+          error?.response?.data?.message ||
+          "Failed to update listing request",
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -81,11 +124,27 @@ export default function ListingRequestDetailsPage() {
           <p className="text-sm text-gray-500 italic">ID: {request.id}</p>
         </div>
         <div className="ml-auto">
-          <span className="text-sm font-medium px-4 py-2 rounded-full capitalize bg-blue-100 text-blue-700">
-            Agent Referral
+          <span
+            className={`text-sm font-medium px-4 py-2 rounded-full capitalize ${getStatusBadge(
+              request.status,
+            )}`}
+          >
+            {request.status.toLowerCase()}
           </span>
         </div>
       </div>
+
+      {message && (
+        <div
+          className={`mb-6 p-4 rounded-lg text-sm border ${
+            message.type === "success"
+              ? "bg-green-50 border-green-200 text-green-700"
+              : "bg-red-50 border-red-200 text-red-600"
+          }`}
+        >
+          {message.text}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column - Details */}
@@ -270,11 +329,44 @@ export default function ListingRequestDetailsPage() {
             <h2 className="text-lg font-medium text-gray-900 mb-4 pb-4 border-b border-gray-100">
               About This Request
             </h2>
-            <p className="text-sm text-gray-500">
-              This agent flagged the property above as worth listing. It has
-              no separate approve/reject workflow — manage the property
-              itself (activate, edit, etc.) from its own page.
+            <p className="text-sm text-gray-500 mb-6">
+              This agent flagged the property above as worth listing. Accept
+              it to acknowledge the referral, or ignore it if the property
+              doesn&apos;t need action.
             </p>
+
+            {request.status === "PENDING" ? (
+              <div className="flex gap-3">
+                <button
+                  onClick={() => handleUpdateStatus("REJECTED")}
+                  disabled={actionLoading !== null}
+                  className="flex-1 bg-[#b91c1c] text-white text-sm px-6 py-2 rounded-lg hover:bg-opacity-90 transition-opacity cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {actionLoading === "REJECTED" && (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  )}
+                  Ignore
+                </button>
+                <button
+                  onClick={() => handleUpdateStatus("APPROVED")}
+                  disabled={actionLoading !== null}
+                  className="flex-1 bg-[#16a34a] text-white text-sm px-6 py-2 rounded-lg hover:bg-opacity-90 transition-opacity cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {actionLoading === "APPROVED" && (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  )}
+                  Accept
+                </button>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">
+                This request has already been{" "}
+                <span className="font-medium">
+                  {request.status.toLowerCase()}
+                </span>
+                .
+              </p>
+            )}
           </div>
         </div>
       </div>

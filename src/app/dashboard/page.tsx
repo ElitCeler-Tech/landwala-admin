@@ -45,6 +45,7 @@ import {
   AreaDistributionZone,
   TopAgent,
   DashboardDateRange,
+  PlotListingsGrowthPoint,
 } from "@/lib/api";
 
 const RANGE_OPTIONS: { value: DashboardDateRange; label: string }[] = [
@@ -114,6 +115,9 @@ export default function Dashboard() {
     AreaDistributionZone[]
   >([]);
   const [topAgents, setTopAgents] = useState<TopAgent[]>([]);
+  const [plotListingsGrowth, setPlotListingsGrowth] = useState<
+    PlotListingsGrowthPoint[]
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -139,16 +143,19 @@ export default function Dashboard() {
     const fetchAll = async () => {
       setIsLoading(true);
       try {
-        const [revenue, activity, area, agents] = await Promise.all([
-          dashboardApi.getRevenueGrowth(),
-          dashboardApi.getRecentActivity(8),
-          dashboardApi.getAreaDistribution(),
-          dashboardApi.getTopAgents(5),
-        ]);
+        const [revenue, activity, area, agents, listingsGrowth] =
+          await Promise.all([
+            dashboardApi.getRevenueGrowth(),
+            dashboardApi.getRecentActivity(8),
+            dashboardApi.getAreaDistribution(),
+            dashboardApi.getTopAgents(5),
+            dashboardApi.getPlotListingsGrowth(),
+          ]);
         setRevenueGrowth(revenue.data);
         setRecentActivity(activity);
         setAreaDistribution(area);
         setTopAgents(agents);
+        setPlotListingsGrowth(listingsGrowth.data);
         setLoadError(null);
         await fetchOverview();
       } catch (error) {
@@ -175,6 +182,14 @@ export default function Dashboard() {
       day: "numeric",
     }),
     value: point.amount,
+  }));
+
+  const listingsChartData = plotListingsGrowth.map((point) => ({
+    name: new Date(point.date).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    }),
+    value: point.count,
   }));
 
   const totalActive = overview?.activeListings ?? 0;
@@ -315,9 +330,17 @@ export default function Dashboard() {
   return (
     <div className="p-6 font-sans bg-white min-h-full">
       {loadError && (
-        <div className="flex items-center gap-2 bg-red-50 border border-red-100 text-red-700 text-sm px-4 py-3 rounded-lg mb-4">
-          <AlertTriangle className="w-4 h-4 shrink-0" />
-          {loadError}
+        <div className="flex items-center justify-between gap-2 bg-red-50 border border-red-100 text-red-700 text-sm px-4 py-3 rounded-lg mb-4">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+            {loadError}
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="text-xs font-semibold underline shrink-0"
+          >
+            Retry
+          </button>
         </div>
       )}
       <div className="flex flex-wrap justify-between items-center gap-3 mb-5">
@@ -463,18 +486,72 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Property listings growth */}
+      <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 h-[280px] flex flex-col mb-6">
+        <div className="flex justify-between items-start mb-4">
+          <div>
+            <h2 className="text-base font-semibold text-gray-900">
+              Property Listings Growth
+            </h2>
+            <p className="text-xs text-gray-500 mt-0.5">Last 30 days</p>
+          </div>
+          <span className="text-lg font-bold text-gray-900">
+            {plotListingsGrowth.reduce((sum, p) => sum + p.count, 0)}
+          </span>
+        </div>
+        <div className="flex-1 w-full min-h-0">
+          {listingsChartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={listingsChartData}>
+                <defs>
+                  <linearGradient id="colorListings" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#22c55e" stopOpacity={0.15} />
+                    <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid
+                  vertical={false}
+                  strokeDasharray="3 3"
+                  stroke="#f3f4f6"
+                />
+                <XAxis
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: "#9ca3af", fontSize: 11 }}
+                  interval={4}
+                />
+                <Tooltip />
+                <Area
+                  type="monotone"
+                  dataKey="value"
+                  stroke="#22c55e"
+                  fillOpacity={1}
+                  fill="url(#colorListings)"
+                  strokeWidth={2}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-full flex items-center justify-center">
+              <p className="text-sm text-gray-400">No listings data yet</p>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Area-wise distribution */}
       <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 mb-6">
         <div className="flex items-center gap-2 mb-4">
           <MapPin className="w-4 h-4 text-[#1e2667]" />
           <h2 className="text-base font-semibold text-gray-900">
-            Area-wise Property Distribution (Hyderabad)
+            Area-wise Property Distribution
           </h2>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           {areaDistribution.length === 0 && (
             <p className="text-sm text-gray-400 col-span-full">
-              No geo-tagged properties yet
+              No properties yet
             </p>
           )}
           {areaDistribution.map((zone) => (
@@ -511,9 +588,17 @@ export default function Dashboard() {
       {/* Recent activity + Top agents */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
         <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
-          <h2 className="text-base font-semibold text-gray-900 mb-4">
-            Recent Activities
-          </h2>
+          <div className="flex items-center gap-2 mb-4">
+            <h2 className="text-base font-semibold text-gray-900">
+              Recent Activities
+            </h2>
+            <Link
+              href="/dashboard/activity"
+              className="ml-auto text-xs text-[#1e2667] hover:underline font-medium"
+            >
+              View all
+            </Link>
+          </div>
           <div className="space-y-3">
             {recentActivity.length === 0 && (
               <p className="text-sm text-gray-400">No recent activity</p>
@@ -538,6 +623,12 @@ export default function Dashboard() {
             <h2 className="text-base font-semibold text-gray-900">
               Top Performing Agents
             </h2>
+            <Link
+              href="/dashboard/top-agents"
+              className="ml-auto text-xs text-[#1e2667] hover:underline font-medium"
+            >
+              View all
+            </Link>
           </div>
           {topAgents.length === 0 ? (
             <p className="text-sm text-gray-400">

@@ -13,12 +13,26 @@ import { listingRequestsApi, ListingRequest, PaginationMeta } from "@/lib/api";
 import Image from "next/image";
 import { useListingRequestsStore } from "@/store/useListingRequestsStore";
 
+const getStatusBadge = (status: string) => {
+  const statusStyles: Record<string, string> = {
+    approved: "bg-green-100 text-green-700",
+    pending: "bg-amber-100 text-amber-700",
+    rejected: "bg-red-100 text-red-700",
+  };
+  return statusStyles[status.toLowerCase()] || "bg-gray-100 text-gray-700";
+};
+
 export default function ListingRequestsPage() {
   const [requests, setRequests] = useState<ListingRequest[]>([]);
   const [meta, setMeta] = useState<PaginationMeta | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
   const limit = 10;
 
   const { setRequestDetail } = useListingRequestsStore();
@@ -42,6 +56,42 @@ export default function ListingRequestsPage() {
 
     fetchRequests();
   }, [currentPage]);
+
+  useEffect(() => {
+    if (!message) return;
+    const timer = setTimeout(() => setMessage(null), 3000);
+    return () => clearTimeout(timer);
+  }, [message]);
+
+  const handleUpdateStatus = async (
+    id: string,
+    status: "APPROVED" | "REJECTED",
+  ) => {
+    setActionLoadingId(`${id}-${status}`);
+    try {
+      const updated = await listingRequestsApi.updateStatus(id, status);
+      setRequests((prev) =>
+        prev.map((req) => (req.id === id ? { ...req, ...updated } : req)),
+      );
+      setMessage({
+        type: "success",
+        text:
+          status === "APPROVED"
+            ? "Listing request accepted"
+            : "Listing request ignored",
+      });
+    } catch (error: any) {
+      console.error("Failed to update listing request status:", error);
+      setMessage({
+        type: "error",
+        text:
+          error?.response?.data?.message ||
+          "Failed to update listing request",
+      });
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
 
   const filteredRequests = requests.filter((req) => {
     const searchLower = searchQuery.toLowerCase();
@@ -88,27 +138,42 @@ export default function ListingRequestsPage() {
         </div>
       </div>
 
+      {message && (
+        <div
+          className={`mb-6 p-4 rounded-lg text-sm border ${
+            message.type === "success"
+              ? "bg-green-50 border-green-200 text-green-700"
+              : "bg-red-50 border-red-200 text-red-600"
+          }`}
+        >
+          {message.text}
+        </div>
+      )}
+
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex-1 flex flex-col">
         <div className="w-full overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-[#f8f9fc] text-sm">
-                <th className="py-4 pl-8 rounded-l-xl font-medium text-gray-600 w-[25%]">
+                <th className="py-4 pl-8 rounded-l-xl font-medium text-gray-600 w-[20%]">
                   Agent details
                 </th>
-                <th className="py-4 font-medium text-gray-600 w-[20%]">
+                <th className="py-4 font-medium text-gray-600 w-[16%]">
                   Property
                 </th>
-                <th className="py-4 font-medium text-gray-600 w-[25%]">
+                <th className="py-4 font-medium text-gray-600 w-[18%]">
                   Location
                 </th>
-                <th className="py-4 font-medium text-gray-600 w-[15%]">
+                <th className="py-4 font-medium text-gray-600 w-[10%]">
                   Pricing
                 </th>
-                <th className="py-4 font-medium text-gray-600 w-[10%]">
+                <th className="py-4 font-medium text-gray-600 w-[9%]">
                   Requested On
                 </th>
-                <th className="py-4 pr-8 rounded-r-xl font-medium text-gray-600 w-[5%]">
+                <th className="py-4 font-medium text-gray-600 w-[9%]">
+                  Status
+                </th>
+                <th className="py-4 pr-8 rounded-r-xl font-medium text-gray-600 w-[18%]">
                   Action
                 </th>
               </tr>
@@ -182,21 +247,60 @@ export default function ListingRequestsPage() {
                       year: "numeric",
                     })}
                   </td>
-                  <td className="py-5 pr-8">
-                    <Link
-                      href={`/dashboard/listing-requests/${req.id}`}
-                      onClick={() => setRequestDetail(req.id, req)}
+                  <td className="py-5">
+                    <span
+                      className={`text-xs font-medium px-3 py-1 rounded-full capitalize ${getStatusBadge(
+                        req.status,
+                      )}`}
                     >
-                      <button className="bg-[#1e2667] text-white text-xs font-medium px-6 py-2 rounded-lg hover:bg-opacity-90 transition-opacity w-20 cursor-pointer">
-                        View
-                      </button>
-                    </Link>
+                      {req.status.toLowerCase()}
+                    </span>
+                  </td>
+                  <td className="py-5 pr-8">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Link
+                        href={`/dashboard/listing-requests/${req.id}`}
+                        onClick={() => setRequestDetail(req.id, req)}
+                      >
+                        <button className="bg-[#1e2667] text-white text-xs font-medium px-4 py-2 rounded-lg hover:bg-opacity-90 transition-opacity cursor-pointer">
+                          View
+                        </button>
+                      </Link>
+                      {req.status === "PENDING" && (
+                        <>
+                          <button
+                            onClick={() =>
+                              handleUpdateStatus(req.id, "APPROVED")
+                            }
+                            disabled={actionLoadingId !== null}
+                            className="bg-[#16a34a] text-white text-xs font-medium px-4 py-2 rounded-lg hover:bg-opacity-90 transition-opacity cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                          >
+                            {actionLoadingId === `${req.id}-APPROVED` && (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            )}
+                            Accept
+                          </button>
+                          <button
+                            onClick={() =>
+                              handleUpdateStatus(req.id, "REJECTED")
+                            }
+                            disabled={actionLoadingId !== null}
+                            className="bg-[#b91c1c] text-white text-xs font-medium px-4 py-2 rounded-lg hover:bg-opacity-90 transition-opacity cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                          >
+                            {actionLoadingId === `${req.id}-REJECTED` && (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            )}
+                            Ignore
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
               {filteredRequests.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="py-10 text-center text-gray-500">
+                  <td colSpan={7} className="py-10 text-center text-gray-500">
                     No listing requests found
                   </td>
                 </tr>
