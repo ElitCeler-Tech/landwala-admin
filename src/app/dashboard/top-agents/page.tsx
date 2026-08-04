@@ -1,19 +1,28 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { dashboardApi, TopAgent } from "@/lib/api";
+import { Pagination } from "@/components/Pagination";
+
+// The top-agents endpoint returns a single bounded "top N" ranking
+// (backend caps it at 20 items, no server-side page param) rather than a
+// full paginated table, so pagination here is applied client-side over
+// the already-fetched list.
+const PAGE_LIMIT = 10;
+const FETCH_LIMIT = 20;
 
 export default function TopAgentsPage() {
   const router = useRouter();
   const [topAgents, setTopAgents] = useState<TopAgent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     const fetchTopAgents = async () => {
       try {
-        const data = await dashboardApi.getTopAgents(20);
+        const data = await dashboardApi.getTopAgents(FETCH_LIMIT);
         setTopAgents(data);
       } catch (error) {
         console.error("Failed to fetch top agents:", error);
@@ -23,6 +32,16 @@ export default function TopAgentsPage() {
     };
     fetchTopAgents();
   }, []);
+
+  const totalPages = Math.max(Math.ceil(topAgents.length / PAGE_LIMIT), 1);
+  const pagedTopAgents = useMemo(
+    () =>
+      topAgents.slice(
+        (currentPage - 1) * PAGE_LIMIT,
+        currentPage * PAGE_LIMIT,
+      ),
+    [topAgents, currentPage],
+  );
 
   return (
     <div className="p-8 pb-4 bg-white font-sans min-h-full flex flex-col">
@@ -47,37 +66,47 @@ export default function TopAgentsPage() {
           No active agent assignments yet
         </p>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-100 p-5">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="text-xs text-gray-400">
-                <th className="pb-2 font-medium">Agent</th>
-                <th className="pb-2 font-medium">Properties</th>
-                <th className="pb-2 font-medium">Leads</th>
-                <th className="pb-2 font-medium">Conversion</th>
-              </tr>
-            </thead>
-            <tbody>
-              {topAgents.map((agent) => (
-                <tr
-                  key={agent.agentId}
-                  className="border-t border-gray-50 text-gray-700"
-                >
-                  <td className="py-2 font-medium text-gray-900">
-                    {agent.name}
-                  </td>
-                  <td className="py-2">{agent.properties}</td>
-                  <td className="py-2">{agent.leads}</td>
-                  <td className="py-2">
-                    {agent.conversionRate !== null
-                      ? `${agent.conversionRate}%`
-                      : "—"}
-                  </td>
+        <>
+          <div className="bg-white rounded-xl border border-gray-100 p-5">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="text-xs text-gray-400">
+                  <th className="pb-2 font-medium">Agent</th>
+                  <th className="pb-2 font-medium">Properties</th>
+                  <th className="pb-2 font-medium">Leads</th>
+                  <th className="pb-2 font-medium">Conversion</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {pagedTopAgents.map((agent) => (
+                  <tr
+                    key={agent.agentId}
+                    className="border-t border-gray-50 text-gray-700"
+                  >
+                    <td className="py-2 font-medium text-gray-900">
+                      {agent.name}
+                    </td>
+                    <td className="py-2">{agent.properties}</td>
+                    <td className="py-2">{agent.leads}</td>
+                    <td className="py-2">
+                      {agent.conversionRate !== null
+                        ? `${agent.conversionRate}%`
+                        : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="flex justify-end mt-6">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          </div>
+        </>
       )}
     </div>
   );

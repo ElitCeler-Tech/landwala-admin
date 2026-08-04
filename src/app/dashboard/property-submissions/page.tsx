@@ -88,10 +88,10 @@ export default function PropertySubmissionsPage() {
       <div className="flex justify-between items-end mb-8">
         <div>
           <h1 className="text-2xl font-medium text-gray-900 mb-2">
-            Property Submissions
+            Sell Requests
           </h1>
           <p className="text-gray-500 italic">
-            Review and approve/reject properties submitted by users and agents
+            Properties users and agents have submitted to sell. Review and approve/reject each request.
           </p>
         </div>
 

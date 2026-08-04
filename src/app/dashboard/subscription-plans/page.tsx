@@ -3,20 +3,31 @@
 import { useState, useEffect } from "react";
 import { Loader2, Check, Plus } from "lucide-react";
 import Link from "next/link";
-import { subscriptionPlansApi, SubscriptionPlan } from "@/lib/api";
+import {
+  subscriptionPlansApi,
+  SubscriptionPlan,
+  PaginationMeta,
+} from "@/lib/api";
+import { Pagination } from "@/components/Pagination";
+
+const PAGE_LIMIT = 9;
 
 export default function SubscriptionPlansPage() {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
+  const [meta, setMeta] = useState<PaginationMeta | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchPlans = async () => {
+      setIsLoading(true);
       try {
         const response = await subscriptionPlansApi.getSubscriptionPlans(
-          1,
-          100,
+          currentPage,
+          PAGE_LIMIT,
         );
         setPlans(response.data);
+        setMeta(response.meta);
       } catch (error) {
         console.error("Failed to fetch subscription plans:", error);
       } finally {
@@ -25,7 +36,7 @@ export default function SubscriptionPlansPage() {
     };
 
     fetchPlans();
-  }, []);
+  }, [currentPage]);
 
   const getPlanUnit = (duration: number) => {
     if (duration === 1) return "/month";
@@ -121,6 +132,16 @@ export default function SubscriptionPlansPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {plans.length > 0 && (
+          <div className="flex justify-center mt-10">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={meta?.totalPages || 1}
+              onPageChange={setCurrentPage}
+            />
           </div>
         )}
       </div>

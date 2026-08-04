@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { ChevronDown, LogOut, UserCircle } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -9,8 +9,19 @@ import { useAuthStore } from "@/store/useAuthStore";
 export function Navbar() {
   const { user, logout } = useAuthStore();
   const router = useRouter();
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const [lastPathname, setLastPathname] = useState(pathname);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close the profile menu automatically whenever the route changes
+  // (e.g. browser back/forward navigation, which fires no mousedown event).
+  // Adjusted during render (rather than in a useEffect) to avoid an extra
+  // cascading render: https://react.dev/learn/you-might-not-need-an-effect
+  if (pathname !== lastPathname) {
+    setLastPathname(pathname);
+    setIsOpen(false);
+  }
 
   const userName = user?.name || "Admin";
   const userInitial = userName.charAt(0).toUpperCase();

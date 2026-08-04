@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import clsx from "clsx";
 import { layoutsApi } from "@/lib/api";
+import { scrollSelectIntoView } from "@/hooks/useScrollIntoViewOnFocus";
 
 const steps = [
   { id: 1, label: "Basic Info & Images" },
@@ -445,6 +446,7 @@ export default function EditLayoutPage() {
                     Price Unit
                   </label>
                   <select
+                    onFocus={scrollSelectIntoView}
                     name="priceUnit"
                     value={formData.priceUnit}
                     onChange={handleInputChange}
@@ -460,6 +462,7 @@ export default function EditLayoutPage() {
                     Approval Type
                   </label>
                   <select
+                    onFocus={scrollSelectIntoView}
                     name="approvalType"
                     value={formData.approvalType}
                     onChange={handleInputChange}

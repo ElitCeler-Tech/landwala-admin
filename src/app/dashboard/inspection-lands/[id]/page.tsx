@@ -12,6 +12,7 @@ import {
   LandInspectionAssignment,
   Executive,
 } from "@/lib/api";
+import { scrollSelectIntoView } from "@/hooks/useScrollIntoViewOnFocus";
 
 interface EditForm {
   ownerName: string;
@@ -476,6 +477,7 @@ export default function InspectionLandDetailPage() {
         )}
         <div className="flex gap-3 flex-wrap">
           <select
+            onFocus={scrollSelectIntoView}
             value={selectedExecutiveId}
             onChange={(e) => setSelectedExecutiveId(e.target.value)}
             className="flex-1 min-w-[200px] border border-gray-200 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"

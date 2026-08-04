@@ -19,6 +19,11 @@ import {
 
 const categoryTabs = ["All", ...PROPERTY_CATEGORIES];
 
+// Boolean designation filters, applied on top of the category tab above.
+// Unlike category, these are independent flags so only one can be active
+// at a time here to keep the list page simple (not a duplicate management page).
+type DesignationFilter = "none" | "trending" | "hotSale";
+
 export default function PlotsPage() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [meta, setMeta] = useState<PaginationMeta | null>(null);
@@ -26,6 +31,8 @@ export default function PlotsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("All");
+  const [designationFilter, setDesignationFilter] =
+    useState<DesignationFilter>("none");
   const limit = 8;
 
   useEffect(() => {
@@ -36,7 +43,9 @@ export default function PlotsPage() {
           currentPage,
           limit,
           undefined,
-          activeCategory === "All" ? undefined : activeCategory
+          activeCategory === "All" ? undefined : activeCategory,
+          designationFilter === "trending" ? true : undefined,
+          designationFilter === "hotSale" ? true : undefined,
         );
         setProperties(response.data);
         setMeta(response.meta);
@@ -48,10 +57,15 @@ export default function PlotsPage() {
     };
 
     fetchProperties();
-  }, [currentPage, activeCategory]);
+  }, [currentPage, activeCategory, designationFilter]);
 
   const handleCategoryChange = (category: string) => {
     setActiveCategory(category);
+    setCurrentPage(1);
+  };
+
+  const handleDesignationFilterChange = (filter: DesignationFilter) => {
+    setDesignationFilter((prev) => (prev === filter ? "none" : filter));
     setCurrentPage(1);
   };
 
@@ -117,7 +131,7 @@ export default function PlotsPage() {
       </div>
 
       {/* Category Tabs */}
-      <div className="flex gap-4 mb-6 flex-wrap">
+      <div className="flex gap-4 mb-4 flex-wrap">
         {categoryTabs.map((category) => (
           <button
             key={category}
@@ -132,6 +146,35 @@ export default function PlotsPage() {
             {category}
           </button>
         ))}
+      </div>
+
+      {/* Designation Filters (Trending / Hot Sale) */}
+      <div className="flex items-center gap-3 mb-6 flex-wrap">
+        <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">
+          Filter by
+        </span>
+        <button
+          onClick={() => handleDesignationFilterChange("trending")}
+          className={clsx(
+            "px-4 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer border",
+            designationFilter === "trending"
+              ? "bg-orange-500 text-white border-orange-500"
+              : "bg-white text-orange-600 border-orange-200 hover:bg-orange-50"
+          )}
+        >
+          🔥 Trending
+        </button>
+        <button
+          onClick={() => handleDesignationFilterChange("hotSale")}
+          className={clsx(
+            "px-4 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer border",
+            designationFilter === "hotSale"
+              ? "bg-red-600 text-white border-red-600"
+              : "bg-white text-red-600 border-red-200 hover:bg-red-50"
+          )}
+        >
+          Hot Sale
+        </button>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex-1 flex flex-col">
@@ -199,15 +242,27 @@ export default function PlotsPage() {
                     </div>
                   </td>
                   <td className="py-5">
-                    <span
-                      className={`text-xs font-medium px-3 py-1 rounded-full ${
-                        property.isActive
-                          ? "bg-green-100 text-green-700"
-                          : "bg-gray-100 text-gray-700"
-                      }`}
-                    >
-                      {property.isActive ? "Active" : "Inactive"}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span
+                        className={`text-xs font-medium px-3 py-1 rounded-full ${
+                          property.isActive
+                            ? "bg-green-100 text-green-700"
+                            : "bg-gray-100 text-gray-700"
+                        }`}
+                      >
+                        {property.isActive ? "Active" : "Inactive"}
+                      </span>
+                      {property.isTrending && (
+                        <span className="text-xs font-medium px-2 py-1 rounded-full bg-orange-100 text-orange-700">
+                          Trending
+                        </span>
+                      )}
+                      {property.isHotSale && (
+                        <span className="text-xs font-medium px-2 py-1 rounded-full bg-red-100 text-red-700">
+                          Hot Sale
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="py-5 pr-8 text-right">
                     <Link href={`/dashboard/plots/${property.id}`}>

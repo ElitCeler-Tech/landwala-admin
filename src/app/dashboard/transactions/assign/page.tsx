@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { agentsApi, propertiesApi, transactionsApi, Agent, Property } from "@/lib/api";
+import { scrollSelectIntoView } from "@/hooks/useScrollIntoViewOnFocus";
 
 export default function AssignCommissionPage() {
     const router = useRouter();
@@ -91,6 +92,7 @@ export default function AssignCommissionPage() {
                         </label>
                         <div className="relative">
                             <select
+                              onFocus={scrollSelectIntoView}
                                 name="agentId"
                                 value={formData.agentId}
                                 onChange={handleChange}
@@ -145,6 +147,7 @@ export default function AssignCommissionPage() {
                         </label>
                         <div className="relative">
                             <select
+                              onFocus={scrollSelectIntoView}
                                 name="propertyId"
                                 value={formData.propertyId}
                                 onChange={handleChange}

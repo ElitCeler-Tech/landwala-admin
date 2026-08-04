@@ -1,9 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import {
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Loader2,
+} from "lucide-react";
 import Link from "next/link";
 import { usersApi, User, PaginationMeta } from "@/lib/api";
+import { scrollSelectIntoView } from "@/hooks/useScrollIntoViewOnFocus";
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
@@ -78,6 +85,12 @@ export default function UsersPage() {
         </div>
 
         <div className="flex items-center gap-4">
+          <Link href="/dashboard/users/create">
+            <button className="flex items-center gap-2 bg-[#1e2667] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-opacity-90 transition-opacity cursor-pointer">
+              <Plus className="w-4 h-4" />
+              Create User
+            </button>
+          </Link>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
@@ -176,6 +189,7 @@ export default function UsersPage() {
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <span>Rows per page</span>
             <select
+              onFocus={scrollSelectIntoView}
               value={limit}
               onChange={(e) => {
                 setLimit(Number(e.target.value));

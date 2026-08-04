@@ -14,6 +14,7 @@ import {
     LegalVerification,
     PaginationMeta,
 } from "@/lib/api";
+import { scrollSelectIntoView } from "@/hooks/useScrollIntoViewOnFocus";
 
 const STATUS_OPTIONS = ["DRAFT", "SUBMITTED", "IN_REVIEW", "VERIFIED", "REJECTED"];
 
@@ -236,6 +237,7 @@ export default function LegalVerificationPage() {
                                     <td className="py-5 pr-8">
                                         <div className="flex items-center gap-2">
                                             <select
+                                              onFocus={scrollSelectIntoView}
                                                 value={item.status}
                                                 disabled={actionLoading !== null}
                                                 onChange={(e) =>

@@ -66,10 +66,14 @@ export default function BuySellPlotsPage() {
                 <div>
                     <h1 className="text-2xl font-medium text-gray-900 mb-2 flex items-center gap-3">
                         <Store className="w-7 h-7 text-[#1e2667]" />
-                        Buy/Sell Plots Enquiries
+                        Buy Enquiries
                     </h1>
                     <p className="text-gray-500 italic">
-                        Manage all property related enquiries
+                        Enquiries from users interested in buying a listed property. Looking for sell requests? See{" "}
+                        <Link href="/dashboard/property-submissions" className="text-[#1e2667] underline">
+                            Sell Requests
+                        </Link>
+                        .
                     </p>
                 </div>
 

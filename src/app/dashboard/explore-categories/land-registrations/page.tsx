@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { userActionsApi, LandRegistration, PaginationMeta } from "@/lib/api";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { scrollSelectIntoView } from "@/hooks/useScrollIntoViewOnFocus";
 
 const STATUS_OPTIONS = ["PENDING", "IN_PROGRESS", "COMPLETED", "CANCELLED"];
 
@@ -164,6 +165,7 @@ export default function LandRegistrationsPage() {
                                     <td className="py-5 pr-8">
                                         <div className="flex items-center gap-2">
                                             <select
+                                              onFocus={scrollSelectIntoView}
                                                 value={item.status}
                                                 disabled={actionLoading !== null}
                                                 onChange={(e) =>

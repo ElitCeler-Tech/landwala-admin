@@ -13,6 +13,7 @@ import Link from "next/link";
 import { reportsApi, Report } from "@/lib/api";
 import Image from "next/image";
 import { useReportsStore } from "@/store/useReportsStore";
+import { scrollSelectIntoView } from "@/hooks/useScrollIntoViewOnFocus";
 
 const REPORT_STATUSES = [
   "pending",
@@ -330,6 +331,7 @@ export default function ReportDetailsPage() {
               <div>
                 <p className="text-sm text-gray-500 mb-2">Update Status</p>
                 <select
+                  onFocus={scrollSelectIntoView}
                   value={report.status}
                   disabled={isUpdatingStatus}
                   onChange={(e) =>

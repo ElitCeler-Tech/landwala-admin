@@ -1,9 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { dashboardApi, RecentActivityItem } from "@/lib/api";
+import { Pagination } from "@/components/Pagination";
+
+// The recent-activity endpoint returns a single bounded "recent" feed
+// (backend caps it at 50 items, no server-side page param) rather than a
+// full paginated table, so pagination here is applied client-side over
+// the already-fetched list.
+const PAGE_LIMIT = 10;
+const FETCH_LIMIT = 50;
 
 function formatRelativeTime(iso: string) {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -20,11 +28,12 @@ export default function ActivityPage() {
   const router = useRouter();
   const [activity, setActivity] = useState<RecentActivityItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     const fetchActivity = async () => {
       try {
-        const data = await dashboardApi.getRecentActivity(50);
+        const data = await dashboardApi.getRecentActivity(FETCH_LIMIT);
         setActivity(data);
       } catch (error) {
         console.error("Failed to fetch activity:", error);
@@ -34,6 +43,16 @@ export default function ActivityPage() {
     };
     fetchActivity();
   }, []);
+
+  const totalPages = Math.max(Math.ceil(activity.length / PAGE_LIMIT), 1);
+  const pagedActivity = useMemo(
+    () =>
+      activity.slice(
+        (currentPage - 1) * PAGE_LIMIT,
+        currentPage * PAGE_LIMIT,
+      ),
+    [activity, currentPage],
+  );
 
   return (
     <div className="p-8 pb-4 bg-white font-sans min-h-full flex flex-col">
@@ -54,19 +73,29 @@ export default function ActivityPage() {
       ) : activity.length === 0 ? (
         <p className="text-sm text-gray-400">No recent activity</p>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-100 divide-y divide-gray-50">
-          {activity.map((item, idx) => (
-            <div
-              key={`${item.type}-${idx}`}
-              className="flex items-start justify-between gap-3 px-5 py-4"
-            >
-              <p className="text-sm text-gray-700">{item.message}</p>
-              <span className="text-xs text-gray-400 shrink-0">
-                {formatRelativeTime(item.occurredAt)}
-              </span>
-            </div>
-          ))}
-        </div>
+        <>
+          <div className="bg-white rounded-xl border border-gray-100 divide-y divide-gray-50">
+            {pagedActivity.map((item, idx) => (
+              <div
+                key={`${item.type}-${(currentPage - 1) * PAGE_LIMIT + idx}`}
+                className="flex items-start justify-between gap-3 px-5 py-4"
+              >
+                <p className="text-sm text-gray-700">{item.message}</p>
+                <span className="text-xs text-gray-400 shrink-0">
+                  {formatRelativeTime(item.occurredAt)}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex justify-end mt-6">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          </div>
+        </>
       )}
     </div>
   );

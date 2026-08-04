@@ -237,6 +237,14 @@ export default function PlotDetailsPage() {
                 {formatDate(property.createdAt)}
               </span>
             </div>
+            <div>
+              <span className="font-medium text-lg text-gray-900">
+                Views -{" "}
+              </span>
+              <span className="text-gray-700 text-lg">
+                {property.viewCount}
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -296,6 +304,62 @@ export default function PlotDetailsPage() {
             >
               <span
                 className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${property.isExploreNearby ? "translate-x-6" : "translate-x-1"
+                  }`}
+              />
+            </button>
+          </div>
+
+          {/* Trending Toggle */}
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div>
+              <p className="font-medium text-gray-900">Trending</p>
+              <p className="text-xs text-gray-500">Show in trending section</p>
+            </div>
+            <button
+              onClick={async () => {
+                if (!property) return;
+                try {
+                  const updated = await propertiesApi.toggleTrending(
+                    property.id
+                  );
+                  setProperty(updated);
+                } catch (error) {
+                  console.error("Failed to toggle trending:", error);
+                }
+              }}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#1e2667] focus:ring-offset-2 ${property.isTrending ? "bg-[#1e2667]" : "bg-gray-200"
+                }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${property.isTrending ? "translate-x-6" : "translate-x-1"
+                  }`}
+              />
+            </button>
+          </div>
+
+          {/* Hot Sale Toggle */}
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div>
+              <p className="font-medium text-gray-900">Hot Sale</p>
+              <p className="text-xs text-gray-500">Show in hot sale section</p>
+            </div>
+            <button
+              onClick={async () => {
+                if (!property) return;
+                try {
+                  const updated = await propertiesApi.toggleHotSale(
+                    property.id
+                  );
+                  setProperty(updated);
+                } catch (error) {
+                  console.error("Failed to toggle hot sale:", error);
+                }
+              }}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#1e2667] focus:ring-offset-2 ${property.isHotSale ? "bg-[#1e2667]" : "bg-gray-200"
+                }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${property.isHotSale ? "translate-x-6" : "translate-x-1"
                   }`}
               />
             </button>

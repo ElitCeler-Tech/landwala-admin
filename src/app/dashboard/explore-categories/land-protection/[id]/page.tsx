@@ -11,6 +11,7 @@ import {
   LandProtectionAssignment,
   Agent,
 } from "@/lib/api";
+import { scrollSelectIntoView } from "@/hooks/useScrollIntoViewOnFocus";
 
 export default function LandProtectionDetailPage() {
   const params = useParams();
@@ -357,6 +358,7 @@ export default function LandProtectionDetailPage() {
           {canAssign ? (
             <div className="flex gap-3">
               <select
+                onFocus={scrollSelectIntoView}
                 value={selectedAgentId}
                 onChange={(e) => setSelectedAgentId(e.target.value)}
                 className="flex-1 border border-gray-200 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"

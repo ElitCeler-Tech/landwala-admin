@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import clsx from "clsx";
 import { propertiesApi } from "@/lib/api";
+import { scrollSelectIntoView } from "@/hooks/useScrollIntoViewOnFocus";
 
 const steps = [
   { id: 1, label: "Basic Info" },
@@ -373,6 +374,7 @@ export default function CreatePlotPage() {
                     Price Unit
                   </label>
                   <select
+                    onFocus={scrollSelectIntoView}
                     name="priceUnit"
                     value={formData.priceUnit}
                     onChange={handleInputChange}

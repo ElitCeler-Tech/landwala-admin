@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { Loader2, ArrowLeft, Plus, X, Trash2, Check } from "lucide-react";
 import Link from "next/link";
 import { subscriptionPlansApi, CreateSubscriptionPlanPayload } from "@/lib/api";
+import { scrollSelectIntoView } from "@/hooks/useScrollIntoViewOnFocus";
 
 export default function SubscriptionPlanDetailsPage() {
   const router = useRouter();
@@ -221,6 +222,7 @@ export default function SubscriptionPlanDetailsPage() {
                 </label>
                 <div className="relative">
                   <select
+                    onFocus={scrollSelectIntoView}
                     name="durationMonths"
                     value={formData.durationMonths}
                     onChange={handleInputChange}

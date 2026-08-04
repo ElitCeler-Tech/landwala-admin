@@ -9,14 +9,20 @@ import {
   layoutsApi,
   BannerItem,
   BannerItemType,
+  PaginationMeta,
   Property,
   Layout,
 } from "@/lib/api";
+import { scrollSelectIntoView } from "@/hooks/useScrollIntoViewOnFocus";
+import { Pagination } from "@/components/Pagination";
 
 const TYPE_FILTERS: ("ALL" | BannerItemType)[] = ["ALL", "PROPERTY", "LAYOUT"];
+const PAGE_LIMIT = 12;
 
 export default function BannersPage() {
   const [items, setItems] = useState<BannerItem[]>([]);
+  const [meta, setMeta] = useState<PaginationMeta | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState<"ALL" | BannerItemType>("ALL");
   const [error, setError] = useState("");
@@ -34,23 +40,29 @@ export default function BannersPage() {
     setIsLoading(true);
     try {
       const response = await bannersApi.getBanners(
-        1,
-        100,
+        currentPage,
+        PAGE_LIMIT,
         typeFilter === "ALL" ? undefined : typeFilter,
       );
       setItems(
         [...response.data].sort((a, b) => a.displayOrder - b.displayOrder),
       );
+      setMeta(response.meta);
     } catch (err) {
       console.error("Failed to fetch banners:", err);
     } finally {
       setIsLoading(false);
     }
-  }, [typeFilter]);
+  }, [currentPage, typeFilter]);
 
   useEffect(() => {
     fetchBanners();
   }, [fetchBanners]);
+
+  const handleTypeFilterChange = (type: "ALL" | BannerItemType) => {
+    setTypeFilter(type);
+    setCurrentPage(1);
+  };
 
   const openAddForm = async () => {
     setShowAddForm(true);
@@ -162,7 +174,7 @@ export default function BannersPage() {
         {TYPE_FILTERS.map((type) => (
           <button
             key={type}
-            onClick={() => setTypeFilter(type)}
+            onClick={() => handleTypeFilterChange(type)}
             className={`text-sm font-medium px-4 py-2 rounded-lg capitalize transition-colors cursor-pointer ${
               typeFilter === type
                 ? "bg-[#1e2667] text-white"
@@ -219,6 +231,7 @@ export default function BannersPage() {
                 </div>
               ) : (
                 <select
+                  onFocus={scrollSelectIntoView}
                   value={selectedItemId}
                   onChange={(e) => setSelectedItemId(e.target.value)}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
@@ -332,6 +345,25 @@ export default function BannersPage() {
           </div>
         )}
       </div>
+
+      {!isLoading && items.length > 0 && (
+        <div className="flex justify-between mb-6 items-center mt-6">
+          <span className="text-gray-500 text-sm">
+            Showing{" "}
+            {meta && meta.total > 0
+              ? `${(currentPage - 1) * PAGE_LIMIT + 1}-${Math.min(
+                  currentPage * PAGE_LIMIT,
+                  meta.total,
+                )} of ${meta.total}`
+              : "0"}
+          </span>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={meta?.totalPages || 1}
+            onPageChange={setCurrentPage}
+          />
+        </div>
+      )}
     </div>
   );
 }

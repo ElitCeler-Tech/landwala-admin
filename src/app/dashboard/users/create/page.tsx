@@ -4,35 +4,36 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, Loader2, CheckCircle } from "lucide-react";
-import { executivesApi } from "@/lib/api";
-import { scrollSelectIntoView } from "@/hooks/useScrollIntoViewOnFocus";
+import { usersApi } from "@/lib/api";
 
-interface ExecutiveFormData {
-  firstName: string;
-  lastName: string;
+interface UserFormData {
+  name: string;
   phone: string;
+  countryCode: string;
   email: string;
+  password: string;
   gender: string;
-  assignedDistrict: string;
-  assignedMandal: string;
-  assignedVillage: string;
+  dateOfBirth: string;
+  location: string;
+  employment: string;
 }
 
-export default function CreateExecutivePage() {
+export default function CreateUserPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
-  const [formData, setFormData] = useState<ExecutiveFormData>({
-    firstName: "",
-    lastName: "",
+  const [formData, setFormData] = useState<UserFormData>({
+    name: "",
     phone: "",
+    countryCode: "+91",
     email: "",
+    password: "",
     gender: "",
-    assignedDistrict: "",
-    assignedMandal: "",
-    assignedVillage: "",
+    dateOfBirth: "",
+    location: "",
+    employment: "",
   });
 
   const handleInputChange = (
@@ -46,22 +47,23 @@ export default function CreateExecutivePage() {
     setIsSubmitting(true);
     setError("");
     try {
-      await executivesApi.createExecutive({
-        firstName: formData.firstName,
-        lastName: formData.lastName,
+      await usersApi.createUser({
+        name: formData.name,
         phone: formData.phone,
-        email: formData.email,
+        countryCode: formData.countryCode || undefined,
+        email: formData.email || undefined,
+        password: formData.password || undefined,
         gender: formData.gender || undefined,
-        assignedDistrict: formData.assignedDistrict,
-        assignedMandal: formData.assignedMandal,
-        assignedVillage: formData.assignedVillage,
+        dateOfBirth: formData.dateOfBirth || undefined,
+        location: formData.location || undefined,
+        employment: formData.employment || undefined,
       });
       setSuccess(true);
       setTimeout(() => {
-        router.push("/dashboard/executives");
+        router.push("/dashboard/users");
       }, 1500);
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to create executive");
+      setError(err.response?.data?.message || "Failed to create user");
     } finally {
       setIsSubmitting(false);
     }
@@ -73,9 +75,9 @@ export default function CreateExecutivePage() {
         <div className="text-center">
           <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Executive Created Successfully!
+            User Created Successfully!
           </h2>
-          <p className="text-gray-500">Redirecting to executives list...</p>
+          <p className="text-gray-500">Redirecting to users list...</p>
         </div>
       </div>
     );
@@ -86,49 +88,34 @@ export default function CreateExecutivePage() {
       <div className="mb-8">
         <div className="flex items-center gap-2 mb-2">
           <Link
-            href="/dashboard/executives"
+            href="/dashboard/users"
             className="hover:bg-gray-100 p-1 rounded-full transition-colors cursor-pointer"
           >
             <ChevronLeft className="w-5 h-5 text-gray-900" />
           </Link>
-          <h1 className="text-xl font-bold text-gray-900">
-            Create Executive
-          </h1>
+          <h1 className="text-xl font-bold text-gray-900">Create User</h1>
         </div>
         <p className="text-gray-500 italic ml-8">
-          Add a new field executive for GPS-verified land inspections
+          Add a new user account for Landwala
         </p>
       </div>
 
       <div className="space-y-6">
         <div className="border border-gray-100 rounded-xl p-6 bg-white shadow-sm">
           <h2 className="text-lg font-semibold text-gray-900 mb-6 border-b border-gray-100 pb-4">
-            Personal Information
+            Basic Information
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-900">
-                First Name
+                Full Name
               </label>
               <input
                 type="text"
-                name="firstName"
-                value={formData.firstName}
+                name="name"
+                value={formData.name}
                 onChange={handleInputChange}
-                placeholder="Enter First Name"
-                className="w-full bg-gray-50 border-none rounded-lg px-4 py-3 text-sm focus:ring-1 focus:ring-[#1e2667] outline-none placeholder:text-gray-400 text-gray-900"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-900">
-                Last Name
-              </label>
-              <input
-                type="text"
-                name="lastName"
-                value={formData.lastName}
-                onChange={handleInputChange}
-                placeholder="Enter Last Name"
+                placeholder="Enter Full Name"
                 className="w-full bg-gray-50 border-none rounded-lg px-4 py-3 text-sm focus:ring-1 focus:ring-[#1e2667] outline-none placeholder:text-gray-400 text-gray-900"
               />
             </div>
@@ -136,18 +123,28 @@ export default function CreateExecutivePage() {
               <label className="text-sm font-medium text-gray-900">
                 Phone Number
               </label>
-              <input
-                type="text"
-                name="phone"
-                value={formData.phone}
-                onChange={handleInputChange}
-                placeholder="10-digit phone number"
-                className="w-full bg-gray-50 border-none rounded-lg px-4 py-3 text-sm focus:ring-1 focus:ring-[#1e2667] outline-none placeholder:text-gray-400 text-gray-900"
-              />
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  name="countryCode"
+                  value={formData.countryCode}
+                  onChange={handleInputChange}
+                  placeholder="+91"
+                  className="w-20 bg-gray-50 border-none rounded-lg px-3 py-3 text-sm focus:ring-1 focus:ring-[#1e2667] outline-none placeholder:text-gray-400 text-gray-900"
+                />
+                <input
+                  type="text"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  placeholder="10-digit phone number"
+                  className="flex-1 bg-gray-50 border-none rounded-lg px-4 py-3 text-sm focus:ring-1 focus:ring-[#1e2667] outline-none placeholder:text-gray-400 text-gray-900"
+                />
+              </div>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-900">
-                Email ID
+                Email ID (optional)
               </label>
               <input
                 type="email"
@@ -160,10 +157,22 @@ export default function CreateExecutivePage() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-900">
+                Password (optional)
+              </label>
+              <input
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleInputChange}
+                placeholder="Set a login password"
+                className="w-full bg-gray-50 border-none rounded-lg px-4 py-3 text-sm focus:ring-1 focus:ring-[#1e2667] outline-none placeholder:text-gray-400 text-gray-900"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-900">
                 Gender (optional)
               </label>
               <select
-                onFocus={scrollSelectIntoView}
                 name="gender"
                 value={formData.gender}
                 onChange={handleInputChange}
@@ -175,50 +184,49 @@ export default function CreateExecutivePage() {
                 <option value="Other">Other</option>
               </select>
             </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-900">
+                Date of Birth (optional)
+              </label>
+              <input
+                type="date"
+                name="dateOfBirth"
+                value={formData.dateOfBirth}
+                onChange={handleInputChange}
+                className="w-full bg-gray-50 border-none rounded-lg px-4 py-3 text-sm focus:ring-1 focus:ring-[#1e2667] outline-none text-gray-900"
+              />
+            </div>
           </div>
         </div>
 
         <div className="border border-gray-100 rounded-xl p-6 bg-white shadow-sm">
           <h2 className="text-lg font-semibold text-gray-900 mb-6 border-b border-gray-100 pb-4">
-            Coverage Area
+            Profile Details
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-900">
-                Assigned District
+                Location (optional)
               </label>
               <input
                 type="text"
-                name="assignedDistrict"
-                value={formData.assignedDistrict}
+                name="location"
+                value={formData.location}
                 onChange={handleInputChange}
-                placeholder="Enter Assigned District"
+                placeholder="Enter Location"
                 className="w-full bg-gray-50 border-none rounded-lg px-4 py-3 text-sm focus:ring-1 focus:ring-[#1e2667] outline-none placeholder:text-gray-400 text-gray-900"
               />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-900">
-                Assigned Mandal
+                Employment (optional)
               </label>
               <input
                 type="text"
-                name="assignedMandal"
-                value={formData.assignedMandal}
+                name="employment"
+                value={formData.employment}
                 onChange={handleInputChange}
-                placeholder="Enter Assigned Mandal"
-                className="w-full bg-gray-50 border-none rounded-lg px-4 py-3 text-sm focus:ring-1 focus:ring-[#1e2667] outline-none placeholder:text-gray-400 text-gray-900"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-900">
-                Assigned Village
-              </label>
-              <input
-                type="text"
-                name="assignedVillage"
-                value={formData.assignedVillage}
-                onChange={handleInputChange}
-                placeholder="Enter Assigned Village"
+                placeholder="Enter Employment Status"
                 className="w-full bg-gray-50 border-none rounded-lg px-4 py-3 text-sm focus:ring-1 focus:ring-[#1e2667] outline-none placeholder:text-gray-400 text-gray-900"
               />
             </div>
@@ -233,7 +241,7 @@ export default function CreateExecutivePage() {
       </div>
 
       <div className="flex justify-end gap-4 mt-8">
-        <Link href="/dashboard/executives">
+        <Link href="/dashboard/users">
           <button className="px-8 py-3 rounded-lg text-white font-medium bg-[#ce1313] hover:bg-opacity-90 transition-opacity cursor-pointer">
             Cancel
           </button>
@@ -244,7 +252,7 @@ export default function CreateExecutivePage() {
           className="px-8 py-3 rounded-lg text-white font-medium bg-[#1e2667] hover:bg-opacity-90 transition-opacity cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
         >
           {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-          {isSubmitting ? "Creating..." : "Create Executive"}
+          {isSubmitting ? "Creating..." : "Create User"}
         </button>
       </div>
     </div>

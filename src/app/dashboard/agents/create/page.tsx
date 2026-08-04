@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ChevronLeft, Upload, Loader2, CheckCircle } from "lucide-react";
 import clsx from "clsx";
 import { agentsApi } from "@/lib/api";
+import { scrollSelectIntoView } from "@/hooks/useScrollIntoViewOnFocus";
 
 const steps = [
   { id: 1, label: "Personal info" },
@@ -275,6 +276,7 @@ export default function CreateAgentPage() {
                     Gender
                   </label>
                   <select
+                    onFocus={scrollSelectIntoView}
                     name="gender"
                     value={formData.gender}
                     onChange={handleInputChange}
@@ -509,6 +511,7 @@ export default function CreateAgentPage() {
                   Account Type
                 </label>
                 <select
+                  onFocus={scrollSelectIntoView}
                   name="accountType"
                   value={formData.accountType}
                   onChange={handleInputChange}

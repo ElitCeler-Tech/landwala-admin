@@ -15,6 +15,7 @@ import {
   LandInspectionAssignment,
   UpdateExecutiveProfilePayload,
 } from "@/lib/api";
+import { scrollSelectIntoView } from "@/hooks/useScrollIntoViewOnFocus";
 
 export default function ExecutiveDetailsPage() {
   const params = useParams();
@@ -342,6 +343,7 @@ export default function ExecutiveDetailsPage() {
               Manager
             </label>
             <select
+              onFocus={scrollSelectIntoView}
               value={hrForm.managerId || ""}
               onChange={(e) =>
                 setHrForm({ ...hrForm, managerId: e.target.value || undefined })

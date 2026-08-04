@@ -276,6 +276,24 @@ export const usersApi = {
     return response.data;
   },
 
+  createUser: async (data: {
+    name: string;
+    phone: string;
+    countryCode?: string;
+    email?: string;
+    password?: string;
+    gender?: string;
+    dateOfBirth?: string;
+    location?: string;
+    employment?: string;
+  }) => {
+    const response = await api.post<{ user: User; message: string }>(
+      "/admin/users",
+      data,
+    );
+    return response.data;
+  },
+
   getUserById: async (id: string) => {
     const response = await api.get<User>(`/admin/users/${id}`);
     return response.data;
@@ -445,10 +463,13 @@ export interface Property {
   isFeatured: boolean;
   isExploreNearby: boolean;
   isLatestListing: boolean;
+  isTrending: boolean;
+  isHotSale: boolean;
   isSold: boolean;
   soldAt: string | null;
   isPremium: boolean;
   isArchived: boolean;
+  viewCount: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -456,6 +477,22 @@ export interface Property {
 export interface PropertiesResponse {
   data: Property[];
   meta: PaginationMeta;
+}
+
+// A property annotated with recent-view aggregate stats, returned by the
+// admin "Recently Viewed" endpoint (one row per property, most-recently
+// viewed first) -- distinct from the end-user's personal recently-viewed list.
+export interface AdminRecentlyViewedItem extends Property {
+  lastViewedAt: string;
+  recentViewersCount: number;
+}
+
+export interface AdminRecentlyViewedResponse {
+  data: AdminRecentlyViewedItem[];
+  meta: {
+    total: number;
+    limit: number;
+  };
 }
 
 // Frozen list of property categories - must stay in sync with the backend's
@@ -477,9 +514,18 @@ export const propertiesApi = {
     limit: number = 10,
     isLatestListing?: boolean,
     category?: string,
+    isTrending?: boolean,
+    isHotSale?: boolean,
   ) => {
     const response = await api.get<PropertiesResponse>("/admin/properties", {
-      params: { page, limit, isLatestListing, category },
+      params: {
+        page,
+        limit,
+        isLatestListing,
+        category,
+        isTrending,
+        isHotSale,
+      },
     });
     return response.data;
   },
@@ -537,6 +583,20 @@ export const propertiesApi = {
     return response.data;
   },
 
+  toggleTrending: async (id: string) => {
+    const response = await api.patch<Property>(
+      `/admin/properties/${id}/toggle-trending`,
+    );
+    return response.data;
+  },
+
+  toggleHotSale: async (id: string) => {
+    const response = await api.patch<Property>(
+      `/admin/properties/${id}/toggle-hot-sale`,
+    );
+    return response.data;
+  },
+
   toggleStatus: async (id: string) => {
     const response = await api.patch<Property>(
       `/admin/properties/${id}/toggle-status`,
@@ -576,6 +636,22 @@ export const propertiesApi = {
     const response = await api.get<PropertiesResponse>("/admin/properties", {
       params: { page, limit, isArchived: true },
     });
+    return response.data;
+  },
+
+  getMostViewed: async (page: number = 1, limit: number = 10) => {
+    const response = await api.get<PropertiesResponse>(
+      "/admin/properties/most-viewed",
+      { params: { page, limit } },
+    );
+    return response.data;
+  },
+
+  getRecentlyViewedAdmin: async (limit: number = 20) => {
+    const response = await api.get<AdminRecentlyViewedResponse>(
+      "/admin/properties/recently-viewed",
+      { params: { limit } },
+    );
     return response.data;
   },
 };

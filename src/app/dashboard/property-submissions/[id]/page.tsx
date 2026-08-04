@@ -103,7 +103,7 @@ export default function PropertySubmissionDetailPage() {
           href="/dashboard/property-submissions"
           className="text-[#1e2667] hover:underline"
         >
-          Back to Property Submissions
+          Back to Sell Requests
         </Link>
       </div>
     );
@@ -137,7 +137,7 @@ export default function PropertySubmissionDetailPage() {
             <ChevronLeft className="w-5 h-5 text-gray-900" />
           </Link>
           <h1 className="text-xl font-bold text-gray-900">
-            Property Submission Details
+            Sell Request Details
           </h1>
         </div>
         <p className="text-gray-500 italic ml-8">

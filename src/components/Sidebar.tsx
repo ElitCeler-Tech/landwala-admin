@@ -30,6 +30,8 @@ import {
   Megaphone,
   LogOut,
   Layers,
+  Eye,
+  History,
 } from "lucide-react";
 import clsx from "clsx";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -63,13 +65,15 @@ const sidebarItems: SidebarItem[] = [
     children: [
       { name: "Add Property", href: "/dashboard/plots/create", icon: PlusCircle },
       { name: "All Properties", href: "/dashboard/plots", icon: Grid },
-      {
-        name: "Pending / Sell Requests",
-        href: "/dashboard/property-submissions",
-        icon: FileText,
-      },
       { name: "Latest Listings", href: "/dashboard/latest-listings", icon: Home },
+      { name: "Most Viewed", href: "/dashboard/most-viewed", icon: Eye },
+      { name: "Recently Viewed", href: "/dashboard/recently-viewed", icon: History },
       { name: "Layouts", href: "/dashboard/layouts", icon: Map },
+      {
+        name: "Layout Enquiries",
+        href: "/dashboard/explore-categories/layout-enquiries",
+        icon: MessageSquare,
+      },
       { name: "Archived Properties", href: "/dashboard/plots/archived", icon: FileText },
     ],
   },
@@ -94,14 +98,14 @@ const sidebarItems: SidebarItem[] = [
     icon: Store,
     children: [
       {
-        name: "All Listings",
+        name: "Buy Enquiries",
         href: "/dashboard/explore-categories/buy-sell-plots",
         icon: Store,
       },
       {
-        name: "Layout Enquiries",
-        href: "/dashboard/explore-categories/layout-enquiries",
-        icon: Map,
+        name: "Sell Requests",
+        href: "/dashboard/property-submissions",
+        icon: FileText,
       },
       {
         name: "Manage Categories",

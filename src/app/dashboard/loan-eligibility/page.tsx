@@ -8,6 +8,7 @@ import {
     Loader2,
 } from "lucide-react";
 import { userActionsApi, LoanApplication, PaginationMeta } from "@/lib/api";
+import { scrollSelectIntoView } from "@/hooks/useScrollIntoViewOnFocus";
 
 const STATUS_OPTIONS = [
     "DRAFT",
@@ -173,6 +174,7 @@ export default function LoanEligibilityPage() {
                                     <td className="py-5 pr-8">
                                         <div className="flex items-center gap-2">
                                             <select
+                                              onFocus={scrollSelectIntoView}
                                                 value={app.status}
                                                 disabled={actionLoading !== null}
                                                 onChange={(e) =>
