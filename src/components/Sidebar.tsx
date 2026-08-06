@@ -17,7 +17,6 @@ import {
   Home,
   ShieldCheck,
   LucideIcon,
-  Store,
   CreditCard,
   MapPin,
   GalleryHorizontal,
@@ -29,31 +28,42 @@ import {
   Landmark,
   Megaphone,
   LogOut,
-  Layers,
   Eye,
   History,
+  Flame,
+  TrendingUp,
+  Navigation,
+  ShoppingCart,
+  Handshake,
+  Video,
 } from "lucide-react";
 import clsx from "clsx";
 import { useAuthStore } from "@/store/useAuthStore";
-import { useState } from "react";
+import { AdminSection } from "@/lib/api";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type SidebarItem = {
   name: string;
   href?: string;
   icon: LucideIcon;
+  // The AdminSection this item (and its children, if any) is gated behind.
+  // Omitted for items that are always visible (e.g. Dashboard).
+  section?: AdminSection;
   children?: SidebarItem[];
 };
 
-const sidebarItems: SidebarItem[] = [
+export const sidebarItems: SidebarItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   {
     name: "User Management",
     icon: Users,
+    section: "USER_MANAGEMENT",
     children: [{ name: "Users", href: "/dashboard/users", icon: Users }],
   },
   {
     name: "Agent Management",
     icon: UserCog,
+    section: "AGENT_MANAGEMENT",
     children: [
       { name: "Agents", href: "/dashboard/agents", icon: UserCog },
       { name: "Commissions", href: "/dashboard/transactions", icon: Receipt },
@@ -62,12 +72,20 @@ const sidebarItems: SidebarItem[] = [
   {
     name: "Property Management",
     icon: Home,
+    section: "PROPERTY_MANAGEMENT",
     children: [
       { name: "Add Property", href: "/dashboard/plots/create", icon: PlusCircle },
       { name: "All Properties", href: "/dashboard/plots", icon: Grid },
       { name: "Latest Listings", href: "/dashboard/latest-listings", icon: Home },
       { name: "Most Viewed", href: "/dashboard/most-viewed", icon: Eye },
       { name: "Recently Viewed", href: "/dashboard/recently-viewed", icon: History },
+      { name: "Hot Sale", href: "/dashboard/hot-sale", icon: Flame },
+      { name: "Trending", href: "/dashboard/trending", icon: TrendingUp },
+      {
+        name: "Near By Properties",
+        href: "/dashboard/near-by-properties",
+        icon: Navigation,
+      },
       { name: "Layouts", href: "/dashboard/layouts", icon: Map },
       {
         name: "Layout Enquiries",
@@ -80,6 +98,7 @@ const sidebarItems: SidebarItem[] = [
   {
     name: "Land Protection",
     icon: ShieldCheck,
+    section: "LAND_PROTECTION",
     children: [
       {
         name: "Requests",
@@ -91,32 +110,29 @@ const sidebarItems: SidebarItem[] = [
         href: "/dashboard/assign-land-protections",
         icon: UserCog,
       },
+      {
+        name: "Videos",
+        href: "/dashboard/explore-categories/land-protection/videos",
+        icon: Video,
+      },
     ],
   },
   {
-    name: "Buy / Sell Plots",
-    icon: Store,
-    children: [
-      {
-        name: "Buy Enquiries",
-        href: "/dashboard/explore-categories/buy-sell-plots",
-        icon: Store,
-      },
-      {
-        name: "Sell Requests",
-        href: "/dashboard/property-submissions",
-        icon: FileText,
-      },
-      {
-        name: "Manage Categories",
-        href: "/dashboard/explore-categories/manage",
-        icon: Layers,
-      },
-    ],
+    name: "Buy Enquiries",
+    href: "/dashboard/explore-categories/buy-sell-plots",
+    icon: ShoppingCart,
+    section: "BUY_ENQUIRIES",
+  },
+  {
+    name: "Sell Requests",
+    href: "/dashboard/property-submissions",
+    icon: Handshake,
+    section: "SELL_REQUESTS",
   },
   {
     name: "Services",
     icon: FileText,
+    section: "SERVICES",
     children: [
       {
         name: "Land Registration",
@@ -143,6 +159,7 @@ const sidebarItems: SidebarItem[] = [
   {
     name: "Executive Management",
     icon: HardHat,
+    section: "EXECUTIVE_MANAGEMENT",
     children: [
       { name: "Add Executive", href: "/dashboard/executives/create", icon: PlusCircle },
       { name: "All Executives", href: "/dashboard/executives", icon: HardHat },
@@ -150,11 +167,22 @@ const sidebarItems: SidebarItem[] = [
       { name: "Site Visits", href: "/dashboard/land-visits", icon: Camera },
     ],
   },
-  { name: "Leads", href: "/dashboard/enquiries", icon: MessageSquare },
-  { name: "Listing Requests", href: "/dashboard/listing-requests", icon: FileText },
+  {
+    name: "Leads",
+    href: "/dashboard/enquiries",
+    icon: MessageSquare,
+    section: "LEADS",
+  },
+  {
+    name: "Listing Requests",
+    href: "/dashboard/listing-requests",
+    icon: FileText,
+    section: "LISTING_REQUESTS",
+  },
   {
     name: "Payments",
     icon: CreditCard,
+    section: "PAYMENTS",
     children: [
       {
         name: "Subscription Plans",
@@ -171,30 +199,127 @@ const sidebarItems: SidebarItem[] = [
   {
     name: "Marketing",
     icon: Megaphone,
+    section: "MARKETING",
     children: [
       { name: "Banners", href: "/dashboard/banners", icon: GalleryHorizontal },
     ],
   },
-  { name: "Pincodes", href: "/dashboard/pincodes", icon: MapPin },
-  { name: "Reports", href: "/dashboard/reports", icon: MessageSquare },
-  { name: "Roles & Permissions", href: "/dashboard/sub-admins", icon: ShieldCheck },
+  {
+    name: "Pincodes",
+    href: "/dashboard/pincodes",
+    icon: MapPin,
+    section: "PINCODES",
+  },
+  {
+    name: "Reports",
+    href: "/dashboard/reports",
+    icon: MessageSquare,
+    section: "REPORTS",
+  },
+  {
+    name: "Roles & Permissions",
+    href: "/dashboard/sub-admins",
+    icon: ShieldCheck,
+    section: "ROLES_PERMISSIONS",
+  },
 ];
+
+// Resolves the AdminSection that gates a given pathname, by finding the
+// most specific (longest) matching href among all sidebar items/children.
+// Returns null for unmapped routes (e.g. /dashboard itself, or account
+// pages like /dashboard/profile) — null means "not section-gated".
+// Shared by the Sidebar (to decide what to render) and the dashboard route
+// guard (to decide what to allow), so the two can never drift out of sync.
+export function getSectionForPathname(pathname: string): AdminSection | null {
+  let bestHref = "";
+  let bestSection: AdminSection | null = null;
+
+  const consider = (href: string | undefined, section: AdminSection | undefined) => {
+    if (!href || href === "/dashboard") return;
+    const matches = pathname === href || pathname.startsWith(`${href}/`);
+    if (!matches) return;
+    if (href.length > bestHref.length) {
+      bestHref = href;
+      bestSection = section ?? null;
+    }
+  };
+
+  for (const item of sidebarItems) {
+    consider(item.href, item.section);
+    item.children?.forEach((child) => consider(child.href, item.section));
+  }
+
+  return bestSection;
+}
 
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout } = useAuthStore();
-  const [openSections, setOpenSections] = useState<string[]>([]);
+  const { user, logout, hasSection } = useAuthStore();
+
+  // Only render the items (and their groups) the logged-in admin actually
+  // has access to. Dashboard (no `section`) is always visible; everything
+  // else is gated by the section granted to this admin (SUPER_ADMIN/ADMIN
+  // bypass this via hasSection() itself).
+  // `user` (not just `hasSection`) is the real trigger for recomputation:
+  // hasSection is a stable function reference that reads the store's
+  // current user internally, so `user` must stay in the dep array for
+  // recompute-on-login even though the linter can't see that indirection.
+  const visibleSidebarItems = useMemo(
+    () => sidebarItems.filter((item) => !item.section || hasSection(item.section)),
+    [hasSection, user], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+
+  // Finds the collapsible section (if any) whose children contain the
+  // currently-active route, so it can be auto-expanded.
+  const findActiveSectionName = (path: string) => {
+    const activeItem = visibleSidebarItems.find((item) =>
+      item.children?.some((child) =>
+        child.href
+          ? child.href === "/dashboard"
+            ? path === "/dashboard"
+            : path.startsWith(child.href)
+          : false,
+      ),
+    );
+    return activeItem?.name ?? null;
+  };
+
+  // Single-open accordion: only one section can be expanded at a time.
+  const [openSection, setOpenSection] = useState<string | null>(() =>
+    findActiveSectionName(pathname),
+  );
+
+  // Whenever the route changes, collapse whichever section was open and
+  // auto-expand the section (if any) that contains the new active route.
+  // This follows React's documented "adjust state during render" pattern
+  // (rather than an effect) so the accordion state and the just-rendered
+  // route never visibly disagree for a frame.
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname);
+    setOpenSection(findActiveSectionName(pathname));
+  }
+
+  // Refs to each collapsible section's wrapper element, keyed by section
+  // name, so the newly-opened section can be scrolled into view within the
+  // nav's own scroll container (whether opened by hand or auto-expanded by
+  // a route change) instead of leaving its children hidden below the fold.
+  const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  useEffect(() => {
+    if (!openSection) return;
+    const el = sectionRefs.current[openSection];
+    if (el) {
+      el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+  }, [openSection]);
 
   const userName = user?.name || "Admin";
   const userInitial = userName.charAt(0).toUpperCase();
 
   const toggleSection = (name: string) => {
-    setOpenSections((prev) =>
-      prev.includes(name)
-        ? prev.filter((item) => item !== name)
-        : [...prev, name],
-    );
+    setOpenSection((prev) => (prev === name ? null : name));
   };
 
   const handleLogout = () => {
@@ -217,8 +342,8 @@ export function Sidebar() {
       </div>
 
       <nav className="flex-1 px-4 space-y-1 mt-2 overflow-y-auto">
-        {sidebarItems.map((item) => {
-          const isExpanded = openSections.includes(item.name);
+        {visibleSidebarItems.map((item) => {
+          const isExpanded = openSection === item.name;
           const hasChildren = item.children && item.children.length > 0;
 
           if (hasChildren) {
@@ -228,7 +353,12 @@ export function Sidebar() {
             );
 
             return (
-              <div key={item.name}>
+              <div
+                key={item.name}
+                ref={(el) => {
+                  sectionRefs.current[item.name] = el;
+                }}
+              >
                 <button
                   onClick={() => toggleSection(item.name)}
                   className={clsx(

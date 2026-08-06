@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { ChevronLeft, FileText, Loader2, ShieldCheck, Trash2 } from "lucide-react";
+import { ChevronLeft, FileText, Heart, Loader2, ShieldCheck, Trash2 } from "lucide-react";
 import clsx from "clsx";
 import {
   userActionsApi,
@@ -21,9 +21,16 @@ import {
   PropertySubmission,
   SubscriptionPurchase,
   GenericPayment,
+  WishlistItem,
 } from "@/lib/api";
 
-const TOP_TABS = ["Overview", "Properties", "Services", "Payments"] as const;
+const TOP_TABS = [
+  "Overview",
+  "Properties",
+  "Services",
+  "Payments",
+  "Wishlist",
+] as const;
 type TopTab = (typeof TOP_TABS)[number];
 
 const SERVICE_TABS = [
@@ -81,6 +88,11 @@ export default function UserDetailsPage() {
   >([]);
   const [genericPayments, setGenericPayments] = useState<GenericPayment[]>([]);
   const [isLoadingPayments, setIsLoadingPayments] = useState(false);
+
+  // Wishlist tab data
+  const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
+  const [isLoadingWishlist, setIsLoadingWishlist] = useState(false);
+  const [wishlistError, setWishlistError] = useState("");
 
   const fetchUser = useCallback(async () => {
     setIsLoadingUser(true);
@@ -186,6 +198,27 @@ export default function UserDetailsPage() {
       }
     };
     fetchPayments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTopTab, userId]);
+
+  // Wishlist tab: fetch once when selected
+  useEffect(() => {
+    if (activeTopTab !== "Wishlist" || !userId) return;
+    if (wishlistItems.length > 0) return;
+    const fetchWishlist = async () => {
+      setIsLoadingWishlist(true);
+      setWishlistError("");
+      try {
+        const response = await usersApi.getUserWishlist(userId, 1, 50);
+        setWishlistItems(response.data);
+      } catch (error) {
+        console.error("Failed to fetch user wishlist", error);
+        setWishlistError("Failed to load wishlist");
+      } finally {
+        setIsLoadingWishlist(false);
+      }
+    };
+    fetchWishlist();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTopTab, userId]);
 
@@ -373,13 +406,13 @@ export default function UserDetailsPage() {
               <div className="w-20 h-20 rounded-full bg-[#1e2667] flex items-center justify-center text-white text-3xl font-medium shrink-0">
                 {(user.name || userId).slice(0, 1).toUpperCase()}
               </div>
-              <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-y-4 gap-x-8">
-                <div className="space-y-4">
+              <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-y-4 gap-x-8 min-w-0">
+                <div className="space-y-4 min-w-0">
                   <div>
                     <span className="text-sm font-semibold text-gray-900">
                       User ID-{" "}
                     </span>
-                    <span className="text-sm text-gray-600 truncate block md:inline">
+                    <span className="text-sm text-gray-600 break-words">
                       {userId}
                     </span>
                   </div>
@@ -387,17 +420,17 @@ export default function UserDetailsPage() {
                     <span className="text-sm font-semibold text-gray-900">
                       Name-{" "}
                     </span>
-                    <span className="text-sm text-gray-600">
+                    <span className="text-sm text-gray-600 break-words">
                       {user.name || "-"}
                     </span>
                   </div>
                 </div>
-                <div className="space-y-4">
+                <div className="space-y-4 min-w-0">
                   <div>
                     <span className="text-sm font-semibold text-gray-900">
                       Phone number -{" "}
                     </span>
-                    <span className="text-sm text-gray-600">
+                    <span className="text-sm text-gray-600 break-words">
                       {user.phone
                         ? `${user.countryCode || ""} ${user.phone}`
                         : "-"}
@@ -407,17 +440,17 @@ export default function UserDetailsPage() {
                     <span className="text-sm font-semibold text-gray-900">
                       Email -{" "}
                     </span>
-                    <span className="text-sm text-gray-600">
+                    <span className="text-sm text-gray-600 break-words">
                       {user.email || "-"}
                     </span>
                   </div>
                 </div>
-                <div className="space-y-4">
+                <div className="space-y-4 min-w-0">
                   <div>
                     <span className="text-sm font-semibold text-gray-900">
                       Registered on -{" "}
                     </span>
-                    <span className="text-sm text-gray-600">
+                    <span className="text-sm text-gray-600 break-words">
                       {formatDate(user.createdAt)}
                     </span>
                   </div>
@@ -967,6 +1000,101 @@ export default function UserDetailsPage() {
               </p>
             )}
           </div>
+        </div>
+      )}
+
+      {/* --- Wishlist --- */}
+      {activeTopTab === "Wishlist" && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
+            <Heart className="w-4 h-4 text-red-500" />
+            Saved Properties &amp; Layouts
+          </h2>
+          {wishlistError && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+              {wishlistError}
+            </div>
+          )}
+          {isLoadingWishlist ? (
+            <div className="flex justify-center py-10">
+              <Loader2 className="w-8 h-8 animate-spin text-[#1e2667]" />
+            </div>
+          ) : wishlistItems.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {wishlistItems.map((item) => {
+                const title =
+                  item.type === "PROPERTY"
+                    ? item.property?.title
+                    : item.layout?.title;
+                const image =
+                  item.type === "PROPERTY"
+                    ? item.property?.images?.[0]
+                    : item.layout?.imageUrl;
+                const priceRange =
+                  item.type === "PROPERTY"
+                    ? item.property?.priceRange
+                    : item.layout?.priceRange;
+                const location =
+                  item.type === "PROPERTY"
+                    ? item.property?.locationAddress
+                    : item.layout?.location;
+                const href =
+                  item.type === "PROPERTY" && item.property
+                    ? `/dashboard/plots/${item.property.id}`
+                    : item.type === "LAYOUT" && item.layout
+                      ? `/dashboard/layouts/${item.layout.id}`
+                      : null;
+
+                const cardBody = (
+                  <div className="border border-gray-100 rounded-xl overflow-hidden shadow-sm flex flex-col h-full">
+                    <div className="relative w-full h-36 bg-gray-100">
+                      {image ? (
+                        <img
+                          src={image}
+                          alt={title || "Wishlist item"}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
+                          No image
+                        </div>
+                      )}
+                      <span className="absolute top-2 left-2 text-xs font-medium px-2 py-1 rounded-full bg-white/90 text-gray-700">
+                        {item.type}
+                      </span>
+                    </div>
+                    <div className="p-4 flex flex-col flex-1 min-w-0">
+                      <h3 className="font-medium text-gray-900 line-clamp-1">
+                        {title || "Untitled"}
+                      </h3>
+                      <p className="text-xs text-gray-500 mt-1 line-clamp-1">
+                        {location || "-"}
+                      </p>
+                      <p className="text-sm text-gray-900 font-medium mt-2">
+                        {priceRange || "-"}
+                      </p>
+                    </div>
+                  </div>
+                );
+
+                return href ? (
+                  <Link
+                    key={item.id}
+                    href={href}
+                    className="hover:shadow-md transition-shadow rounded-xl"
+                  >
+                    {cardBody}
+                  </Link>
+                ) : (
+                  <div key={item.id}>{cardBody}</div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-center py-6 text-gray-500">
+              No wishlist items found.
+            </p>
+          )}
         </div>
       )}
     </div>

@@ -27,6 +27,9 @@ export default function LandProtectionDetailPage() {
   const [error, setError] = useState("");
 
   const [quoteAmount, setQuoteAmount] = useState("");
+  const [visitFrequency, setVisitFrequency] = useState<
+    "" | "MONTHLY" | "QUARTERLY" | "HALF_YEARLY"
+  >("");
   const [selectedAgentId, setSelectedAgentId] = useState("");
 
   const fetchAll = useCallback(async () => {
@@ -91,9 +94,11 @@ export default function LandProtectionDetailPage() {
       const updated = await userActionsApi.sendLandProtectionQuote(
         requestId,
         amount,
+        visitFrequency || undefined,
       );
       setRequest(updated);
       setQuoteAmount("");
+      setVisitFrequency("");
     } catch (err: any) {
       setError(err?.response?.data?.message || "Failed to send quote");
     } finally {
@@ -257,6 +262,14 @@ export default function LandProtectionDetailPage() {
             </p>
           </div>
           <div>
+            <p className="text-gray-500 text-sm mb-1">Visit Frequency:</p>
+            <p className="text-gray-900 font-medium">
+              {request.visitFrequency
+                ? request.visitFrequency.replace("_", " ")
+                : "Not set"}
+            </p>
+          </div>
+          <div>
             <p className="text-gray-500 text-sm mb-1">Admin Approved:</p>
             <p className="text-gray-900 font-medium">
               {request.adminApproved ? `Yes (${formatDate(request.adminApprovedAt)})` : "No"}
@@ -281,6 +294,38 @@ export default function LandProtectionDetailPage() {
             >
               View Land Layout <ExternalLink className="w-3.5 h-3.5" />
             </a>
+          </div>
+        )}
+
+        {(request.userLayoutUrl || request.dimensionPageUrl) && (
+          <div className="mt-6 pt-6 border-t border-gray-100">
+            <p className="text-gray-500 text-sm mb-3">
+              Customer Submitted Documents:
+            </p>
+            <div className="flex flex-wrap gap-4">
+              {request.userLayoutUrl && (
+                <a
+                  href={request.userLayoutUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-sm text-[#1e2667] hover:underline"
+                >
+                  View Customer&apos;s Layout Photo{" "}
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              )}
+              {request.dimensionPageUrl && (
+                <a
+                  href={request.dimensionPageUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-sm text-[#1e2667] hover:underline"
+                >
+                  View Dimension Page{" "}
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              )}
+            </div>
           </div>
         )}
 
@@ -325,6 +370,21 @@ export default function LandProtectionDetailPage() {
               onChange={(e) => setQuoteAmount(e.target.value)}
               className="flex-1 border border-gray-200 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
             />
+            <select
+              onFocus={scrollSelectIntoView}
+              value={visitFrequency}
+              onChange={(e) =>
+                setVisitFrequency(
+                  e.target.value as "" | "MONTHLY" | "QUARTERLY" | "HALF_YEARLY",
+                )
+              }
+              className="border border-gray-200 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+            >
+              <option value="">Visit Frequency</option>
+              <option value="MONTHLY">Monthly</option>
+              <option value="QUARTERLY">Quarterly</option>
+              <option value="HALF_YEARLY">Half Yearly</option>
+            </select>
             <button
               onClick={handleSendQuote}
               disabled={actionLoading !== null}

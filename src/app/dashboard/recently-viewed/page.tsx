@@ -5,13 +5,18 @@ import Link from "next/link";
 import { Search, Loader2, Users } from "lucide-react";
 import { propertiesApi, AdminRecentlyViewedItem } from "@/lib/api";
 
-const LIMIT_OPTIONS = [10, 20, 50] as const;
+// The backend's /admin/properties/recently-viewed endpoint only accepts a
+// `limit` param -- it has no page-based pagination (see
+// property.controller.ts@getRecentlyViewedAdmin). Rather than faking
+// client-side pagination over a single fetched page, we expose a clearer
+// set of limit options so the admin can control how many rows load.
+const LIMIT_OPTIONS = [10, 25, 50, 100] as const;
 
 export default function RecentlyViewedPage() {
     const [items, setItems] = useState<AdminRecentlyViewedItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
-    const [limit, setLimit] = useState<number>(20);
+    const [limit, setLimit] = useState<number>(25);
 
     const fetchRecentlyViewed = useCallback(async () => {
         setIsLoading(true);

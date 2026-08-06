@@ -10,8 +10,34 @@ import {
   Pencil,
   X,
 } from "lucide-react";
-import { subAdminsApi, SubAdmin, PaginationMeta } from "@/lib/api";
+import {
+  subAdminsApi,
+  SubAdmin,
+  PaginationMeta,
+  AdminSection,
+  ADMIN_SECTIONS,
+} from "@/lib/api";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+
+// Human-readable labels for each AdminSection, in the same order/grouping
+// as the sidebar so admins can recognize what they're granting.
+const SECTION_LABELS: Record<AdminSection, string> = {
+  USER_MANAGEMENT: "User Management",
+  AGENT_MANAGEMENT: "Agent Management",
+  PROPERTY_MANAGEMENT: "Property Management",
+  LAND_PROTECTION: "Land Protection",
+  BUY_ENQUIRIES: "Buy Enquiries",
+  SELL_REQUESTS: "Sell Requests",
+  SERVICES: "Services",
+  EXECUTIVE_MANAGEMENT: "Executive Management",
+  LEADS: "Leads",
+  LISTING_REQUESTS: "Listing Requests",
+  PAYMENTS: "Payments",
+  MARKETING: "Marketing",
+  PINCODES: "Pincodes",
+  REPORTS: "Reports",
+  ROLES_PERMISSIONS: "Roles & Permissions",
+};
 
 export default function SubAdminsPage() {
   const [subAdmins, setSubAdmins] = useState<SubAdmin[]>([]);
@@ -31,6 +57,7 @@ export default function SubAdminsPage() {
     email: "",
     password: "",
     permissions: [] as string[],
+    sections: [] as AdminSection[],
   });
 
   const PERMISSION_OPTIONS = ["VIEW", "CREATE", "UPDATE", "DELETE"];
@@ -38,6 +65,7 @@ export default function SubAdminsPage() {
   // Edit permissions modal
   const [editingAdmin, setEditingAdmin] = useState<SubAdmin | null>(null);
   const [editPermissions, setEditPermissions] = useState<string[]>([]);
+  const [editSections, setEditSections] = useState<AdminSection[]>([]);
   const [isEditSubmitting, setIsEditSubmitting] = useState(false);
   const [editError, setEditError] = useState("");
 
@@ -90,13 +118,31 @@ export default function SubAdminsPage() {
     });
   };
 
+  const handleSectionToggle = (section: AdminSection) => {
+    setFormData((prev) => {
+      const isSelected = prev.sections.includes(section);
+      return {
+        ...prev,
+        sections: isSelected
+          ? prev.sections.filter((s) => s !== section)
+          : [...prev.sections, section],
+      };
+    });
+  };
+
   const handleCreateSubAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
       await subAdminsApi.createSubAdmin(formData);
       setIsModalOpen(false);
-      setFormData({ name: "", email: "", password: "", permissions: [] });
+      setFormData({
+        name: "",
+        email: "",
+        password: "",
+        permissions: [],
+        sections: [],
+      });
       // Refresh the list seamlessly
       fetchSubAdmins();
     } catch (error) {
@@ -110,6 +156,7 @@ export default function SubAdminsPage() {
   const openEditModal = (admin: SubAdmin) => {
     setEditingAdmin(admin);
     setEditPermissions(admin.permissions);
+    setEditSections(admin.sections ?? []);
     setEditError("");
   };
 
@@ -118,6 +165,14 @@ export default function SubAdminsPage() {
       prev.includes(permission)
         ? prev.filter((p) => p !== permission)
         : [...prev, permission],
+    );
+  };
+
+  const toggleEditSection = (section: AdminSection) => {
+    setEditSections((prev) =>
+      prev.includes(section)
+        ? prev.filter((s) => s !== section)
+        : [...prev, section],
     );
   };
 
@@ -130,10 +185,10 @@ export default function SubAdminsPage() {
     setIsEditSubmitting(true);
     setEditError("");
     try {
-      await subAdminsApi.updateSubAdminPermissions(
-        editingAdmin.id,
-        editPermissions,
-      );
+      await subAdminsApi.updateSubAdminPermissions(editingAdmin.id, {
+        permissions: editPermissions,
+        sections: editSections,
+      });
       setEditingAdmin(null);
       await fetchSubAdmins();
     } catch (error: any) {
@@ -424,6 +479,34 @@ export default function SubAdminsPage() {
                 </div>
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Section Access
+                </label>
+                <div className="grid grid-cols-2 gap-3 max-h-56 overflow-y-auto pr-1">
+                  {ADMIN_SECTIONS.map((section) => (
+                    <label
+                      key={section}
+                      className={`flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-colors ${
+                        formData.sections.includes(section)
+                          ? "border-[#1e2667] bg-indigo-50/50"
+                          : "border-gray-200 hover:bg-gray-50"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={formData.sections.includes(section)}
+                        onChange={() => handleSectionToggle(section)}
+                        className="w-4 h-4 text-[#1e2667] rounded border-gray-300 focus:ring-[#1e2667]"
+                      />
+                      <span className="text-sm font-medium text-gray-700">
+                        {SECTION_LABELS[section]}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
               <div className="pt-4 mt-6 border-t border-gray-100 flex gap-3">
                 <button
                   type="button"
@@ -502,6 +585,34 @@ export default function SubAdminsPage() {
                       />
                       <span className="text-sm font-medium text-gray-700">
                         {perm}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Section Access
+                </label>
+                <div className="grid grid-cols-2 gap-3 max-h-56 overflow-y-auto pr-1">
+                  {ADMIN_SECTIONS.map((section) => (
+                    <label
+                      key={section}
+                      className={`flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-colors ${
+                        editSections.includes(section)
+                          ? "border-[#1e2667] bg-indigo-50/50"
+                          : "border-gray-200 hover:bg-gray-50"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={editSections.includes(section)}
+                        onChange={() => toggleEditSection(section)}
+                        className="w-4 h-4 text-[#1e2667] rounded border-gray-300 focus:ring-[#1e2667]"
+                      />
+                      <span className="text-sm font-medium text-gray-700">
+                        {SECTION_LABELS[section]}
                       </span>
                     </label>
                   ))}

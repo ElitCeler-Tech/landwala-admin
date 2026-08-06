@@ -210,16 +210,16 @@ export default function PlotsPage() {
                   key={property.id}
                   className="hover:bg-gray-50/50 transition-colors border-b border-gray-50 last:border-0"
                 >
-                  <td className="py-5 pl-8 font-medium text-gray-900">
-                    <div className="flex items-center gap-3">
+                  <td className="py-5 pl-8 font-medium text-gray-900 max-w-0">
+                    <div className="flex items-center gap-3 min-w-0">
                       {property.images[0] && (
                         <img
                           src={property.images[0]}
                           alt={property.title}
-                          className="w-10 h-10 rounded-lg object-cover"
+                          className="w-10 h-10 rounded-lg object-cover shrink-0"
                         />
                       )}
-                      <div className="max-w-[200px]">
+                      <div className="min-w-0 flex-1">
                         <p className="truncate">{property.title}</p>
                         <p className="text-xs text-gray-400 truncate">
                           {getPlotType(property)}
@@ -227,7 +227,7 @@ export default function PlotsPage() {
                       </div>
                     </div>
                   </td>
-                  <td className="py-5 text-gray-900 font-medium">
+                  <td className="py-5 text-gray-900 font-medium whitespace-nowrap">
                     {property.priceRange}
                   </td>
                   <td className="py-5 text-gray-500">

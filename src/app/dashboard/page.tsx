@@ -119,62 +119,102 @@ export default function Dashboard() {
     PlotListingsGrowthPoint[]
   >([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRetrying, setIsRetrying] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const [range, setRange] = useState<DashboardDateRange>("month");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
 
+  // Note: intentionally does not catch -- callers decide how to handle a
+  // failure (silent auto-retry on initial load vs. surfacing the error
+  // banner on range changes / manual retry).
   const fetchOverview = useCallback(async () => {
     if (range === "custom" && (!customFrom || !customTo)) return;
-    try {
-      const data = await dashboardApi.getOverview(range, customFrom, customTo);
-      setOverview(data);
-      setLoadError(null);
-    } catch (error) {
-      console.error("Failed to fetch dashboard overview:", error);
-      setLoadError(
-        "Couldn't load dashboard data from the server. Numbers below may be stale or blank.",
-      );
-    }
+    const data = await dashboardApi.getOverview(range, customFrom, customTo);
+    setOverview(data);
   }, [range, customFrom, customTo]);
 
+  // All of the dashboard's initial data in one shot -- used by the initial
+  // mount load (with auto-retry below) and by the manual Retry button.
+  const loadDashboardData = useCallback(async () => {
+    const [revenue, activity, area, agents, listingsGrowth] =
+      await Promise.all([
+        dashboardApi.getRevenueGrowth(),
+        dashboardApi.getRecentActivity(8),
+        dashboardApi.getAreaDistribution(),
+        dashboardApi.getTopAgents(5),
+        dashboardApi.getPlotListingsGrowth(),
+      ]);
+    setRevenueGrowth(revenue.data);
+    setRecentActivity(activity);
+    setAreaDistribution(area);
+    setTopAgents(agents);
+    setPlotListingsGrowth(listingsGrowth.data);
+    await fetchOverview();
+  }, [fetchOverview]);
+
   useEffect(() => {
-    const fetchAll = async () => {
+    let cancelled = false;
+
+    const runInitialLoad = async () => {
       setIsLoading(true);
       try {
-        const [revenue, activity, area, agents, listingsGrowth] =
-          await Promise.all([
-            dashboardApi.getRevenueGrowth(),
-            dashboardApi.getRecentActivity(8),
-            dashboardApi.getAreaDistribution(),
-            dashboardApi.getTopAgents(5),
-            dashboardApi.getPlotListingsGrowth(),
-          ]);
-        setRevenueGrowth(revenue.data);
-        setRecentActivity(activity);
-        setAreaDistribution(area);
-        setTopAgents(agents);
-        setPlotListingsGrowth(listingsGrowth.data);
-        setLoadError(null);
-        await fetchOverview();
+        await loadDashboardData();
+        if (!cancelled) setLoadError(null);
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
-        setLoadError(
-          "Couldn't load dashboard data from the server. Numbers below may be stale or blank.",
-        );
+        // Most failures here are a one-off transient network blip rather
+        // than a real backend fault, so give it a single silent retry
+        // before bothering the user with an error banner.
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        if (cancelled) return;
+        try {
+          await loadDashboardData();
+          if (!cancelled) setLoadError(null);
+        } catch (retryError) {
+          console.error("Retry of dashboard data fetch also failed:", retryError);
+          if (!cancelled) {
+            setLoadError(
+              "Couldn't load dashboard data from the server. Numbers below may be stale or blank.",
+            );
+          }
+        }
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     };
 
-    fetchAll();
+    runInitialLoad();
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    fetchOverview();
+    fetchOverview().catch((error) => {
+      console.error("Failed to fetch dashboard overview:", error);
+      setLoadError(
+        "Couldn't load dashboard data from the server. Numbers below may be stale or blank.",
+      );
+    });
   }, [fetchOverview]);
+
+  const handleRetry = async () => {
+    setIsRetrying(true);
+    try {
+      await loadDashboardData();
+      setLoadError(null);
+    } catch (error) {
+      console.error("Manual dashboard data retry failed:", error);
+      setLoadError(
+        "Couldn't load dashboard data from the server. Numbers below may be stale or blank.",
+      );
+    } finally {
+      setIsRetrying(false);
+    }
+  };
 
   const revenueChartData = revenueGrowth.map((point) => ({
     name: new Date(point.date).toLocaleDateString("en-US", {
@@ -336,10 +376,11 @@ export default function Dashboard() {
             {loadError}
           </div>
           <button
-            onClick={() => window.location.reload()}
-            className="text-xs font-semibold underline shrink-0"
+            onClick={handleRetry}
+            disabled={isRetrying}
+            className="text-xs font-semibold underline shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Retry
+            {isRetrying ? "Retrying..." : "Retry"}
           </button>
         </div>
       )}

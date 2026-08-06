@@ -31,6 +31,7 @@ export default function ReportDetailsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [remark, setRemark] = useState("");
 
   const { getReportDetail } = useReportsStore();
 
@@ -41,6 +42,7 @@ export default function ReportDetailsPage() {
         const cachedReport = getReportDetail(id);
         if (cachedReport) {
           setReport(cachedReport);
+          setRemark(cachedReport.adminRemark || "");
           setIsLoading(false);
           return;
         }
@@ -48,6 +50,7 @@ export default function ReportDetailsPage() {
         // 2. Fallback to API if user landed here directly via URL
         const data = await reportsApi.getReportById(id);
         setReport(data);
+        setRemark(data.adminRemark || "");
       } catch (error) {
         console.error("Failed to fetch report:", error);
       } finally {
@@ -99,8 +102,17 @@ export default function ReportDetailsPage() {
     if (!report || status === report.status) return;
     setIsUpdatingStatus(true);
     try {
-      await reportsApi.updateStatus(report.id, status);
-      setReport({ ...report, status });
+      const trimmedRemark = remark.trim();
+      await reportsApi.updateStatus(
+        report.id,
+        status,
+        trimmedRemark || undefined,
+      );
+      setReport({
+        ...report,
+        status,
+        adminRemark: trimmedRemark || report.adminRemark,
+      });
     } catch (error) {
       console.error("Failed to update report status:", error);
     } finally {
@@ -319,6 +331,15 @@ export default function ReportDetailsPage() {
                   })}
                 </p>
               </div>
+
+              {report.adminRemark && (
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">Admin Remark</p>
+                  <p className="font-medium text-gray-900 whitespace-pre-wrap">
+                    {report.adminRemark}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -328,6 +349,18 @@ export default function ReportDetailsPage() {
             </h2>
 
             <div className="space-y-4">
+              <div>
+                <p className="text-sm text-gray-500 mb-2">Admin Remark</p>
+                <textarea
+                  rows={3}
+                  value={remark}
+                  onChange={(e) => setRemark(e.target.value)}
+                  disabled={isUpdatingStatus}
+                  placeholder="Remark for the reporter (optional)"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667] disabled:opacity-50"
+                />
+              </div>
+
               <div>
                 <p className="text-sm text-gray-500 mb-2">Update Status</p>
                 <select
@@ -347,6 +380,9 @@ export default function ReportDetailsPage() {
                     </option>
                   ))}
                 </select>
+                <p className="text-xs text-gray-400 mt-1">
+                  Changing the status sends the remark above to the reporter.
+                </p>
               </div>
 
               <button

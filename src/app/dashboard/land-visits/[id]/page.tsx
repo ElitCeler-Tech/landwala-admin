@@ -33,6 +33,12 @@ export default function LandVisitDetailPage() {
   }, [visitId, fetchVisit]);
 
   const handleReview = async (status: "REVIEWED" | "FLAGGED") => {
+    if (status === "FLAGGED" && !reviewNotes.trim()) {
+      setError(
+        "Admin review notes are required when flagging a visit for re-upload",
+      );
+      return;
+    }
     setActionLoading(status);
     setError("");
     try {
@@ -235,9 +241,13 @@ export default function LandVisitDetailPage() {
             rows={3}
             value={reviewNotes}
             onChange={(e) => setReviewNotes(e.target.value)}
-            placeholder="Admin review notes (optional)"
-            className="w-full border border-gray-200 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667] mb-4"
+            placeholder="Admin review notes (required to flag, optional to approve)"
+            className="w-full border border-gray-200 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667] mb-1"
           />
+          <p className="text-xs text-gray-400 mb-4">
+            Notes are required when flagging a visit for re-upload; optional
+            when approving.
+          </p>
           <div className="flex gap-4">
             <button
               onClick={() => handleReview("FLAGGED")}

@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Sidebar } from "@/components/Sidebar";
+import { useRouter, usePathname } from "next/navigation";
+import { Sidebar, getSectionForPathname } from "@/components/Sidebar";
 import { Navbar } from "@/components/Navbar";
 import { useAuthStore } from "@/store/useAuthStore";
 import { Loader2 } from "lucide-react";
@@ -13,7 +13,8 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }>) {
   const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
+  const pathname = usePathname();
+  const { isAuthenticated, hasSection } = useAuthStore();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -29,7 +30,31 @@ export default function DashboardLayout({
     return () => clearTimeout(timer);
   }, [isAuthenticated, router]);
 
+  // Route-level RBAC guard: mirrors the sidebar's filtering so a restricted
+  // sub-admin can't reach a hidden section just by typing its URL. Uses the
+  // same pathname -> AdminSection lookup the Sidebar uses, so the two can't
+  // drift out of sync. /dashboard itself is never gated.
+  const currentSection =
+    pathname === "/dashboard" ? null : getSectionForPathname(pathname);
+  const isSectionAllowed = !currentSection || hasSection(currentSection);
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (!isSectionAllowed) {
+      router.replace("/dashboard");
+    }
+  }, [isLoading, isSectionAllowed, router]);
+
   if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-white">
+        <Loader2 className="w-8 h-8 animate-spin text-[#1e2667]" />
+      </div>
+    );
+  }
+
+  // Don't flash restricted content while the redirect above is in flight.
+  if (!isSectionAllowed) {
     return (
       <div className="flex items-center justify-center h-screen bg-white">
         <Loader2 className="w-8 h-8 animate-spin text-[#1e2667]" />

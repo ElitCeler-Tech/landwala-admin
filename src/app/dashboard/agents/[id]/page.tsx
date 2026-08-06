@@ -3,9 +3,18 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft, FileText, Loader2, ExternalLink, Trash2 } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  Loader2,
+  ExternalLink,
+  Trash2,
+} from "lucide-react";
 import clsx from "clsx";
-import { agentsApi, Agent } from "@/lib/api";
+import { agentsApi, Agent, Property, PaginationMeta } from "@/lib/api";
+
+const AGENT_PROPERTIES_LIMIT = 9;
 
 const tabs = [
   "KYC Document",
@@ -26,6 +35,16 @@ export default function AgentDetailsPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("KYC Document");
 
+  // Land Listing tab data -- properties this agent has had approved via
+  // their submissions (GET /admin/agents/:id/properties)
+  const [agentProperties, setAgentProperties] = useState<Property[]>([]);
+  const [propertiesMeta, setPropertiesMeta] = useState<PaginationMeta | null>(
+    null,
+  );
+  const [propertiesPage, setPropertiesPage] = useState(1);
+  const [isLoadingProperties, setIsLoadingProperties] = useState(false);
+  const [propertiesError, setPropertiesError] = useState("");
+
   const fetchAgent = async () => {
     try {
       const data = await agentsApi.getAgentById(agentId);
@@ -43,6 +62,31 @@ export default function AgentDetailsPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [agentId]);
+
+  // Land Listing tab: fetch (and re-fetch on page change) whenever the tab
+  // is active, mirroring the lazy-load pattern used by other tabs.
+  useEffect(() => {
+    if (activeTab !== "Land Listing" || !agentId) return;
+    const fetchAgentProperties = async () => {
+      setIsLoadingProperties(true);
+      setPropertiesError("");
+      try {
+        const response = await agentsApi.getAgentProperties(
+          agentId,
+          propertiesPage,
+          AGENT_PROPERTIES_LIMIT,
+        );
+        setAgentProperties(response.data);
+        setPropertiesMeta(response.meta);
+      } catch (error) {
+        console.error("Failed to fetch agent properties:", error);
+        setPropertiesError("Failed to load land listings");
+      } finally {
+        setIsLoadingProperties(false);
+      }
+    };
+    fetchAgentProperties();
+  }, [activeTab, agentId, propertiesPage]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -184,6 +228,14 @@ export default function AgentDetailsPage() {
               </span>
               <span className="text-sm text-gray-700 break-all">
                 {agent.id.slice(0, 8)}...
+              </span>
+            </div>
+            <div>
+              <span className="text-sm font-medium text-gray-900">
+                Agent Code -{" "}
+              </span>
+              <span className="text-sm text-gray-700">
+                {agent.agentCode || "—"}
               </span>
             </div>
             <div>
@@ -497,17 +549,112 @@ export default function AgentDetailsPage() {
               <h2 className="text-lg font-medium text-gray-900">
                 Land Listing By Agent
               </h2>
-              <button className="bg-[#1e2667] text-white text-xs font-medium px-6 py-2 rounded-lg hover:bg-opacity-90 transition-opacity cursor-pointer">
-                View all
-              </button>
             </div>
-            <div className="text-center py-12 text-gray-400">
-              <p>No land listings available yet.</p>
-              <p className="text-sm mt-2">
-                This feature will be available when land listing API is
-                integrated.
-              </p>
-            </div>
+
+            {propertiesError && (
+              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+                {propertiesError}
+              </div>
+            )}
+
+            {isLoadingProperties ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-[#1e2667]" />
+              </div>
+            ) : agentProperties.length > 0 ? (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {agentProperties.map((property) => (
+                    <Link
+                      key={property.id}
+                      href={`/dashboard/plots/${property.id}`}
+                      className="hover:shadow-md transition-shadow rounded-xl"
+                    >
+                      <div className="border border-gray-100 rounded-xl overflow-hidden shadow-sm flex flex-col h-full">
+                        <div className="relative w-full h-36 bg-gray-100">
+                          {property.images?.[0] ? (
+                            <img
+                              src={property.images[0]}
+                              alt={property.title}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
+                              No image
+                            </div>
+                          )}
+                          {property.category && (
+                            <span className="absolute top-2 left-2 text-xs font-medium px-2 py-1 rounded-full bg-white/90 text-gray-700">
+                              {property.category}
+                            </span>
+                          )}
+                        </div>
+                        <div className="p-4 flex flex-col flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <h3 className="font-medium text-gray-900 line-clamp-1">
+                              {property.title}
+                            </h3>
+                            <span
+                              className={`text-xs font-medium px-2 py-1 rounded-full shrink-0 ${
+                                property.isActive
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-gray-100 text-gray-700"
+                              }`}
+                            >
+                              {property.isActive ? "Active" : "Inactive"}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1 line-clamp-1">
+                            {property.city}, {property.state}
+                          </p>
+                          <p className="text-sm text-gray-900 font-medium mt-2">
+                            {property.priceRange}
+                          </p>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+
+                <div className="flex justify-between items-center mt-6 pt-6 border-t border-gray-100">
+                  <span className="text-gray-500 text-sm">
+                    Showing{" "}
+                    {propertiesMeta
+                      ? `${(propertiesPage - 1) * AGENT_PROPERTIES_LIMIT + 1}-${Math.min(
+                          propertiesPage * AGENT_PROPERTIES_LIMIT,
+                          propertiesMeta.total,
+                        )} of ${propertiesMeta.total}`
+                      : "0"}
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() =>
+                        setPropertiesPage((prev) => Math.max(prev - 1, 1))
+                      }
+                      disabled={!propertiesMeta?.hasPrevPage}
+                      className="p-2 bg-[#1e2667] text-white rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setPropertiesPage((prev) => prev + 1)}
+                      disabled={!propertiesMeta?.hasNextPage}
+                      className="p-2 bg-[#1e2667] text-white rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-12 text-gray-400">
+                <p>No approved land listings yet.</p>
+                <p className="text-sm mt-2">
+                  Properties approved from this agent&apos;s submissions will
+                  appear here.
+                </p>
+              </div>
+            )}
           </div>
         )}
 

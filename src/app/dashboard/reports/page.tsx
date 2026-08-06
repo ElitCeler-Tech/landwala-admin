@@ -1,7 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import {
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  MessageSquareText,
+} from "lucide-react";
 import Link from "next/link";
 import { reportsApi, Report, PaginationMeta } from "@/lib/api";
 import { useReportsStore } from "@/store/useReportsStore";
@@ -188,13 +194,23 @@ export default function ReportsPage() {
                       </p>
                     </td>
                     <td className="py-5">
-                      <span
-                        className={`text-xs font-medium px-3 py-1 rounded-full capitalize ${getStatusBadge(
-                          report.status,
-                        )}`}
-                      >
-                        {report.status}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`text-xs font-medium px-3 py-1 rounded-full capitalize ${getStatusBadge(
+                            report.status,
+                          )}`}
+                        >
+                          {report.status}
+                        </span>
+                        {report.adminRemark && (
+                          <span
+                            title={`Admin remark: ${report.adminRemark}`}
+                            className="shrink-0"
+                          >
+                            <MessageSquareText className="w-3.5 h-3.5 text-gray-400" />
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="py-5 pr-8">
                       <Link

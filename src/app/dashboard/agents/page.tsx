@@ -118,22 +118,25 @@ export default function AgentsPage() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-[#f8f9fc]">
-                <th className="py-4 pl-8 rounded-l-xl font-medium text-gray-600 w-[20%]">
+                <th className="py-4 pl-8 rounded-l-xl font-medium text-gray-600 w-[18%]">
                   Name
                 </th>
-                <th className="py-4 font-medium text-gray-600 w-[20%]">
+                <th className="py-4 font-medium text-gray-600 w-[10%]">
+                  Agent Code
+                </th>
+                <th className="py-4 font-medium text-gray-600 w-[18%]">
                   Email
                 </th>
-                <th className="py-4 font-medium text-gray-600 w-[15%]">
+                <th className="py-4 font-medium text-gray-600 w-[13%]">
                   Phone
                 </th>
-                <th className="py-4 font-medium text-gray-600 w-[20%]">
+                <th className="py-4 font-medium text-gray-600 w-[18%]">
                   Assigned Locations
                 </th>
-                <th className="py-4 font-medium text-gray-600 w-[12%]">
+                <th className="py-4 font-medium text-gray-600 w-[11%]">
                   KYC Status
                 </th>
-                <th className="py-4 pr-8 rounded-r-xl font-medium text-gray-600 w-[13%]">
+                <th className="py-4 pr-8 rounded-r-xl font-medium text-gray-600 w-[12%]">
                   Action
                 </th>
               </tr>
@@ -150,6 +153,9 @@ export default function AgentsPage() {
                 >
                   <td className="py-5 pl-8 font-medium text-gray-900">
                     {agent.fullName}
+                  </td>
+                  <td className="py-5 text-gray-500">
+                    {agent.agentCode || "—"}
                   </td>
                   <td className="py-5 text-gray-500">{agent.email}</td>
                   <td className="py-5 text-gray-500">{agent.phone}</td>
@@ -176,7 +182,7 @@ export default function AgentsPage() {
               ))}
               {agents.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="py-10 text-center text-gray-500">
+                  <td colSpan={7} className="py-10 text-center text-gray-500">
                     No agents found
                   </td>
                 </tr>

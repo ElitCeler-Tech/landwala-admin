@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { ChevronLeft, Loader2, Plus, Pencil, Trash2, X } from "lucide-react";
 import {
@@ -8,6 +8,7 @@ import {
   BankPartner,
   CreateBankPartnerPayload,
 } from "@/lib/api";
+import { Pagination } from "@/components/Pagination";
 
 const EMPTY_FORM: CreateBankPartnerPayload = {
   name: "",
@@ -18,11 +19,18 @@ const EMPTY_FORM: CreateBankPartnerPayload = {
   isActive: true,
 };
 
+// The bank partner directory is a small, hand-curated list (a handful of
+// partner banks), so rather than round-tripping to the paginated backend
+// endpoint on every page click, we fetch the full list once and paginate
+// client-side -- same approach as the Top Agents page.
+const PAGE_LIMIT = 10;
+
 export default function BankPartnersPage() {
   const [partners, setPartners] = useState<BankPartner[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -44,6 +52,28 @@ export default function BankPartnersPage() {
   useEffect(() => {
     fetchPartners();
   }, []);
+
+  const sortedPartners = useMemo(
+    () => partners.slice().sort((a, b) => a.displayOrder - b.displayOrder),
+    [partners],
+  );
+  const totalPages = Math.max(
+    Math.ceil(sortedPartners.length / PAGE_LIMIT),
+    1,
+  );
+  const pagedPartners = useMemo(
+    () =>
+      sortedPartners.slice(
+        (currentPage - 1) * PAGE_LIMIT,
+        currentPage * PAGE_LIMIT,
+      ),
+    [sortedPartners, currentPage],
+  );
+
+  // Keep the current page in range if the list shrinks (e.g. after a delete).
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
 
   const openCreateModal = () => {
     setEditingId(null);
@@ -170,10 +200,7 @@ export default function BankPartnersPage() {
               </tr>
             </thead>
             <tbody className="text-sm text-gray-600 divide-y divide-gray-50">
-              {partners
-                .slice()
-                .sort((a, b) => a.displayOrder - b.displayOrder)
-                .map((partner) => (
+              {pagedPartners.map((partner) => (
                   <tr key={partner.id} className="hover:bg-gray-50/50">
                     <td className="py-4 pl-6 font-medium text-gray-900">
                       {partner.name}
@@ -218,6 +245,23 @@ export default function BankPartnersPage() {
           </table>
         )}
       </div>
+
+      {!isLoading && sortedPartners.length > 0 && (
+        <div className="flex justify-between items-center mt-6">
+          <span className="text-gray-500 text-sm">
+            Showing{" "}
+            {`${(currentPage - 1) * PAGE_LIMIT + 1}-${Math.min(
+              currentPage * PAGE_LIMIT,
+              sortedPartners.length,
+            )} of ${sortedPartners.length}`}
+          </span>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        </div>
+      )}
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">

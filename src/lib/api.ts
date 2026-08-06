@@ -1,6 +1,29 @@
 import api from "./axios";
 
 // Types
+
+// Per-section RBAC. Must match the backend's `AdminSection` enum exactly —
+// these values are what the server-side guard checks against.
+export const ADMIN_SECTIONS = [
+  "USER_MANAGEMENT",
+  "AGENT_MANAGEMENT",
+  "PROPERTY_MANAGEMENT",
+  "LAND_PROTECTION",
+  "BUY_ENQUIRIES",
+  "SELL_REQUESTS",
+  "SERVICES",
+  "EXECUTIVE_MANAGEMENT",
+  "LEADS",
+  "LISTING_REQUESTS",
+  "PAYMENTS",
+  "MARKETING",
+  "PINCODES",
+  "REPORTS",
+  "ROLES_PERMISSIONS",
+] as const;
+
+export type AdminSection = (typeof ADMIN_SECTIONS)[number];
+
 export interface LoginRequest {
   email: string;
   password: string;
@@ -21,6 +44,7 @@ export interface AdminUser {
   lastLoginAt: string | null;
   createdAt: string;
   updatedAt: string;
+  sections: AdminSection[];
 }
 
 export interface AuthTokens {
@@ -266,6 +290,28 @@ export interface UsersResponse {
   meta: PaginationMeta;
 }
 
+// A user's saved wishlist item -- same shape as the public GET /wishlist
+// response (see backend WishlistItemResponseDto), just fetched through the
+// admin path-param route GET /admin/users/:id/wishlist instead of the
+// JWT-derived GET /wishlist used by the mobile app.
+export type WishlistItemType = "PROPERTY" | "LAYOUT";
+
+export interface WishlistItem {
+  id: string;
+  type: WishlistItemType;
+  propertyId: string | null;
+  layoutId: string | null;
+  property?: Property | null;
+  layout?: Layout | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WishlistListResponse {
+  data: WishlistItem[];
+  meta: PaginationMeta;
+}
+
 // Users API
 export const usersApi = {
   getUsers: async (page: number = 1, limit: number = 10, search?: string) => {
@@ -323,11 +369,25 @@ export const usersApi = {
     );
     return response.data;
   },
+
+  getUserWishlist: async (
+    id: string,
+    page: number = 1,
+    limit: number = 10,
+    type?: WishlistItemType,
+  ) => {
+    const response = await api.get<WishlistListResponse>(
+      `/admin/users/${id}/wishlist`,
+      { params: { page, limit, type } },
+    );
+    return response.data;
+  },
 };
 
 // Agent Types
 export interface Agent {
   id: string;
+  agentCode: string;
   firstName: string;
   lastName: string;
   fullName: string;
@@ -425,6 +485,20 @@ export const agentsApi = {
   deleteAgent: async (id: string) => {
     await api.delete(`/admin/agents/${id}`);
   },
+
+  // Properties an agent has had approved via their submissions -- same
+  // response shape as every other admin property list endpoint.
+  getAgentProperties: async (
+    id: string,
+    page: number = 1,
+    limit: number = 10,
+  ) => {
+    const response = await api.get<PropertiesResponse>(
+      `/admin/agents/${id}/properties`,
+      { params: { page, limit } },
+    );
+    return response.data;
+  },
 };
 
 // Property Types
@@ -516,6 +590,7 @@ export const propertiesApi = {
     category?: string,
     isTrending?: boolean,
     isHotSale?: boolean,
+    isExploreNearby?: boolean,
   ) => {
     const response = await api.get<PropertiesResponse>("/admin/properties", {
       params: {
@@ -525,6 +600,7 @@ export const propertiesApi = {
         category,
         isTrending,
         isHotSale,
+        isExploreNearby,
       },
     });
     return response.data;
@@ -888,8 +964,11 @@ export interface LandProtection {
   isOutOfRange: boolean;
   adminApproved: boolean;
   adminApprovedAt: string | null;
+  visitFrequency: "MONTHLY" | "QUARTERLY" | "HALF_YEARLY" | null;
   imageUrls?: string[];
   layoutUrl?: string | null;
+  userLayoutUrl?: string | null;
+  dimensionPageUrl?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -1052,10 +1131,14 @@ export const userActionsApi = {
     return response.data;
   },
 
-  sendLandProtectionQuote: async (id: string, quotedAmount: number) => {
+  sendLandProtectionQuote: async (
+    id: string,
+    quotedAmount: number,
+    visitFrequency?: "MONTHLY" | "QUARTERLY" | "HALF_YEARLY",
+  ) => {
     const response = await api.patch<LandProtection>(
       `/admin/land-protections/${id}/quote`,
-      { quotedAmount },
+      { quotedAmount, visitFrequency },
     );
     return response.data;
   },
@@ -1355,6 +1438,7 @@ export interface Report {
   imageKeys: string[];
   imageUrls: string[];
   status: string;
+  adminRemark: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -1380,10 +1464,11 @@ export const reportsApi = {
   updateStatus: async (
     id: string,
     status: "pending" | "in_progress" | "resolved" | "closed",
+    remark?: string,
   ) => {
     const response = await api.patch<{ id: string; status: string; message: string }>(
       `/admin/issue-reports/${id}/status`,
-      { status },
+      { status, remark },
     );
     return response.data;
   },
@@ -1454,6 +1539,7 @@ export interface SubAdmin {
   name: string;
   role: string;
   permissions: string[];
+  sections: AdminSection[];
   isActive: boolean;
   lastLoginAt: string;
   createdAt: string;
@@ -1470,6 +1556,12 @@ export interface CreateSubAdminPayload {
   name: string;
   password?: string;
   permissions: string[];
+  sections?: AdminSection[];
+}
+
+export interface UpdateSubAdminPermissionsPayload {
+  permissions: string[];
+  sections?: AdminSection[];
 }
 
 // Sub Admins API
@@ -1495,10 +1587,13 @@ export const subAdminsApi = {
     return response.data;
   },
 
-  updateSubAdminPermissions: async (id: string, permissions: string[]) => {
+  updateSubAdminPermissions: async (
+    id: string,
+    data: UpdateSubAdminPermissionsPayload,
+  ) => {
     const response = await api.patch<SubAdmin>(
       `/admin/sub-admins/${id}/permissions`,
-      { permissions },
+      data,
     );
     return response.data;
   },
@@ -1576,63 +1671,6 @@ export const subscriptionPlansApi = {
 };
 
 // Explore Categories (admin-managed) Types
-export interface ExploreCategory {
-  id: string;
-  name: string;
-  iconKey: string | null;
-  displayOrder: number;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface ExploreCategoriesResponse {
-  data: ExploreCategory[];
-  meta: PaginationMeta;
-}
-
-export interface CreateExploreCategoryPayload {
-  name: string;
-  iconKey?: string;
-  displayOrder?: number;
-  isActive?: boolean;
-}
-
-export type UpdateExploreCategoryPayload = Partial<CreateExploreCategoryPayload>;
-
-// Explore Categories (admin-managed) API
-export const exploreCategoryManagementApi = {
-  getCategories: async (page: number = 1, limit: number = 50) => {
-    const response = await api.get<ExploreCategoriesResponse>(
-      `/admin/explore-category-management?page=${page}&limit=${limit}`,
-    );
-    return response.data;
-  },
-
-  createCategory: async (data: CreateExploreCategoryPayload) => {
-    const response = await api.post<ExploreCategory>(
-      "/admin/explore-category-management",
-      data,
-    );
-    return response.data;
-  },
-
-  updateCategory: async (id: string, data: UpdateExploreCategoryPayload) => {
-    const response = await api.patch<ExploreCategory>(
-      `/admin/explore-category-management/${id}`,
-      data,
-    );
-    return response.data;
-  },
-
-  deleteCategory: async (id: string) => {
-    const response = await api.delete<void>(
-      `/admin/explore-category-management/${id}`,
-    );
-    return response.data;
-  },
-};
-
 // Bank Partners (admin-managed) Types
 export interface BankPartner {
   id: string;
@@ -1688,6 +1726,104 @@ export const bankPartnersApi = {
 
   deletePartner: async (id: string) => {
     const response = await api.delete<void>(`/admin/bank-partners/${id}`);
+    return response.data;
+  },
+};
+
+// Land Protection Content (Videos) Types
+export interface LandProtectionVideo {
+  id: string;
+  videoUrl: string;
+  title: string;
+  displayOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LandProtectionVideoListResponse {
+  data: LandProtectionVideo[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+export type LandProtectionVideoUploadTaskStatus =
+  | "QUEUED"
+  | "UPLOADING"
+  | "COMPLETED"
+  | "FAILED";
+
+// Adding a video kicks off an async upload/processing task (large video
+// files) -- the create call returns this task, which must be polled via
+// getUploadTask until it reaches COMPLETED/FAILED.
+export interface LandProtectionVideoUploadTask {
+  id: string;
+  status: LandProtectionVideoUploadTaskStatus;
+  errorMessage: string | null;
+  videoId: string | null;
+  originalName: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Land Protection Content (admin-managed videos) API
+export const landProtectionContentApi = {
+  getVideos: async (page: number = 1, limit: number = 10) => {
+    const response = await api.get<LandProtectionVideoListResponse>(
+      "/admin/land-protection-content/videos",
+      { params: { page, limit } },
+    );
+    return response.data;
+  },
+
+  addVideo: async (title: string, file: File, displayOrder?: number) => {
+    const formData = new FormData();
+    formData.append("title", title);
+    if (displayOrder !== undefined) {
+      formData.append("displayOrder", String(displayOrder));
+    }
+    formData.append("video", file);
+    const response = await api.post<LandProtectionVideoUploadTask>(
+      "/admin/land-protection-content/videos",
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } },
+    );
+    return response.data;
+  },
+
+  updateVideo: async (
+    id: string,
+    data: { title?: string; displayOrder?: number },
+    file?: File,
+  ) => {
+    const formData = new FormData();
+    if (data.title !== undefined) formData.append("title", data.title);
+    if (data.displayOrder !== undefined) {
+      formData.append("displayOrder", String(data.displayOrder));
+    }
+    if (file) formData.append("video", file);
+    const response = await api.patch<LandProtectionVideo>(
+      `/admin/land-protection-content/videos/${id}`,
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } },
+    );
+    return response.data;
+  },
+
+  deleteVideo: async (id: string) => {
+    const response = await api.delete<void>(
+      `/admin/land-protection-content/videos/${id}`,
+    );
+    return response.data;
+  },
+
+  getUploadTask: async (id: string) => {
+    const response = await api.get<LandProtectionVideoUploadTask>(
+      `/admin/land-protection-content/video-upload-tasks/${id}`,
+    );
     return response.data;
   },
 };
