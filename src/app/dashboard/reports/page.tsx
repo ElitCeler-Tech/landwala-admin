@@ -7,6 +7,7 @@ import { reportsApi, Report, PaginationMeta } from "@/lib/api";
 import { useReportsStore } from "@/store/useReportsStore";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { Pagination } from "@/components/Pagination";
+import { scrollSelectIntoView } from "@/hooks/useScrollIntoViewOnFocus";
 
 export default function ReportsPage() {
   const [reports, setReports] = useState<Report[]>([]);
@@ -17,12 +18,13 @@ export default function ReportsPage() {
   const [searchInput, setSearchInput] = useState("");
   const searchQuery = useDebouncedValue(searchInput, 350);
   const [limit, setLimit] = useState(10);
+  const [reportedByFilter, setReportedByFilter] = useState("");
 
   const { setReportDetail } = useReportsStore();
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery]);
+  }, [searchQuery, reportedByFilter]);
 
   useEffect(() => {
     const fetchReports = async () => {
@@ -32,6 +34,7 @@ export default function ReportsPage() {
           currentPage,
           limit,
           searchQuery || undefined,
+          reportedByFilter || undefined,
         );
         setReports(response.data);
         setMeta(response.meta);
@@ -44,7 +47,7 @@ export default function ReportsPage() {
     };
 
     fetchReports();
-  }, [currentPage, limit, searchQuery]);
+  }, [currentPage, limit, searchQuery, reportedByFilter]);
 
   const getStatusBadge = (status: string) => {
     const statusStyles: Record<string, string> = {
@@ -69,6 +72,12 @@ export default function ReportsPage() {
         email: report.agent?.email || "N/A",
         phone: report.agent?.phone || "N/A",
       };
+    } else if (report.reportedBy === "EXECUTIVE") {
+      return {
+        name: report.executive?.fullName || "Unknown Executive",
+        email: report.executive?.email || "N/A",
+        phone: report.executive?.phone || "N/A",
+      };
     }
     return { name: "Unknown", email: "N/A", phone: "N/A" };
   };
@@ -89,11 +98,22 @@ export default function ReportsPage() {
             Issue Reports
           </h1>
           <p className="text-gray-500 italic">
-            Manage all reported issues from users and agents
+            Manage all reported issues from users, agents, and executives
           </p>
         </div>
 
         <div className="flex items-center gap-4">
+          <select
+            onFocus={scrollSelectIntoView}
+            value={reportedByFilter}
+            onChange={(e) => setReportedByFilter(e.target.value)}
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+          >
+            <option value="">All reporters</option>
+            <option value="USER">Users</option>
+            <option value="AGENT">Agents</option>
+            <option value="EXECUTIVE">Executives</option>
+          </select>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
@@ -172,7 +192,9 @@ export default function ReportsPage() {
                         className={`text-xs font-medium px-2 py-1 rounded-full ${
                           report.reportedBy === "USER"
                             ? "bg-purple-100 text-purple-700"
-                            : "bg-blue-100 text-blue-700"
+                            : report.reportedBy === "EXECUTIVE"
+                              ? "bg-teal-100 text-teal-700"
+                              : "bg-blue-100 text-blue-700"
                         }`}
                       >
                         {report.reportedBy}

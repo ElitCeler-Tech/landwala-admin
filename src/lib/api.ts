@@ -160,13 +160,13 @@ export interface DashboardOverview {
   propertiesPendingApproval: number;
   activeListings: number;
   soldProperties: number;
-  todaysLeads: number;
+  periodLeads: number;
   totalLeads: number;
   loanRequests: number;
   legalVerificationRequests: number;
   registrationRequests: number;
   landProtectionRequests: number;
-  revenueToday: number;
+  periodRevenue: number;
   monthlyRevenue: number;
   totalRevenue: number;
   propertiesByCategory: PropertyCategoryBreakdown[];
@@ -1472,10 +1472,21 @@ export interface ReportAgent {
   phone: string;
 }
 
+export interface ReportExecutive {
+  id: string;
+  executiveCode: string | null;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  email: string;
+  phone: string;
+}
+
 export interface Report {
   id: string;
   user: ReportUser | null;
   agent: ReportAgent | null;
+  executive: ReportExecutive | null;
   reportedBy: string;
   title: string;
   description: string;
@@ -1494,10 +1505,16 @@ export interface ReportsResponse {
 
 // Reports API
 export const reportsApi = {
-  getReports: async (page: number = 1, limit: number = 10, search?: string) => {
+  getReports: async (
+    page: number = 1,
+    limit: number = 10,
+    search?: string,
+    reportedBy?: string,
+  ) => {
     const searchParam = search ? `&search=${encodeURIComponent(search)}` : "";
+    const reportedByParam = reportedBy ? `&reportedBy=${reportedBy}` : "";
     const response = await api.get<ReportsResponse>(
-      `/admin/issue-reports?page=${page}&limit=${limit}${searchParam}`,
+      `/admin/issue-reports?page=${page}&limit=${limit}${searchParam}${reportedByParam}`,
     );
     return response.data;
   },

@@ -55,6 +55,21 @@ const RANGE_OPTIONS: { value: DashboardDateRange; label: string }[] = [
   { value: "custom", label: "Custom" },
 ];
 
+// Short parenthetical used on the range-scoped tiles (Leads/Revenue) so
+// their title reflects whichever period is currently selected above them.
+function rangeSuffix(range: DashboardDateRange): string {
+  switch (range) {
+    case "today":
+      return "Today";
+    case "week":
+      return "This Week";
+    case "month":
+      return "This Month";
+    case "custom":
+      return "Selected Period";
+  }
+}
+
 const DONUT_COLORS = ["#1e2667", "#22c55e", "#e5e7eb"];
 
 function formatCurrency(amount: number) {
@@ -303,8 +318,8 @@ export default function Dashboard() {
       accent: "bg-rose-50",
     },
     {
-      title: "Today's Leads",
-      value: overview?.todaysLeads ?? 0,
+      title: `Leads (${rangeSuffix(range)})`,
+      value: overview?.periodLeads ?? 0,
       icon: MessageSquare,
       href: "/dashboard/enquiries",
       accent: "bg-cyan-50",
@@ -317,36 +332,36 @@ export default function Dashboard() {
       accent: "bg-teal-50",
     },
     {
-      title: "Loan Requests",
+      title: `Loan Requests (${rangeSuffix(range)})`,
       value: overview?.loanRequests ?? 0,
       icon: Landmark,
       href: "/dashboard/loan-eligibility",
       accent: "bg-sky-50",
     },
     {
-      title: "Legal Verification",
+      title: `Legal Verification (${rangeSuffix(range)})`,
       value: overview?.legalVerificationRequests ?? 0,
       icon: Scale,
       href: "/dashboard/legal-verification",
       accent: "bg-orange-50",
     },
     {
-      title: "Registration Requests",
+      title: `Registration Requests (${rangeSuffix(range)})`,
       value: overview?.registrationRequests ?? 0,
       icon: FileSignature,
       href: "/dashboard/explore-categories/land-registrations",
       accent: "bg-fuchsia-50",
     },
     {
-      title: "Land Protection",
+      title: `Land Protection (${rangeSuffix(range)})`,
       value: overview?.landProtectionRequests ?? 0,
       icon: Shield,
       href: "/dashboard/explore-categories/land-protection",
       accent: "bg-pink-50",
     },
     {
-      title: "Revenue Today",
-      value: formatCurrency(overview?.revenueToday ?? 0),
+      title: `Revenue (${rangeSuffix(range)})`,
+      value: formatCurrency(overview?.periodRevenue ?? 0),
       icon: IndianRupee,
       href: "/dashboard/subscription-purchases",
       accent: "bg-lime-50",

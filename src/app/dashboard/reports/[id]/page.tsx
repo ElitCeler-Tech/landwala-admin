@@ -141,14 +141,23 @@ export default function ReportDetailsPage() {
           phone: report.user?.phone || "N/A",
           link: report.user?.id ? `/dashboard/users/${report.user.id}` : null,
         }
-      : {
-          name: report.agent?.fullName || "Unknown Agent",
-          email: report.agent?.email || "N/A",
-          phone: report.agent?.phone || "N/A",
-          link: report.agent?.id
-            ? `/dashboard/agents/${report.agent.id}`
-            : null,
-        };
+      : report.reportedBy === "EXECUTIVE"
+        ? {
+            name: report.executive?.fullName || "Unknown Executive",
+            email: report.executive?.email || "N/A",
+            phone: report.executive?.phone || "N/A",
+            link: report.executive?.id
+              ? `/dashboard/executives/${report.executive.id}`
+              : null,
+          }
+        : {
+            name: report.agent?.fullName || "Unknown Agent",
+            email: report.agent?.email || "N/A",
+            phone: report.agent?.phone || "N/A",
+            link: report.agent?.id
+              ? `/dashboard/agents/${report.agent.id}`
+              : null,
+          };
 
   return (
     <div className="p-8 pb-4 bg-white font-sans min-h-full flex flex-col">
@@ -259,7 +268,9 @@ export default function ReportDetailsPage() {
                 className={`text-xs font-bold px-3 py-1 rounded-full tracking-wide ${
                   report.reportedBy === "USER"
                     ? "bg-purple-100 text-purple-700"
-                    : "bg-blue-100 text-blue-700"
+                    : report.reportedBy === "EXECUTIVE"
+                      ? "bg-teal-100 text-teal-700"
+                      : "bg-blue-100 text-blue-700"
                 }`}
               >
                 {report.reportedBy}
