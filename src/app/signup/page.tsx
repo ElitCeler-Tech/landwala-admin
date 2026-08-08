@@ -3,14 +3,9 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { authApi } from "@/lib/api";
-import { useAuthStore } from "@/store/useAuthStore";
 
 export default function SignupPage() {
-  const router = useRouter();
-  const setAuth = useAuthStore((state) => state.setAuth);
-
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -18,11 +13,13 @@ export default function SignupPage() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
+    setSuccess(false);
 
     const allowedDomains = ["landwalaa.com", "gmail.com"];
     const emailDomain = formData.email.split("@")[1];
@@ -33,14 +30,12 @@ export default function SignupPage() {
     }
 
     try {
-      const response = await authApi.register(formData);
-      // Auto-login after registration since the API returns tokens
-      setAuth(
-        response.admin,
-        response.tokens.accessToken,
-        response.tokens.refreshToken,
-      );
-      router.push("/dashboard");
+      // Requires the current session to be a super admin (backend-enforced).
+      // Deliberately does NOT log in as the new admin -- that would replace
+      // the acting super admin's own session with the new account's.
+      await authApi.register(formData);
+      setSuccess(true);
+      setFormData({ name: "", email: "", password: "" });
     } catch (err: any) {
       setError(err.response?.data?.message || "Something went wrong");
     } finally {
@@ -70,10 +65,10 @@ export default function SignupPage() {
         <div className="w-full bg-white rounded-3xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] p-8 md:p-10 border border-gray-100/50 backdrop-blur-sm">
           <div className="text-center mb-8">
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              Create an Account
+              Add New Admin
             </h1>
             <p className="text-gray-500 text-sm">
-              Enter your details to register
+              Create a new full-privilege admin account. Requires super admin access.
             </p>
           </div>
 
@@ -132,22 +127,27 @@ export default function SignupPage() {
               </div>
             )}
 
+            {success && (
+              <div className="p-3 rounded-lg bg-green-50 text-green-600 text-sm font-medium">
+                Admin account created successfully.
+              </div>
+            )}
+
             <button
               type="submit"
               disabled={isLoading}
               className="w-full bg-[#1e2667] text-white font-semibold py-3.5 rounded-xl hover:bg-[#151b4d] active:scale-[0.98] transition-all shadow-md hover:shadow-lg mt-2 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
             >
-              {isLoading ? "Creating Account..." : "Sign Up"}
+              {isLoading ? "Creating Admin..." : "Create Admin"}
             </button>
 
             <div className="text-center pt-2">
               <p className="text-sm text-gray-500">
-                Already have an account?{" "}
                 <Link
-                  href="/login"
+                  href="/dashboard"
                   className="text-[#1e2667] font-semibold hover:underline"
                 >
-                  Sign In
+                  Back to Dashboard
                 </Link>
               </p>
             </div>

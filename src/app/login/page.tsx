@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { authApi } from "@/lib/api";
@@ -137,17 +136,6 @@ export default function LoginPage() {
               {isLoading ? "Signing In..." : "Sign In"}
             </button>
 
-            <div className="text-center pt-2">
-              <p className="text-sm text-gray-500">
-                Don't have an account?{" "}
-                <Link
-                  href="/signup"
-                  className="text-[#1e2667] font-semibold hover:underline"
-                >
-                  Sign Up
-                </Link>
-              </p>
-            </div>
           </form>
         </div>
       </div>

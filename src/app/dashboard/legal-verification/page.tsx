@@ -409,6 +409,9 @@ export default function LegalVerificationPage() {
                                 { label: "Sale Agreement", url: docsTarget.saleAgreementUrl },
                                 { label: "Tax Receipt", url: docsTarget.taxReceiptUrl },
                                 { label: "Encumbrance Certificate", url: docsTarget.ecUrl },
+                                { label: "Link Documents", url: docsTarget.linkDocumentsUrl },
+                                { label: "Layout Approval", url: docsTarget.layoutApprovalUrl },
+                                { label: "ID Proof", url: docsTarget.idProofUrl },
                             ].map((doc) => (
                                 <div
                                     key={doc.label}

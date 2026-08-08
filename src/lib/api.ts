@@ -906,6 +906,9 @@ export interface LegalVerification {
   saleAgreementUrl: string;
   taxReceiptUrl: string;
   ecUrl: string;
+  linkDocumentsUrl: string | null;
+  layoutApprovalUrl: string | null;
+  idProofUrl: string | null;
   assignedLawyerName: string | null;
   assignedLawyerPhone: string | null;
   assignedLawyerEmail: string | null;
