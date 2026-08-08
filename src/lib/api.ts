@@ -202,57 +202,95 @@ export interface TopAgent {
   totalCommissionAmount: number;
 }
 
+function buildRangeParams(
+  range: DashboardDateRange,
+  from?: string,
+  to?: string,
+): URLSearchParams {
+  const params = new URLSearchParams({ range });
+  if (range === "custom" && from && to) {
+    params.set("from", from);
+    params.set("to", to);
+  }
+  return params;
+}
+
 export const dashboardApi = {
   getDashboard: async () => {
     const response = await api.get<DashboardData>("/admin/dashboard");
     return response.data;
   },
 
-  getPlotListingsGrowth: async () => {
+  getPlotListingsGrowth: async (
+    range: DashboardDateRange = "month",
+    from?: string,
+    to?: string,
+  ) => {
+    const params = buildRangeParams(range, from, to);
     const response = await api.get<PlotListingsGrowthResponse>(
-      "/admin/dashboard/plot-listings-growth",
+      `/admin/dashboard/plot-listings-growth?${params.toString()}`,
     );
     return response.data;
   },
 
   getOverview: async (range: DashboardDateRange = "month", from?: string, to?: string) => {
-    const params = new URLSearchParams({ range });
-    if (range === "custom" && from && to) {
-      params.set("from", from);
-      params.set("to", to);
-    }
+    const params = buildRangeParams(range, from, to);
     const response = await api.get<DashboardOverview>(
       `/admin/dashboard/overview?${params.toString()}`,
     );
     return response.data;
   },
 
-  getRecentActivity: async (limit: number = 8) => {
+  getRecentActivity: async (
+    limit: number = 8,
+    range: DashboardDateRange = "month",
+    from?: string,
+    to?: string,
+  ) => {
+    const params = buildRangeParams(range, from, to);
+    params.set("limit", String(limit));
     const response = await api.get<RecentActivityItem[]>(
-      `/admin/dashboard/recent-activity?limit=${limit}`,
+      `/admin/dashboard/recent-activity?${params.toString()}`,
     );
     return response.data;
   },
 
-  getAreaDistribution: async () => {
+  getAreaDistribution: async (
+    range: DashboardDateRange = "month",
+    from?: string,
+    to?: string,
+  ) => {
+    const params = buildRangeParams(range, from, to);
     const response = await api.get<AreaDistributionZone[]>(
-      "/admin/dashboard/area-distribution",
+      `/admin/dashboard/area-distribution?${params.toString()}`,
     );
     return response.data;
   },
 
-  getTopAgents: async (limit: number = 5) => {
+  getTopAgents: async (
+    limit: number = 5,
+    range: DashboardDateRange = "month",
+    from?: string,
+    to?: string,
+  ) => {
+    const params = buildRangeParams(range, from, to);
+    params.set("limit", String(limit));
     const response = await api.get<TopAgent[]>(
-      `/admin/dashboard/top-agents?limit=${limit}`,
+      `/admin/dashboard/top-agents?${params.toString()}`,
     );
     return response.data;
   },
 
-  getRevenueGrowth: async () => {
+  getRevenueGrowth: async (
+    range: DashboardDateRange = "month",
+    from?: string,
+    to?: string,
+  ) => {
+    const params = buildRangeParams(range, from, to);
     const response = await api.get<{
       data: { date: string; amount: number }[];
       totalLast30Days: number;
-    }>("/admin/dashboard/revenue-growth");
+    }>(`/admin/dashboard/revenue-growth?${params.toString()}`);
     return response.data;
   },
 };

@@ -153,16 +153,20 @@ export default function Dashboard() {
     setOverview(data);
   }, [range, customFrom, customTo]);
 
-  // All of the dashboard's initial data in one shot -- used by the initial
-  // mount load (with auto-retry below) and by the manual Retry button.
+  // All of the dashboard's data in one shot, scoped to the selected range --
+  // used by the initial mount load (with auto-retry below), by range
+  // changes, and by the manual Retry button. The two trend charts
+  // (revenue/listings growth) accept the same range but clamp it server-side
+  // to a bounded window for readability -- see dashboard.service.ts.
   const loadDashboardData = useCallback(async () => {
+    if (range === "custom" && (!customFrom || !customTo)) return;
     const [revenue, activity, area, agents, listingsGrowth] =
       await Promise.all([
-        dashboardApi.getRevenueGrowth(),
-        dashboardApi.getRecentActivity(8),
-        dashboardApi.getAreaDistribution(),
-        dashboardApi.getTopAgents(5),
-        dashboardApi.getPlotListingsGrowth(),
+        dashboardApi.getRevenueGrowth(range, customFrom, customTo),
+        dashboardApi.getRecentActivity(8, range, customFrom, customTo),
+        dashboardApi.getAreaDistribution(range, customFrom, customTo),
+        dashboardApi.getTopAgents(5, range, customFrom, customTo),
+        dashboardApi.getPlotListingsGrowth(range, customFrom, customTo),
       ]);
     setRevenueGrowth(revenue.data);
     setRecentActivity(activity);
@@ -170,7 +174,7 @@ export default function Dashboard() {
     setTopAgents(agents);
     setPlotListingsGrowth(listingsGrowth.data);
     await fetchOverview();
-  }, [fetchOverview]);
+  }, [range, customFrom, customTo, fetchOverview]);
 
   useEffect(() => {
     let cancelled = false;
@@ -211,13 +215,13 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    fetchOverview().catch((error) => {
-      console.error("Failed to fetch dashboard overview:", error);
+    loadDashboardData().catch((error) => {
+      console.error("Failed to fetch dashboard data:", error);
       setLoadError(
         "Couldn't load dashboard data from the server. Numbers below may be stale or blank.",
       );
     });
-  }, [fetchOverview]);
+  }, [loadDashboardData]);
 
   const handleRetry = async () => {
     setIsRetrying(true);
