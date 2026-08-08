@@ -81,12 +81,12 @@ export default function PlotDetailsPage() {
     return (
       <div className="p-8 bg-white font-sans min-h-full flex flex-col items-center justify-center">
         <p className="text-gray-500 mb-4">Property not found</p>
-        <Link
-          href="/dashboard/plots"
-          className="text-[#1e2667] hover:underline"
+        <button
+          onClick={() => router.back()}
+          className="text-[#1e2667] hover:underline cursor-pointer"
         >
-          Back to Plots
-        </Link>
+          Back
+        </button>
       </div>
     );
   }
@@ -125,12 +125,12 @@ export default function PlotDetailsPage() {
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-2">
-          <Link
-            href="/dashboard/plots"
+          <button
+            onClick={() => router.back()}
             className="hover:bg-gray-100 p-1 rounded-full transition-colors cursor-pointer"
           >
             <ChevronLeft className="w-5 h-5 text-gray-900" />
-          </Link>
+          </button>
           <h1 className="text-xl font-bold text-gray-900">Plot Details</h1>
         </div>
         <p className="text-gray-500 italic ml-8">
@@ -617,11 +617,12 @@ export default function PlotDetailsPage() {
             Edit
           </button>
         </Link>
-        <Link href="/dashboard/plots">
-          <button className="px-8 py-2 rounded-lg text-white font-medium bg-gray-500 hover:bg-opacity-90 transition-opacity cursor-pointer">
-            Back
-          </button>
-        </Link>
+        <button
+          onClick={() => router.back()}
+          className="px-8 py-2 rounded-lg text-white font-medium bg-gray-500 hover:bg-opacity-90 transition-opacity cursor-pointer"
+        >
+          Back
+        </button>
         <button
           onClick={async () => {
             if (!property) return;

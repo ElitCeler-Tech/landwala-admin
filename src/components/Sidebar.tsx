@@ -118,7 +118,7 @@ export const sidebarItems: SidebarItem[] = [
     ],
   },
   {
-    name: "Buy Enquiries",
+    name: "Buy Plots / Enquiries",
     href: "/dashboard/explore-categories/buy-sell-plots",
     icon: ShoppingCart,
     section: "BUY_ENQUIRIES",
@@ -174,7 +174,7 @@ export const sidebarItems: SidebarItem[] = [
     section: "LEADS",
   },
   {
-    name: "Listing Requests",
+    name: "Agent Listing Properties",
     href: "/dashboard/listing-requests",
     icon: FileText,
     section: "LISTING_REQUESTS",

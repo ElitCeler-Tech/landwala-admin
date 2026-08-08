@@ -7,6 +7,7 @@ import {
     ChevronRight,
     Loader2,
     Scale,
+    FileText,
     X,
 } from "lucide-react";
 import {
@@ -31,6 +32,7 @@ export default function LegalVerificationPage() {
     const [assignTargetId, setAssignTargetId] = useState<string | null>(null);
     const [lawyerForm, setLawyerForm] = useState({ name: "", phone: "", email: "" });
     const [isAssigning, setIsAssigning] = useState(false);
+    const [docsTarget, setDocsTarget] = useState<LegalVerification | null>(null);
 
     useEffect(() => {
         const fetchVerifications = async () => {
@@ -187,6 +189,9 @@ export default function LegalVerificationPage() {
                                 <th className="py-4 font-medium text-gray-600">
                                     Assigned Lawyer
                                 </th>
+                                <th className="py-4 font-medium text-gray-600">
+                                    Documents
+                                </th>
                                 <th className="py-4 pr-8 rounded-r-xl font-medium text-gray-600">
                                     Update Status
                                 </th>
@@ -233,6 +238,15 @@ export default function LegalVerificationPage() {
                                                 Assign Lawyer
                                             </button>
                                         )}
+                                    </td>
+                                    <td className="py-5">
+                                        <button
+                                            onClick={() => setDocsTarget(item)}
+                                            className="flex items-center gap-1.5 text-xs font-medium text-[#1e2667] hover:underline cursor-pointer"
+                                        >
+                                            <FileText className="w-3.5 h-3.5" />
+                                            View Docs
+                                        </button>
                                     </td>
                                     <td className="py-5 pr-8">
                                         <div className="flex items-center gap-2">
@@ -368,6 +382,61 @@ export default function LegalVerificationPage() {
                             >
                                 {isAssigning && <Loader2 className="w-4 h-4 animate-spin" />}
                                 Assign
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {docsTarget && (
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-lg font-medium text-gray-900">
+                                Uploaded Documents
+                            </h2>
+                            <button
+                                onClick={() => setDocsTarget(null)}
+                                className="p-1 text-gray-400 hover:text-gray-600 cursor-pointer"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="space-y-2">
+                            {[
+                                { label: "Title Deed", url: docsTarget.titleDeedUrl },
+                                { label: "Sale Agreement", url: docsTarget.saleAgreementUrl },
+                                { label: "Tax Receipt", url: docsTarget.taxReceiptUrl },
+                                { label: "Encumbrance Certificate", url: docsTarget.ecUrl },
+                            ].map((doc) => (
+                                <div
+                                    key={doc.label}
+                                    className="flex items-center justify-between px-3 py-2 border border-gray-100 rounded-lg"
+                                >
+                                    <span className="text-sm text-gray-700">{doc.label}</span>
+                                    {doc.url ? (
+                                        <a
+                                            href={doc.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-xs font-medium text-[#1e2667] hover:underline"
+                                        >
+                                            View
+                                        </a>
+                                    ) : (
+                                        <span className="text-xs text-gray-400">Not uploaded</span>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="flex justify-end mt-6">
+                            <button
+                                onClick={() => setDocsTarget(null)}
+                                className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors"
+                            >
+                                Close
                             </button>
                         </div>
                     </div>

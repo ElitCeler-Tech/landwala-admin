@@ -2,15 +2,10 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import {
-    Search,
-    ChevronLeft,
-    ChevronRight,
-    Loader2,
-    Store,
-} from "lucide-react";
+import { Search, Loader2, Store } from "lucide-react";
 import { enquiriesApi, Enquiry, PaginationMeta } from "@/lib/api";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { Pagination } from "@/components/Pagination";
 
 export default function BuySellPlotsPage() {
     const [searchInput, setSearchInput] = useState("");
@@ -66,10 +61,10 @@ export default function BuySellPlotsPage() {
                 <div>
                     <h1 className="text-2xl font-medium text-gray-900 mb-2 flex items-center gap-3">
                         <Store className="w-7 h-7 text-[#1e2667]" />
-                        Buy Enquiries
+                        Buy Plots / Enquiries
                     </h1>
                     <p className="text-gray-500 italic">
-                        Enquiries from users interested in buying a listed property. Looking for sell requests? See{" "}
+                        Users interested in buying a listed, approved property, tracked as an enquiry when they message about it. Looking for sell requests? See{" "}
                         <Link href="/dashboard/property-submissions" className="text-[#1e2667] underline">
                             Sell Requests
                         </Link>
@@ -111,19 +106,22 @@ export default function BuySellPlotsPage() {
                     </div>
                 ) : (
                     <div className="w-full overflow-x-auto">
-                        <table className="w-full text-left border-collapse min-w-full">
+                        <table className="w-full text-left border-collapse min-w-full table-fixed">
                             <thead>
                                 <tr className="bg-[#f8f9fc]">
-                                    <th className="py-4 pl-6 rounded-l-xl font-medium text-gray-600">
+                                    <th className="py-4 pl-6 rounded-l-xl font-medium text-gray-600 w-[14%]">
                                         User Name
                                     </th>
-                                    <th className="py-4 font-medium text-gray-600">Phone</th>
-                                    <th className="py-4 font-medium text-gray-600">Email</th>
-                                    <th className="py-4 font-medium text-gray-600">Property</th>
-                                    <th className="py-4 font-medium text-gray-600">Location</th>
-                                    <th className="py-4 font-medium text-gray-600">Message</th>
-                                    <th className="py-4 pr-6 rounded-r-xl font-medium text-gray-600">
+                                    <th className="py-4 font-medium text-gray-600 w-[10%] whitespace-nowrap">Phone</th>
+                                    <th className="py-4 font-medium text-gray-600 w-[14%]">Email</th>
+                                    <th className="py-4 font-medium text-gray-600 w-[16%]">Property</th>
+                                    <th className="py-4 font-medium text-gray-600 w-[10%]">Location</th>
+                                    <th className="py-4 font-medium text-gray-600 w-[18%]">Message</th>
+                                    <th className="py-4 font-medium text-gray-600 w-[10%] whitespace-nowrap">
                                         Date
+                                    </th>
+                                    <th className="py-4 pr-6 rounded-r-xl font-medium text-gray-600 text-right w-[8%] whitespace-nowrap">
+                                        Action
                                     </th>
                                 </tr>
                             </thead>
@@ -136,7 +134,7 @@ export default function BuySellPlotsPage() {
                                         key={item.id}
                                         className="hover:bg-gray-50/50 transition-colors border-b border-gray-50 last:border-0"
                                     >
-                                        <td className="py-5 pl-6 font-medium text-gray-900">
+                                        <td className="py-5 pl-6 font-medium text-gray-900 truncate max-w-0">
                                             <Link
                                                 href={`/dashboard/users/${item.user.id}`}
                                                 className="hover:text-[#1e2667] hover:underline"
@@ -144,34 +142,41 @@ export default function BuySellPlotsPage() {
                                                 {item.user.name || "N/A"}
                                             </Link>
                                         </td>
-                                        <td className="py-5 text-gray-900">{item.user.phone || "N/A"}</td>
-                                        <td className="py-5 text-gray-600">
-                                            {item.user.email && item.user.email.length > 20
-                                                ? item.user.email.substring(0, 20) + "..."
-                                                : item.user.email || "N/A"}
+                                        <td className="py-5 text-gray-900 whitespace-nowrap">{item.user.phone || "N/A"}</td>
+                                        <td className="py-5 text-gray-600 truncate max-w-0">
+                                            {item.user.email || "N/A"}
                                         </td>
-                                        <td className="py-5">
+                                        <td className="py-5 truncate max-w-0">
                                             {item.property ? (
                                                 <Link
                                                     href={`/dashboard/plots/${item.property.id}`}
                                                     className="text-[#1e2667] hover:underline font-medium"
                                                 >
-                                                    {item.property.title.length > 25
-                                                        ? item.property.title.substring(0, 25) + "..."
-                                                        : item.property.title}
+                                                    {item.property.title}
                                                 </Link>
                                             ) : (
                                                 <span className="text-gray-400">-</span>
                                             )}
                                         </td>
-                                        <td className="py-5 text-gray-600">
+                                        <td className="py-5 text-gray-600 truncate max-w-0">
                                             {item.property?.city || item.user.location || "-"}
                                         </td>
-                                        <td className="py-5 text-gray-600 max-w-[200px] truncate">
+                                        <td className="py-5 text-gray-600 truncate max-w-0">
                                             {item.message}
                                         </td>
-                                        <td className="py-5 pr-6 text-gray-500">
+                                        <td className="py-5 text-gray-500 whitespace-nowrap">
                                             {formatDate(item.createdAt)}
+                                        </td>
+                                        <td className="py-5 pr-6 text-right whitespace-nowrap">
+                                            {item.property ? (
+                                                <Link href={`/dashboard/plots/${item.property.id}`}>
+                                                    <button className="bg-[#1e2667] text-white text-xs font-medium px-4 py-2 rounded-lg hover:bg-opacity-90 transition-opacity cursor-pointer">
+                                                        View
+                                                    </button>
+                                                </Link>
+                                            ) : (
+                                                <span className="text-gray-400 text-xs">-</span>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}
@@ -190,22 +195,11 @@ export default function BuySellPlotsPage() {
                           )}-${Math.min(currentPage * limit, meta.total)} of ${meta.total}`
                         : "Showing 0"}
                 </span>
-                <div className="flex gap-2">
-                    <button
-                        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                        disabled={!meta?.hasPrevPage}
-                        className="p-2 bg-[#1e2667] text-white rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <ChevronLeft className="w-4 h-4" />
-                    </button>
-                    <button
-                        onClick={() => setCurrentPage((prev) => prev + 1)}
-                        disabled={!meta?.hasNextPage}
-                        className="p-2 bg-[#1e2667] text-white rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <ChevronRight className="w-4 h-4" />
-                    </button>
-                </div>
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={meta?.totalPages ?? 1}
+                    onPageChange={setCurrentPage}
+                />
             </div>
         </div>
     );

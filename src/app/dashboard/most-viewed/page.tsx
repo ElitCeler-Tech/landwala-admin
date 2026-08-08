@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { Search, ChevronLeft, ChevronRight, Loader2, Eye } from "lucide-react";
+import { Search, Loader2, Eye } from "lucide-react";
 import { propertiesApi, Property, PaginationMeta } from "@/lib/api";
+import { Pagination } from "@/components/Pagination";
 
 export default function MostViewedPage() {
     const [properties, setProperties] = useState<Property[]>([]);
@@ -156,22 +157,11 @@ export default function MostViewedPage() {
                         )} of ${meta.total}`
                         : "0"}
                 </span>
-                <div className="flex gap-2">
-                    <button
-                        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                        disabled={!meta?.hasPrevPage}
-                        className="p-2 bg-[#1e2667] text-white rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <ChevronLeft className="w-4 h-4" />
-                    </button>
-                    <button
-                        onClick={() => setCurrentPage((prev) => prev + 1)}
-                        disabled={!meta?.hasNextPage}
-                        className="p-2 bg-[#1e2667] text-white rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <ChevronRight className="w-4 h-4" />
-                    </button>
-                </div>
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={meta?.totalPages ?? 1}
+                    onPageChange={setCurrentPage}
+                />
             </div>
         </div>
     );

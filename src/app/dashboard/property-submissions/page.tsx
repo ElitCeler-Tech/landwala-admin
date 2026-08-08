@@ -1,18 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Search,
-  ChevronLeft,
-  ChevronRight,
-  Loader2,
-} from "lucide-react";
+import { Search, Loader2 } from "lucide-react";
 import Link from "next/link";
 import {
   propertySubmissionsApi,
   PropertySubmission,
   PaginationMeta,
 } from "@/lib/api";
+import { Pagination } from "@/components/Pagination";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 
 const STATUS_FILTERS = ["all", "pending", "reviewed", "approved", "rejected"];
@@ -135,7 +131,7 @@ export default function PropertySubmissionsPage() {
           </div>
         )}
         <div className="w-full overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left border-collapse table-fixed">
             <thead>
               <tr className="bg-[#f8f9fc]">
                 <th className="py-4 pl-8 rounded-l-xl font-medium text-gray-600 w-[22%]">
@@ -225,22 +221,11 @@ export default function PropertySubmissionsPage() {
               )} of ${meta.total}`
             : "0"}
         </span>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            disabled={!meta?.hasPrevPage}
-            className="p-2 bg-[#1e2667] text-white rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => setCurrentPage((prev) => prev + 1)}
-            disabled={!meta?.hasNextPage}
-            className="p-2 bg-[#1e2667] text-white rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={meta?.totalPages ?? 1}
+          onPageChange={setCurrentPage}
+        />
       </div>
     </div>
   );

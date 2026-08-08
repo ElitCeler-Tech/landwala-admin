@@ -6,6 +6,8 @@ import {
     ChevronLeft,
     ChevronRight,
     Loader2,
+    FileText,
+    X,
 } from "lucide-react";
 import { userActionsApi, LoanApplication, PaginationMeta } from "@/lib/api";
 import { scrollSelectIntoView } from "@/hooks/useScrollIntoViewOnFocus";
@@ -27,6 +29,7 @@ export default function LoanEligibilityPage() {
     const [searchQuery, setSearchQuery] = useState("");
     const [actionLoading, setActionLoading] = useState<string | null>(null);
     const [error, setError] = useState("");
+    const [docsTarget, setDocsTarget] = useState<LoanApplication | null>(null);
     const limit = 10;
 
     useEffect(() => {
@@ -139,6 +142,7 @@ export default function LoanEligibilityPage() {
                                 <th className="py-4 font-medium text-gray-600">Email</th>
                                 <th className="py-4 font-medium text-gray-600">Amount</th>
                                 <th className="py-4 font-medium text-gray-600">Status</th>
+                                <th className="py-4 font-medium text-gray-600">Documents</th>
                                 <th className="py-4 pr-8 rounded-r-xl font-medium text-gray-600">
                                     Update Status
                                 </th>
@@ -170,6 +174,15 @@ export default function LoanEligibilityPage() {
                                         >
                                             {app.status.replace("_", " ")}
                                         </span>
+                                    </td>
+                                    <td className="py-5">
+                                        <button
+                                            onClick={() => setDocsTarget(app)}
+                                            className="flex items-center gap-1.5 text-xs font-medium text-[#1e2667] hover:underline cursor-pointer"
+                                        >
+                                            <FileText className="w-3.5 h-3.5" />
+                                            View Docs {app.documents?.length ? `(${app.documents.length})` : ""}
+                                        </button>
                                     </td>
                                     <td className="py-5 pr-8">
                                         <div className="flex items-center gap-2">
@@ -227,6 +240,63 @@ export default function LoanEligibilityPage() {
                     </button>
                 </div>
             </div>
+
+            {docsTarget && (
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-lg font-medium text-gray-900">
+                                Uploaded Documents
+                            </h2>
+                            <button
+                                onClick={() => setDocsTarget(null)}
+                                className="p-1 text-gray-400 hover:text-gray-600 cursor-pointer"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        {docsTarget.documents && docsTarget.documents.length > 0 ? (
+                            <div className="space-y-2">
+                                {docsTarget.documents.map((doc) => (
+                                    <div
+                                        key={doc.id}
+                                        className="flex items-center justify-between px-3 py-2 border border-gray-100 rounded-lg"
+                                    >
+                                        <div className="min-w-0">
+                                            <p className="text-sm text-gray-700 truncate">
+                                                {doc.documentType}
+                                            </p>
+                                            <p className="text-xs text-gray-400 truncate">
+                                                {doc.fileName}
+                                            </p>
+                                        </div>
+                                        <a
+                                            href={doc.fileUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-xs font-medium text-[#1e2667] hover:underline shrink-0 ml-3"
+                                        >
+                                            View
+                                        </a>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-sm text-gray-500">No documents uploaded</p>
+                        )}
+
+                        <div className="flex justify-end mt-6">
+                            <button
+                                onClick={() => setDocsTarget(null)}
+                                className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

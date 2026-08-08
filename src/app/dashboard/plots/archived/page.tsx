@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { ChevronLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { propertiesApi, Property, PaginationMeta } from "@/lib/api";
+import { Pagination } from "@/components/Pagination";
 
 export default function ArchivedPropertiesPage() {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -105,16 +106,23 @@ export default function ArchivedPropertiesPage() {
                     {property.city}
                   </td>
                   <td className="py-5 pr-8 text-right">
-                    <button
-                      onClick={() => handleRestore(property.id)}
-                      disabled={restoringId === property.id}
-                      className="bg-green-600 text-white text-xs font-medium px-6 py-2 rounded-lg hover:bg-opacity-90 transition-opacity cursor-pointer disabled:opacity-50 inline-flex items-center gap-2"
-                    >
-                      {restoringId === property.id && (
-                        <Loader2 className="w-3 h-3 animate-spin" />
-                      )}
-                      Restore
-                    </button>
+                    <div className="inline-flex items-center gap-2">
+                      <Link href={`/dashboard/plots/${property.id}`}>
+                        <button className="bg-[#1e2667] text-white text-xs font-medium px-6 py-2 rounded-lg hover:bg-opacity-90 transition-opacity cursor-pointer">
+                          View
+                        </button>
+                      </Link>
+                      <button
+                        onClick={() => handleRestore(property.id)}
+                        disabled={restoringId === property.id}
+                        className="bg-green-600 text-white text-xs font-medium px-6 py-2 rounded-lg hover:bg-opacity-90 transition-opacity cursor-pointer disabled:opacity-50 inline-flex items-center gap-2"
+                      >
+                        {restoringId === property.id && (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        )}
+                        Restore
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -140,22 +148,11 @@ export default function ArchivedPropertiesPage() {
               )} of ${meta.total}`
             : "0"}
         </span>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            disabled={!meta?.hasPrevPage}
-            className="p-2 bg-[#1e2667] text-white rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => setCurrentPage((prev) => prev + 1)}
-            disabled={!meta?.hasNextPage}
-            className="p-2 bg-[#1e2667] text-white rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={meta?.totalPages ?? 1}
+          onPageChange={setCurrentPage}
+        />
       </div>
     </div>
   );

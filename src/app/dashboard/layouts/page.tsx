@@ -85,7 +85,7 @@ export default function LayoutsPage() {
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex-1 flex flex-col">
         <div className="w-full overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left border-collapse table-fixed">
             <thead>
               <tr className="bg-[#f8f9fc]">
                 <th className="py-4 pl-8 rounded-l-xl font-medium text-gray-600 w-[25%]">

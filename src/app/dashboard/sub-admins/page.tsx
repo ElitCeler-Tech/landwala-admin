@@ -26,12 +26,12 @@ const SECTION_LABELS: Record<AdminSection, string> = {
   AGENT_MANAGEMENT: "Agent Management",
   PROPERTY_MANAGEMENT: "Property Management",
   LAND_PROTECTION: "Land Protection",
-  BUY_ENQUIRIES: "Buy Enquiries",
+  BUY_ENQUIRIES: "Buy Plots / Enquiries",
   SELL_REQUESTS: "Sell Requests",
   SERVICES: "Services",
   EXECUTIVE_MANAGEMENT: "Executive Management",
   LEADS: "Leads",
-  LISTING_REQUESTS: "Listing Requests",
+  LISTING_REQUESTS: "Agent Listing Properties",
   PAYMENTS: "Payments",
   MARKETING: "Marketing",
   PINCODES: "Pincodes",
@@ -248,7 +248,7 @@ export default function SubAdminsPage() {
           </div>
         )}
         <div className="w-full overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left border-collapse table-fixed">
             <thead>
               <tr className="bg-[#f8f9fc] text-sm">
                 <th className="py-4 pl-8 rounded-l-xl font-medium text-gray-600 w-[20%]">

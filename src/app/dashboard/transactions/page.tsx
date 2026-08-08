@@ -133,7 +133,7 @@ export default function TransactionsPage() {
       <div className="bg-white rounded-none md:rounded-xl shadow-sm border-0 md:border border-gray-100 p-0 md:p-6 flex-1 flex flex-col">
         {activeTab === "Commission Summary" ? (
           <div className="w-full overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-full">
+            <table className="w-full text-left border-collapse min-w-full table-fixed">
               <thead>
                 <tr className="bg-[#f8f9fc]">
                   <th className="py-4 pl-8 rounded-l-xl font-medium text-gray-600 w-[30%] text-sm">
@@ -193,7 +193,7 @@ export default function TransactionsPage() {
           </div>
         ) : (
           <div className="w-full overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-full">
+            <table className="w-full text-left border-collapse min-w-full table-fixed">
               <thead>
                 <tr className="bg-[#f8f9fc]">
                   <th className="py-4 pl-8 rounded-l-xl font-medium text-gray-600 w-[10%] text-sm">

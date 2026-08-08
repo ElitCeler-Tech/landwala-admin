@@ -117,7 +117,7 @@ export default function ListingRequestsPage() {
       <div className="flex justify-between items-end mb-8">
         <div>
           <h1 className="text-2xl font-medium text-gray-900 mb-2">
-            Listing Requests
+            Agent Listing Properties
           </h1>
           <p className="text-gray-500 italic">
             Review requests by Agents to list specific properties
@@ -152,7 +152,7 @@ export default function ListingRequestsPage() {
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex-1 flex flex-col">
         <div className="w-full overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left border-collapse table-fixed">
             <thead>
               <tr className="bg-[#f8f9fc] text-sm">
                 <th className="py-4 pl-8 rounded-l-xl font-medium text-gray-600 w-[20%]">

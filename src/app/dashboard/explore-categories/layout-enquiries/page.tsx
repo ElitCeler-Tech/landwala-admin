@@ -2,15 +2,10 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import {
-    Search,
-    ChevronLeft,
-    ChevronRight,
-    Loader2,
-    Map,
-} from "lucide-react";
+import { Search, Loader2, Map } from "lucide-react";
 import { enquiriesApi, Enquiry, PaginationMeta } from "@/lib/api";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { Pagination } from "@/components/Pagination";
 
 export default function LayoutEnquiriesPage() {
     const [searchInput, setSearchInput] = useState("");
@@ -190,22 +185,11 @@ export default function LayoutEnquiriesPage() {
                           )}-${Math.min(currentPage * limit, meta.total)} of ${meta.total}`
                         : "Showing 0"}
                 </span>
-                <div className="flex gap-2">
-                    <button
-                        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                        disabled={!meta?.hasPrevPage}
-                        className="p-2 bg-[#1e2667] text-white rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <ChevronLeft className="w-4 h-4" />
-                    </button>
-                    <button
-                        onClick={() => setCurrentPage((prev) => prev + 1)}
-                        disabled={!meta?.hasNextPage}
-                        className="p-2 bg-[#1e2667] text-white rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <ChevronRight className="w-4 h-4" />
-                    </button>
-                </div>
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={meta?.totalPages ?? 1}
+                    onPageChange={setCurrentPage}
+                />
             </div>
         </div>
     );
