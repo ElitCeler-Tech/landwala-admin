@@ -161,14 +161,11 @@ export interface DashboardOverview {
   activeListings: number;
   soldProperties: number;
   periodLeads: number;
-  totalLeads: number;
   loanRequests: number;
   legalVerificationRequests: number;
   registrationRequests: number;
   landProtectionRequests: number;
   periodRevenue: number;
-  monthlyRevenue: number;
-  totalRevenue: number;
   propertiesByCategory: PropertyCategoryBreakdown[];
   roleCounts: RoleCount[];
   appliedRange: { from: string; to: string };
