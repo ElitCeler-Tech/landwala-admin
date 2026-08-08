@@ -52,6 +52,7 @@ const RANGE_OPTIONS: { value: DashboardDateRange; label: string }[] = [
   { value: "today", label: "Today" },
   { value: "week", label: "This Week" },
   { value: "month", label: "This Month" },
+  { value: "all", label: "All Time" },
   { value: "custom", label: "Custom" },
 ];
 
@@ -65,6 +66,8 @@ function rangeSuffix(range: DashboardDateRange): string {
       return "This Week";
     case "month":
       return "This Month";
+    case "all":
+      return "All Time";
     case "custom":
       return "Selected Period";
   }

@@ -136,7 +136,7 @@ export interface PlotListingsGrowthResponse {
   percentChange: number | null;
 }
 
-export type DashboardDateRange = "today" | "week" | "month" | "custom";
+export type DashboardDateRange = "today" | "week" | "month" | "all" | "custom";
 
 export interface PropertyCategoryBreakdown {
   category: string;
