@@ -1,17 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Search,
-  ChevronLeft,
-  ChevronRight,
-  Loader2,
-  ExternalLink,
-} from "lucide-react";
+import { Search, Loader2, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { listingRequestsApi, ListingRequest, PaginationMeta } from "@/lib/api";
 import Image from "next/image";
 import { useListingRequestsStore } from "@/store/useListingRequestsStore";
+import { Pagination } from "@/components/Pagination";
 
 const getStatusBadge = (status: string) => {
   const statusStyles: Record<string, string> = {
@@ -33,7 +28,7 @@ export default function ListingRequestsPage() {
     type: "success" | "error";
     text: string;
   } | null>(null);
-  const limit = 10;
+  const [limit, setLimit] = useState(10);
 
   const { setRequestDetail } = useListingRequestsStore();
 
@@ -55,7 +50,7 @@ export default function ListingRequestsPage() {
     };
 
     fetchRequests();
-  }, [currentPage]);
+  }, [currentPage, limit]);
 
   useEffect(() => {
     if (!message) return;
@@ -189,24 +184,26 @@ export default function ListingRequestsPage() {
                   className="hover:bg-gray-50/50 transition-colors border-b border-gray-50 last:border-0"
                 >
                   <td className="py-5 pl-8">
-                    <div className="flex flex-col">
+                    <div className="flex flex-col min-w-0">
                       <Link
                         href={`/dashboard/agents/${req.agentId}`}
-                        className="font-medium text-[#1e2667] hover:underline flex items-center gap-1"
+                        className="font-medium text-[#1e2667] hover:underline flex items-center gap-1 min-w-0"
                       >
-                        {req.agent?.fullName || "N/A"}
-                        <ExternalLink className="w-3 h-3" />
+                        <span className="truncate">
+                          {req.agent?.fullName || "N/A"}
+                        </span>
+                        <ExternalLink className="w-3 h-3 shrink-0" />
                       </Link>
-                      <span className="text-xs text-gray-500 mt-1">
+                      <span className="text-xs text-gray-500 mt-1 truncate">
                         {req.agent?.email || "N/A"}
                       </span>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-gray-500 truncate">
                         {req.agent?.phone || "N/A"}
                       </span>
                     </div>
                   </td>
                   <td className="py-5">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                       {req.property?.images?.[0] ? (
                         <div className="w-12 h-12 rounded bg-gray-100 overflow-hidden relative border border-gray-200 shrink-0">
                           <Image
@@ -219,7 +216,7 @@ export default function ListingRequestsPage() {
                       ) : (
                         <div className="w-12 h-12 rounded bg-gray-100 border border-gray-200 shrink-0" />
                       )}
-                      <div>
+                      <div className="min-w-0">
                         <Link
                           href={`/dashboard/plots/${req.propertyId}`}
                           className="font-medium text-gray-900 hover:text-[#1e2667] line-clamp-2"
@@ -310,32 +307,18 @@ export default function ListingRequestsPage() {
         </div>
       </div>
 
-      <div className="flex justify-between mb-6 items-center mt-6">
-        <span className="text-gray-500 text-sm">
-          Showing{" "}
-          {meta
-            ? `${(currentPage - 1) * limit + 1}-${Math.min(
-                currentPage * limit,
-                meta.total,
-              )} of ${meta.total}`
-            : "0"}
-        </span>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            disabled={!meta?.hasPrevPage}
-            className="p-2 bg-[#1e2667] text-white rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => setCurrentPage((prev) => prev + 1)}
-            disabled={!meta?.hasNextPage}
-            className="p-2 bg-[#1e2667] text-white rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
+      <div className="mb-6 mt-6">
+        <Pagination
+          currentPage={currentPage}
+          totalPages={meta?.totalPages ?? 1}
+          onPageChange={setCurrentPage}
+          totalItems={meta?.total ?? 0}
+          pageSize={limit}
+          onPageSizeChange={(size) => {
+            setLimit(size);
+            setCurrentPage(1);
+          }}
+        />
       </div>
     </div>
   );

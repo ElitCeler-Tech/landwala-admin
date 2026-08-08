@@ -3,8 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   Search,
-  ChevronLeft,
-  ChevronRight,
   Loader2,
   Plus,
   Pencil,
@@ -15,6 +13,7 @@ import {
 } from "lucide-react";
 import { pincodesApi, PincodeItem } from "@/lib/api";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { Pagination } from "@/components/Pagination";
 
 export default function PincodesPage() {
   const [items, setItems] = useState<PincodeItem[]>([]);
@@ -25,7 +24,7 @@ export default function PincodesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchInput, setSearchInput] = useState("");
   const searchQuery = useDebouncedValue(searchInput, 350);
-  const limit = 20;
+  const [limit, setLimit] = useState(20);
 
   const [error, setError] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -63,7 +62,7 @@ export default function PincodesPage() {
       setIsFetching(false);
       setIsInitialLoading(false);
     }
-  }, [currentPage, searchQuery]);
+  }, [currentPage, limit, searchQuery]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -451,32 +450,18 @@ export default function PincodesPage() {
         </div>
       </div>
 
-      <div className="flex justify-between mb-6 items-center mt-6">
-        <span className="text-gray-500 text-sm">
-          Showing{" "}
-          {total > 0
-            ? `${(currentPage - 1) * limit + 1}-${Math.min(
-                currentPage * limit,
-                total,
-              )} of ${total}`
-            : "0"}
-        </span>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            disabled={currentPage <= 1}
-            className="p-2 bg-[#1e2667] text-white rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => setCurrentPage((prev) => prev + 1)}
-            disabled={currentPage >= totalPages}
-            className="p-2 bg-[#1e2667] text-white rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
+      <div className="mb-6 mt-6">
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          totalItems={total}
+          pageSize={limit}
+          onPageSizeChange={(size) => {
+            setLimit(size);
+            setCurrentPage(1);
+          }}
+        />
       </div>
     </div>
   );

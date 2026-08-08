@@ -6,11 +6,11 @@ import Link from "next/link";
 import { ChevronLeft, Loader2, ExternalLink } from "lucide-react";
 import {
   userActionsApi,
-  agentsApi,
+  executivesApi,
   LandProtection,
   LandProtectionAssignment,
   LandProtectionComment,
-  Agent,
+  Executive,
 } from "@/lib/api";
 import { scrollSelectIntoView } from "@/hooks/useScrollIntoViewOnFocus";
 
@@ -22,7 +22,7 @@ export default function LandProtectionDetailPage() {
   const [assignments, setAssignments] = useState<LandProtectionAssignment[]>(
     [],
   );
-  const [agents, setAgents] = useState<Agent[]>([]);
+  const [executives, setExecutives] = useState<Executive[]>([]);
   const [comments, setComments] = useState<LandProtectionComment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -32,20 +32,23 @@ export default function LandProtectionDetailPage() {
   const [visitFrequency, setVisitFrequency] = useState<
     "" | "MONTHLY" | "QUARTERLY" | "HALF_YEARLY"
   >("");
-  const [selectedAgentId, setSelectedAgentId] = useState("");
+  const [selectedExecutiveId, setSelectedExecutiveId] = useState("");
+  const [district, setDistrict] = useState("");
+  const [mandal, setMandal] = useState("");
+  const [village, setVillage] = useState("");
 
   const fetchAll = useCallback(async () => {
     try {
-      const [requestData, assignmentData, agentsData, commentsData] =
+      const [requestData, assignmentData, executivesData, commentsData] =
         await Promise.all([
           userActionsApi.getLandProtectionById(requestId),
           userActionsApi.getLandProtectionAssignmentHistory(requestId),
-          agentsApi.getAgents(1, 100),
+          executivesApi.getExecutives(1, 100),
           userActionsApi.getLandProtectionComments(requestId),
         ]);
       setRequest(requestData);
       setAssignments(assignmentData);
-      setAgents(agentsData.data);
+      setExecutives(executivesData.data);
       setComments(commentsData);
     } catch (err) {
       console.error("Failed to fetch land protection details:", err);
@@ -53,6 +56,16 @@ export default function LandProtectionDetailPage() {
       setIsLoading(false);
     }
   }, [requestId]);
+
+  const handleSelectExecutive = (executiveId: string) => {
+    setSelectedExecutiveId(executiveId);
+    const executive = executives.find((e) => e.id === executiveId);
+    if (executive) {
+      setDistrict((prev) => prev || executive.assignedDistrict);
+      setMandal((prev) => prev || executive.assignedMandal);
+      setVillage((prev) => prev || executive.assignedVillage);
+    }
+  };
 
   useEffect(() => {
     if (requestId) {
@@ -82,10 +95,6 @@ export default function LandProtectionDetailPage() {
     };
     return statusStyles[status] || "bg-gray-100 text-gray-700";
   };
-
-  const currentAssignment = assignments[0];
-  const canReassign = currentAssignment?.status === "REJECTED";
-  const canAssign = !currentAssignment || currentAssignment.status === "REJECTED";
 
   const handleSendQuote = async () => {
     const amount = parseFloat(quoteAmount);
@@ -127,22 +136,27 @@ export default function LandProtectionDetailPage() {
   };
 
   const handleAssign = async () => {
-    if (!selectedAgentId) {
-      setError("Select an agent first");
+    if (!selectedExecutiveId) {
+      setError("Select an executive first");
+      return;
+    }
+    if (!district.trim() || !mandal.trim() || !village.trim()) {
+      setError("District, Mandal, and Village are required");
       return;
     }
     setActionLoading("assign");
     setError("");
     try {
-      if (canReassign) {
-        await userActionsApi.reassignLandProtection(requestId, selectedAgentId);
-      } else {
-        await userActionsApi.assignLandProtection(requestId, selectedAgentId);
-      }
-      setSelectedAgentId("");
+      await userActionsApi.assignLandProtectionToExecutive(requestId, {
+        executiveId: selectedExecutiveId,
+        district,
+        mandal,
+        village,
+      });
+      setSelectedExecutiveId("");
       await fetchAll();
     } catch (err: any) {
-      setError(err?.response?.data?.message || "Failed to assign agent");
+      setError(err?.response?.data?.message || "Failed to assign executive");
     } finally {
       setActionLoading(null);
     }
@@ -186,7 +200,7 @@ export default function LandProtectionDetailPage() {
           </h1>
         </div>
         <p className="text-gray-500 italic ml-8">
-          Send a quote, approve out-of-range requests, and assign to agents
+          Send a quote, approve out-of-range requests, and assign to an executive
         </p>
       </div>
 
@@ -366,14 +380,14 @@ export default function LandProtectionDetailPage() {
           <h3 className="text-md font-medium text-gray-900 mb-4">
             Send Quote
           </h3>
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <input
               type="number"
               min="1"
               placeholder="Amount (₹)"
               value={quoteAmount}
               onChange={(e) => setQuoteAmount(e.target.value)}
-              className="flex-1 border border-gray-200 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+              className="flex-1 min-w-0 border border-gray-200 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
             />
             <select
               onFocus={scrollSelectIntoView}
@@ -383,7 +397,7 @@ export default function LandProtectionDetailPage() {
                   e.target.value as "" | "MONTHLY" | "QUARTERLY" | "HALF_YEARLY",
                 )
               }
-              className="border border-gray-200 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+              className="sm:w-44 shrink-0 border border-gray-200 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
             >
               <option value="">Visit Frequency</option>
               <option value="MONTHLY">Monthly</option>
@@ -393,7 +407,7 @@ export default function LandProtectionDetailPage() {
             <button
               onClick={handleSendQuote}
               disabled={actionLoading !== null}
-              className="bg-[#1e2667] text-white text-sm font-medium px-6 py-2 rounded-lg hover:bg-opacity-90 transition-opacity cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="shrink-0 bg-[#1e2667] text-white text-sm font-medium px-6 py-2 rounded-lg hover:bg-opacity-90 transition-opacity cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {actionLoading === "quote" && (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -415,50 +429,71 @@ export default function LandProtectionDetailPage() {
           )}
         </div>
 
-        {/* Assign to Agent */}
+        {/* Assign to Executive */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <h3 className="text-md font-medium text-gray-900 mb-4">
-            {canReassign ? "Reassign to Agent" : "Assign to Agent"}
+            Assign to Executive
           </h3>
-          {canAssign ? (
-            <div className="flex gap-3">
-              <select
-                onFocus={scrollSelectIntoView}
-                value={selectedAgentId}
-                onChange={(e) => setSelectedAgentId(e.target.value)}
-                className="flex-1 border border-gray-200 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
-              >
-                <option value="">Select an agent</option>
-                {agents.map((agent) => (
-                  <option key={agent.id} value={agent.id}>
-                    {agent.fullName}
-                  </option>
-                ))}
-              </select>
-              <button
-                onClick={handleAssign}
-                disabled={actionLoading !== null}
-                className="bg-[#1e2667] text-white text-sm font-medium px-6 py-2 rounded-lg hover:bg-opacity-90 transition-opacity cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                {actionLoading === "assign" && (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                )}
-                {canReassign ? "Reassign" : "Assign"}
-              </button>
+          <div className="space-y-3">
+            <select
+              onFocus={scrollSelectIntoView}
+              value={selectedExecutiveId}
+              onChange={(e) => handleSelectExecutive(e.target.value)}
+              className="w-full border border-gray-200 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+            >
+              <option value="">Select an executive</option>
+              {executives.map((executive) => (
+                <option key={executive.id} value={executive.id}>
+                  {executive.fullName}
+                </option>
+              ))}
+            </select>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <input
+                type="text"
+                value={district}
+                onChange={(e) => setDistrict(e.target.value)}
+                placeholder="District *"
+                className="min-w-0 border border-gray-200 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+              />
+              <input
+                type="text"
+                value={mandal}
+                onChange={(e) => setMandal(e.target.value)}
+                placeholder="Mandal *"
+                className="min-w-0 border border-gray-200 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+              />
+              <input
+                type="text"
+                value={village}
+                onChange={(e) => setVillage(e.target.value)}
+                placeholder="Village *"
+                className="min-w-0 border border-gray-200 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+              />
             </div>
-          ) : (
-            <p className="text-sm text-gray-500">
-              Already assigned to{" "}
-              <span className="font-medium text-gray-900">
-                {currentAssignment?.agent?.fullName}
-              </span>{" "}
-              (
-              {currentAssignment?.status.toLowerCase()}
-              ). {currentAssignment?.status === "REJECTED"
-                ? ""
-                : "Reject the assignment before reassigning."}
+            <button
+              onClick={handleAssign}
+              disabled={actionLoading !== null}
+              className="w-full bg-[#1e2667] text-white text-sm font-medium px-6 py-2 rounded-lg hover:bg-opacity-90 transition-opacity cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {actionLoading === "assign" && (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              )}
+              Assign
+            </button>
+            <p className="text-xs text-gray-400">
+              Auto-filled from the executive&apos;s coverage area -- adjust if
+              this request&apos;s land is elsewhere. This creates (or reuses)
+              an Inspection Land record linked to this request, visible under{" "}
+              <Link
+                href="/dashboard/inspection-lands"
+                className="text-[#1e2667] hover:underline"
+              >
+                Inspection Lands
+              </Link>
+              .
             </p>
-          )}
+          </div>
         </div>
       </div>
 

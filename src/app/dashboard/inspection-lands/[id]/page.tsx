@@ -270,6 +270,14 @@ export default function InspectionLandDetailPage() {
             <p className="text-sm text-gray-500 mt-1">
               {land.landCode || "No land code assigned"}
             </p>
+            {land.landProtectionId && (
+              <Link
+                href={`/dashboard/explore-categories/land-protection/${land.landProtectionId}`}
+                className="inline-block mt-2 text-xs font-medium text-[#1e2667] hover:underline bg-indigo-50 px-2.5 py-1 rounded-full"
+              >
+                From Land Protection request &rarr;
+              </Link>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <span

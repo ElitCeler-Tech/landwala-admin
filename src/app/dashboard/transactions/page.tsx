@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Plus, Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import clsx from "clsx";
 import Link from "next/link";
 import { transactionsApi, CommissionSummary, LeaderboardEntry } from "@/lib/api";
+import { Pagination } from "@/components/Pagination";
 
 const tabs = ["Commission Summary", "Leaderboard"];
 
@@ -14,6 +15,7 @@ export default function TransactionsPage() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [limit, setLimit] = useState(10);
   const [meta, setMeta] = useState({
     total: 0,
     page: 1,
@@ -23,13 +25,14 @@ export default function TransactionsPage() {
 
   useEffect(() => {
     fetchData(1);
-  }, [activeTab]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, limit]);
 
   const fetchData = async (page: number) => {
     setLoading(true);
     try {
       if (activeTab === "Commission Summary") {
-        const response = await transactionsApi.getCommissions(page, 10);
+        const response = await transactionsApi.getCommissions(page, limit);
         setCommissions(response.data);
         if (response.meta) {
           setMeta({
@@ -40,7 +43,7 @@ export default function TransactionsPage() {
           });
         }
       } else {
-        const response = await transactionsApi.getLeaderboard(page, 10);
+        const response = await transactionsApi.getLeaderboard(page, limit);
         setLeaderboard(response.data);
         if (response.meta) {
           setMeta({
@@ -250,26 +253,15 @@ export default function TransactionsPage() {
       </div>
 
       {/* Pagination */}
-      <div className="flex justify-between mb-2 items-center mt-auto pt-6">
-        <span className="text-gray-500 text-sm">
-          Showing {Math.min((meta.page - 1) * meta.limit + 1, meta.total)} to {Math.min(meta.page * meta.limit, meta.total)} of {meta.total}
-        </span>
-        <div className="flex gap-2">
-          <button
-            disabled={meta.page <= 1}
-            onClick={() => fetchData(meta.page - 1)}
-            className="p-2 bg-[#1e2667] text-white rounded-lg cursor-pointer hover:bg-opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <button
-            disabled={meta.page >= meta.totalPages}
-            onClick={() => fetchData(meta.page + 1)}
-            className="p-2 bg-[#1e2667] text-white rounded-lg cursor-pointer hover:bg-opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
+      <div className="mb-2 mt-auto pt-6">
+        <Pagination
+          currentPage={meta.page}
+          totalPages={meta.totalPages}
+          onPageChange={(page) => fetchData(page)}
+          totalItems={meta.total}
+          pageSize={limit}
+          onPageSizeChange={(size) => setLimit(size)}
+        />
       </div>
     </div>
   );

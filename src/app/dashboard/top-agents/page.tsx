@@ -10,7 +10,6 @@ import { Pagination } from "@/components/Pagination";
 // (backend caps it at 20 items, no server-side page param) rather than a
 // full paginated table, so pagination here is applied client-side over
 // the already-fetched list.
-const PAGE_LIMIT = 10;
 const FETCH_LIMIT = 20;
 
 export default function TopAgentsPage() {
@@ -18,6 +17,7 @@ export default function TopAgentsPage() {
   const [topAgents, setTopAgents] = useState<TopAgent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageLimit, setPageLimit] = useState(10);
 
   useEffect(() => {
     const fetchTopAgents = async () => {
@@ -33,14 +33,14 @@ export default function TopAgentsPage() {
     fetchTopAgents();
   }, []);
 
-  const totalPages = Math.max(Math.ceil(topAgents.length / PAGE_LIMIT), 1);
+  const totalPages = Math.max(Math.ceil(topAgents.length / pageLimit), 1);
   const pagedTopAgents = useMemo(
     () =>
       topAgents.slice(
-        (currentPage - 1) * PAGE_LIMIT,
-        currentPage * PAGE_LIMIT,
+        (currentPage - 1) * pageLimit,
+        currentPage * pageLimit,
       ),
-    [topAgents, currentPage],
+    [topAgents, currentPage, pageLimit],
   );
 
   return (
@@ -99,11 +99,18 @@ export default function TopAgentsPage() {
             </table>
           </div>
 
-          <div className="flex justify-end mt-6">
+          <div className="mt-6">
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
               onPageChange={setCurrentPage}
+              totalItems={topAgents.length}
+              pageSize={pageLimit}
+              onPageSizeChange={(size) => {
+                setPageLimit(size);
+                setCurrentPage(1);
+              }}
+              pageSizeOptions={[10, 20]}
             />
           </div>
         </>

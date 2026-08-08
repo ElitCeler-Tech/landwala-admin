@@ -36,8 +36,9 @@ interface LayoutFormData {
   title: string;
   location: string;
   minPrice: string;
+  minPriceUnit: string;
   maxPrice: string;
-  priceUnit: string;
+  maxPriceUnit: string;
   approvalType: string;
 }
 
@@ -59,8 +60,9 @@ export default function EditLayoutPage() {
     title: "",
     location: "",
     minPrice: "",
+    minPriceUnit: "Cr",
     maxPrice: "",
-    priceUnit: "Cr",
+    maxPriceUnit: "Cr",
     approvalType: "",
   });
   const [isPremium, setIsPremium] = useState(false);
@@ -104,8 +106,9 @@ export default function EditLayoutPage() {
           title: data.title || "",
           location: data.location || "",
           minPrice: data.minPrice.toString() || "",
+          minPriceUnit: data.minPriceUnit || "Cr",
           maxPrice: data.maxPrice.toString() || "",
-          priceUnit: data.priceUnit || "Cr",
+          maxPriceUnit: data.maxPriceUnit || "Cr",
           approvalType: data.approvalType || "",
         });
         setIsPremium(data.isPremium || false);
@@ -240,7 +243,7 @@ export default function EditLayoutPage() {
             area: s.area,
             facing: s.facing,
             price: parseFloat(s.price),
-            priceUnit: formData.priceUnit, // Include priceUnit
+            priceUnit: formData.minPriceUnit, // Slots have one unit; reuse the layout's min-price unit
             width: s.width,
             height: s.height,
             status: s.status,
@@ -258,7 +261,7 @@ export default function EditLayoutPage() {
             area: s.area,
             facing: s.facing,
             price: parseFloat(s.price),
-            priceUnit: formData.priceUnit, // Include priceUnit
+            priceUnit: formData.minPriceUnit, // Slots have one unit; reuse the layout's min-price unit
             width: s.width,
             height: s.height,
             status: s.status,
@@ -417,45 +420,55 @@ export default function EditLayoutPage() {
                   <label className="text-sm font-medium text-gray-900">
                     Min Price *
                   </label>
-                  <input
-                    type="number"
-                    name="minPrice"
-                    value={formData.minPrice}
-                    onChange={handleInputChange}
-                    placeholder="Min Price"
-                    step="0.01"
-                    className="w-full bg-gray-50 border-none rounded-lg px-4 py-3 text-sm focus:ring-1 focus:ring-[#1e2667] outline-none placeholder:text-gray-400 text-gray-900"
-                  />
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      name="minPrice"
+                      value={formData.minPrice}
+                      onChange={handleInputChange}
+                      placeholder="Min Price"
+                      step="0.01"
+                      className="flex-1 min-w-0 bg-gray-50 border-none rounded-lg px-4 py-3 text-sm focus:ring-1 focus:ring-[#1e2667] outline-none placeholder:text-gray-400 text-gray-900"
+                    />
+                    <select
+                      onFocus={scrollSelectIntoView}
+                      name="minPriceUnit"
+                      value={formData.minPriceUnit}
+                      onChange={handleInputChange}
+                      className="w-24 shrink-0 bg-gray-50 border-none rounded-lg px-2 py-3 text-sm focus:ring-1 focus:ring-[#1e2667] outline-none text-gray-900"
+                    >
+                      <option value="Cr">Cr</option>
+                      <option value="L">L</option>
+                      <option value="K">K</option>
+                    </select>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-900">
                     Max Price *
                   </label>
-                  <input
-                    type="number"
-                    name="maxPrice"
-                    value={formData.maxPrice}
-                    onChange={handleInputChange}
-                    placeholder="Max Price"
-                    step="0.01"
-                    className="w-full bg-gray-50 border-none rounded-lg px-4 py-3 text-sm focus:ring-1 focus:ring-[#1e2667] outline-none placeholder:text-gray-400 text-gray-900"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-900">
-                    Price Unit
-                  </label>
-                  <select
-                    onFocus={scrollSelectIntoView}
-                    name="priceUnit"
-                    value={formData.priceUnit}
-                    onChange={handleInputChange}
-                    className="w-full bg-gray-50 border-none rounded-lg px-4 py-3 text-sm focus:ring-1 focus:ring-[#1e2667] outline-none text-gray-900"
-                  >
-                    <option value="Cr">Crore (Cr)</option>
-                    <option value="L">Lakh (L)</option>
-                    <option value="K">Thousand (K)</option>
-                  </select>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      name="maxPrice"
+                      value={formData.maxPrice}
+                      onChange={handleInputChange}
+                      placeholder="Max Price"
+                      step="0.01"
+                      className="flex-1 min-w-0 bg-gray-50 border-none rounded-lg px-4 py-3 text-sm focus:ring-1 focus:ring-[#1e2667] outline-none placeholder:text-gray-400 text-gray-900"
+                    />
+                    <select
+                      onFocus={scrollSelectIntoView}
+                      name="maxPriceUnit"
+                      value={formData.maxPriceUnit}
+                      onChange={handleInputChange}
+                      className="w-24 shrink-0 bg-gray-50 border-none rounded-lg px-2 py-3 text-sm focus:ring-1 focus:ring-[#1e2667] outline-none text-gray-900"
+                    >
+                      <option value="Cr">Cr</option>
+                      <option value="L">L</option>
+                      <option value="K">K</option>
+                    </select>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-900">

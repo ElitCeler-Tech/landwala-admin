@@ -5,7 +5,6 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ChevronLeft,
-  ChevronRight,
   FileText,
   Loader2,
   ExternalLink,
@@ -13,8 +12,7 @@ import {
 } from "lucide-react";
 import clsx from "clsx";
 import { agentsApi, Agent, Property, PaginationMeta } from "@/lib/api";
-
-const AGENT_PROPERTIES_LIMIT = 9;
+import { Pagination } from "@/components/Pagination";
 
 const tabs = [
   "KYC Document",
@@ -42,6 +40,7 @@ export default function AgentDetailsPage() {
     null,
   );
   const [propertiesPage, setPropertiesPage] = useState(1);
+  const [propertiesLimit, setPropertiesLimit] = useState(9);
   const [isLoadingProperties, setIsLoadingProperties] = useState(false);
   const [propertiesError, setPropertiesError] = useState("");
 
@@ -74,7 +73,7 @@ export default function AgentDetailsPage() {
         const response = await agentsApi.getAgentProperties(
           agentId,
           propertiesPage,
-          AGENT_PROPERTIES_LIMIT,
+          propertiesLimit,
         );
         setAgentProperties(response.data);
         setPropertiesMeta(response.meta);
@@ -86,7 +85,7 @@ export default function AgentDetailsPage() {
       }
     };
     fetchAgentProperties();
-  }, [activeTab, agentId, propertiesPage]);
+  }, [activeTab, agentId, propertiesPage, propertiesLimit]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -616,34 +615,18 @@ export default function AgentDetailsPage() {
                   ))}
                 </div>
 
-                <div className="flex justify-between items-center mt-6 pt-6 border-t border-gray-100">
-                  <span className="text-gray-500 text-sm">
-                    Showing{" "}
-                    {propertiesMeta
-                      ? `${(propertiesPage - 1) * AGENT_PROPERTIES_LIMIT + 1}-${Math.min(
-                          propertiesPage * AGENT_PROPERTIES_LIMIT,
-                          propertiesMeta.total,
-                        )} of ${propertiesMeta.total}`
-                      : "0"}
-                  </span>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() =>
-                        setPropertiesPage((prev) => Math.max(prev - 1, 1))
-                      }
-                      disabled={!propertiesMeta?.hasPrevPage}
-                      className="p-2 bg-[#1e2667] text-white rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => setPropertiesPage((prev) => prev + 1)}
-                      disabled={!propertiesMeta?.hasNextPage}
-                      className="p-2 bg-[#1e2667] text-white rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </div>
+                <div className="mt-6 pt-6 border-t border-gray-100">
+                  <Pagination
+                    currentPage={propertiesPage}
+                    totalPages={propertiesMeta?.totalPages ?? 1}
+                    onPageChange={setPropertiesPage}
+                    totalItems={propertiesMeta?.total ?? 0}
+                    pageSize={propertiesLimit}
+                    onPageSizeChange={(size) => {
+                      setPropertiesLimit(size);
+                      setPropertiesPage(1);
+                    }}
+                  />
                 </div>
               </>
             ) : (

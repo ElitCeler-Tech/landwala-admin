@@ -33,8 +33,9 @@ interface PropertyFormData {
     subtitle: string;
     // Pricing
     minPrice: string;
+    minPriceUnit: string;
     maxPrice: string;
-    priceUnit: string;
+    maxPriceUnit: string;
     // Location
     locationAddress: string;
     city: string;
@@ -68,8 +69,9 @@ export default function EditPlotPage() {
         title: "",
         subtitle: "",
         minPrice: "",
+        minPriceUnit: "Cr",
         maxPrice: "",
-        priceUnit: "Cr",
+        maxPriceUnit: "Cr",
         locationAddress: "",
         city: "",
         state: "",
@@ -111,8 +113,9 @@ export default function EditPlotPage() {
                     title: data.title || "",
                     subtitle: data.subtitle || "",
                     minPrice: data.minPrice.toString() || "",
+                    minPriceUnit: data.minPriceUnit || "Cr",
                     maxPrice: data.maxPrice.toString() || "",
-                    priceUnit: data.priceUnit || "Cr",
+                    maxPriceUnit: data.maxPriceUnit || "Cr",
                     locationAddress: data.locationAddress || "",
                     city: data.city || "",
                     state: data.state || "",
@@ -412,50 +415,60 @@ export default function EditPlotPage() {
                             <h2 className="text-lg font-semibold text-gray-900 mb-6 border-b border-gray-100 pb-4">
                                 Pricing
                             </h2>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium text-gray-900">
                                         Min Price *
                                     </label>
-                                    <input
-                                        type="number"
-                                        name="minPrice"
-                                        value={formData.minPrice}
-                                        onChange={handleInputChange}
-                                        placeholder="e.g., 3.19"
-                                        step="0.01"
-                                        className="w-full bg-gray-50 border-none rounded-lg px-4 py-3 text-sm focus:ring-1 focus:ring-[#1e2667] outline-none placeholder:text-gray-400 text-gray-900"
-                                    />
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="number"
+                                            name="minPrice"
+                                            value={formData.minPrice}
+                                            onChange={handleInputChange}
+                                            placeholder="e.g., 3.19"
+                                            step="0.01"
+                                            className="flex-1 min-w-0 bg-gray-50 border-none rounded-lg px-4 py-3 text-sm focus:ring-1 focus:ring-[#1e2667] outline-none placeholder:text-gray-400 text-gray-900"
+                                        />
+                                        <select
+                                          onFocus={scrollSelectIntoView}
+                                            name="minPriceUnit"
+                                            value={formData.minPriceUnit}
+                                            onChange={handleInputChange}
+                                            className="w-24 shrink-0 bg-gray-50 border-none rounded-lg px-2 py-3 text-sm focus:ring-1 focus:ring-[#1e2667] outline-none text-gray-900"
+                                        >
+                                            <option value="Cr">Cr</option>
+                                            <option value="L">L</option>
+                                            <option value="K">K</option>
+                                        </select>
+                                    </div>
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium text-gray-900">
                                         Max Price *
                                     </label>
-                                    <input
-                                        type="number"
-                                        name="maxPrice"
-                                        value={formData.maxPrice}
-                                        onChange={handleInputChange}
-                                        placeholder="e.g., 3.82"
-                                        step="0.01"
-                                        className="w-full bg-gray-50 border-none rounded-lg px-4 py-3 text-sm focus:ring-1 focus:ring-[#1e2667] outline-none placeholder:text-gray-400 text-gray-900"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium text-gray-900">
-                                        Price Unit
-                                    </label>
-                                    <select
-                                      onFocus={scrollSelectIntoView}
-                                        name="priceUnit"
-                                        value={formData.priceUnit}
-                                        onChange={handleInputChange}
-                                        className="w-full bg-gray-50 border-none rounded-lg px-4 py-3 text-sm focus:ring-1 focus:ring-[#1e2667] outline-none text-gray-900"
-                                    >
-                                        <option value="Cr">Crore (Cr)</option>
-                                        <option value="L">Lakh (L)</option>
-                                        <option value="K">Thousand (K)</option>
-                                    </select>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="number"
+                                            name="maxPrice"
+                                            value={formData.maxPrice}
+                                            onChange={handleInputChange}
+                                            placeholder="e.g., 3.82"
+                                            step="0.01"
+                                            className="flex-1 min-w-0 bg-gray-50 border-none rounded-lg px-4 py-3 text-sm focus:ring-1 focus:ring-[#1e2667] outline-none placeholder:text-gray-400 text-gray-900"
+                                        />
+                                        <select
+                                          onFocus={scrollSelectIntoView}
+                                            name="maxPriceUnit"
+                                            value={formData.maxPriceUnit}
+                                            onChange={handleInputChange}
+                                            className="w-24 shrink-0 bg-gray-50 border-none rounded-lg px-2 py-3 text-sm focus:ring-1 focus:ring-[#1e2667] outline-none text-gray-900"
+                                        >
+                                            <option value="Cr">Cr</option>
+                                            <option value="L">L</option>
+                                            <option value="K">K</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
                         </div>

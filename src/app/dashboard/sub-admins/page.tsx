@@ -1,15 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Search,
-  ChevronLeft,
-  ChevronRight,
-  Loader2,
-  Plus,
-  Pencil,
-  X,
-} from "lucide-react";
+import { Search, Loader2, Plus, Pencil, X } from "lucide-react";
 import {
   subAdminsApi,
   SubAdmin,
@@ -18,6 +10,7 @@ import {
   ADMIN_SECTIONS,
 } from "@/lib/api";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { Pagination } from "@/components/Pagination";
 
 // Human-readable labels for each AdminSection, in the same order/grouping
 // as the sidebar so admins can recognize what they're granting.
@@ -37,6 +30,7 @@ const SECTION_LABELS: Record<AdminSection, string> = {
   PINCODES: "Pincodes",
   REPORTS: "Reports",
   ROLES_PERMISSIONS: "Roles & Permissions",
+  CONTENT_MANAGEMENT: "Content Management",
 };
 
 export default function SubAdminsPage() {
@@ -47,7 +41,7 @@ export default function SubAdminsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchInput, setSearchInput] = useState("");
   const searchQuery = useDebouncedValue(searchInput, 350);
-  const limit = 10;
+  const [limit, setLimit] = useState(10);
 
   // Modal styling and setup
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -94,7 +88,7 @@ export default function SubAdminsPage() {
   useEffect(() => {
     fetchSubAdmins();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, searchQuery]);
+  }, [currentPage, limit, searchQuery]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -361,32 +355,18 @@ export default function SubAdminsPage() {
         </div>
       </div>
 
-      <div className="flex justify-between mb-6 items-center mt-6">
-        <span className="text-gray-500 text-sm">
-          Showing{" "}
-          {meta
-            ? `${(currentPage - 1) * limit + 1}-${Math.min(
-                currentPage * limit,
-                meta.total,
-              )} of ${meta.total}`
-            : "0"}
-        </span>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            disabled={!meta?.hasPrevPage}
-            className="p-2 bg-[#1e2667] text-white rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => setCurrentPage((prev) => prev + 1)}
-            disabled={!meta?.hasNextPage}
-            className="p-2 bg-[#1e2667] text-white rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
+      <div className="mb-6 mt-6">
+        <Pagination
+          currentPage={currentPage}
+          totalPages={meta?.totalPages ?? 1}
+          onPageChange={setCurrentPage}
+          totalItems={meta?.total ?? 0}
+          pageSize={limit}
+          onPageSizeChange={(size) => {
+            setLimit(size);
+            setCurrentPage(1);
+          }}
+        />
       </div>
 
       {/* CREATE SUB ADMIN MODAL */}

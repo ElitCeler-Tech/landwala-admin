@@ -1,17 +1,11 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import {
-  Search,
-  ChevronLeft,
-  ChevronRight,
-  Loader2,
-  Plus,
-  X,
-} from "lucide-react";
+import { Search, Loader2, Plus, X } from "lucide-react";
 import Link from "next/link";
 import { inspectionLandsApi, InspectionLand } from "@/lib/api";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { Pagination } from "@/components/Pagination";
 
 export default function InspectionLandsPage() {
   const [lands, setLands] = useState<InspectionLand[]>([]);
@@ -22,7 +16,7 @@ export default function InspectionLandsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchInput, setSearchInput] = useState("");
   const searchQuery = useDebouncedValue(searchInput, 350);
-  const limit = 10;
+  const [limit, setLimit] = useState(10);
 
   const [error, setError] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
@@ -59,7 +53,7 @@ export default function InspectionLandsPage() {
       setIsFetching(false);
       setIsInitialLoading(false);
     }
-  }, [currentPage, searchQuery]);
+  }, [currentPage, limit, searchQuery]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -332,6 +326,11 @@ export default function InspectionLandsPage() {
                   >
                     <td className="py-5 pl-8 font-medium text-gray-900">
                       {land.ownerName}
+                      {land.landProtectionId && (
+                        <span className="ml-2 inline-block text-[10px] font-medium text-[#1e2667] bg-indigo-50 px-2 py-0.5 rounded-full align-middle">
+                          Land Protection
+                        </span>
+                      )}
                     </td>
                     <td className="py-5 text-gray-500">
                       {land.landCode || "-"}
@@ -373,32 +372,18 @@ export default function InspectionLandsPage() {
         )}
       </div>
 
-      <div className="flex justify-between mb-6 items-center mt-6">
-        <span className="text-gray-500 text-sm">
-          Showing{" "}
-          {total > 0
-            ? `${(currentPage - 1) * limit + 1}-${Math.min(
-                currentPage * limit,
-                total,
-              )} of ${total}`
-            : "0"}
-        </span>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            disabled={currentPage <= 1}
-            className="p-2 bg-[#1e2667] text-white rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => setCurrentPage((prev) => prev + 1)}
-            disabled={currentPage >= totalPages}
-            className="p-2 bg-[#1e2667] text-white rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
+      <div className="mb-6 mt-6">
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          totalItems={total}
+          pageSize={limit}
+          onPageSizeChange={(size) => {
+            setLimit(size);
+            setCurrentPage(1);
+          }}
+        />
       </div>
     </div>
   );

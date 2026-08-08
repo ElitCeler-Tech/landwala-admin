@@ -20,6 +20,7 @@ export const ADMIN_SECTIONS = [
   "PINCODES",
   "REPORTS",
   "ROLES_PERMISSIONS",
+  "CONTENT_MANAGEMENT",
 ] as const;
 
 export type AdminSection = (typeof ADMIN_SECTIONS)[number];
@@ -518,7 +519,8 @@ export interface Property {
   category: string | null;
   minPrice: number;
   maxPrice: number;
-  priceUnit: string;
+  minPriceUnit: string;
+  maxPriceUnit: string;
   priceRange: string;
   locationAddress: string;
   city: string;
@@ -754,7 +756,8 @@ export interface Layout {
   location: string;
   minPrice: number;
   maxPrice: number;
-  priceUnit: string;
+  minPriceUnit: string;
+  maxPriceUnit: string;
   priceRange: string;
   imageUrl: string;
   layoutImageUrl: string;
@@ -1171,6 +1174,27 @@ export const userActionsApi = {
     return response.data;
   },
 
+  assignLandProtectionToExecutive: async (
+    id: string,
+    data: {
+      executiveId: string;
+      district: string;
+      mandal: string;
+      village: string;
+      ownerPhone?: string;
+      latitude?: number;
+      longitude?: number;
+      nextVisitDueAt?: string;
+    },
+  ) => {
+    const response = await api.post<{
+      landInspectionAssignmentId: string;
+      inspectionLandId: string;
+      message: string;
+    }>(`/admin/land-protections/${id}/assign-executive`, data);
+    return response.data;
+  },
+
   getLandProtectionAssignmentHistory: async (id: string) => {
     const response = await api.get<LandProtectionAssignment[]>(
       `/admin/land-protections/${id}/assignments`,
@@ -1227,7 +1251,8 @@ export interface EnquiryProperty {
   description: string;
   minPrice: number;
   maxPrice: number;
-  priceUnit: string;
+  minPriceUnit: string;
+  maxPriceUnit: string;
   priceRange: string;
   locationAddress: string;
   city: string;
@@ -1269,7 +1294,8 @@ export interface EnquiryLayout {
   location: string;
   minPrice: number;
   maxPrice: number;
-  priceUnit: string;
+  minPriceUnit: string;
+  maxPriceUnit: string;
   priceRange: string;
   imageUrl: string;
   layoutImageUrl: string;
@@ -2049,6 +2075,269 @@ export const bannersApi = {
 
   removeFromBanner: async (bannerItemId: string) => {
     await api.delete(`/admin/banner/${bannerItemId}`);
+  },
+};
+
+// Content Management Types (Terms of Use / Privacy Policy sections, FAQs,
+// Why Choose Us items -- all shown in the user app, previously hardcoded)
+export type LegalDocumentType = "TERMS" | "PRIVACY";
+
+export interface LegalDocumentSection {
+  id: string;
+  documentType: LegalDocumentType;
+  title: string;
+  content: string;
+  displayOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LegalDocument {
+  documentType: LegalDocumentType;
+  lastUpdatedAt: string | null;
+  sections: LegalDocumentSection[];
+}
+
+export interface FaqItem {
+  id: string;
+  category: string;
+  question: string;
+  answer: string;
+  displayOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Fixed set of icon names the Flutter app knows how to render (see
+// why_choose_screen.dart's _iconByName map) -- keep in sync with the
+// backend's WHY_CHOOSE_ICONS whitelist.
+export const WHY_CHOOSE_ICONS = [
+  "verified_user",
+  "calendar_month",
+  "cleaning_services",
+  "fence",
+  "format_paint",
+  "remove_red_eye",
+  "photo_camera",
+  "shield",
+  "description",
+  "home_repair_service",
+  "verified",
+  "approval",
+  "security",
+  "support_agent",
+  "fact_check",
+  "handshake",
+  "visibility",
+  "people",
+  "monetization_on",
+  "thumb_up",
+  "receipt_long",
+  "gavel",
+  "dashboard",
+  "shield_outlined",
+  "check_circle",
+  "group",
+  "attach_money",
+  "star",
+] as const;
+
+export interface WhyChooseItem {
+  id: string;
+  sectionTitle: string;
+  icon: string;
+  title: string;
+  description: string;
+  displayOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Fixed set of filter groups the user app reads (see buy_property_screen.dart) --
+// keep in sync with the backend's FILTER_OPTION_GROUPS whitelist.
+export const FILTER_OPTION_GROUPS = [
+  "property_type",
+  "facing",
+  "bhk",
+  "price_range",
+  "plot_size_default",
+  "plot_size_agriculture_lands",
+  "plot_size_farmlands",
+  "plot_size_residential_house",
+  "plot_size_apartments",
+  "plot_size_villas",
+] as const;
+
+export const FILTER_OPTION_GROUP_LABELS: Record<
+  (typeof FILTER_OPTION_GROUPS)[number],
+  string
+> = {
+  property_type: "Property Type (Buy screen tabs)",
+  facing: "Facing",
+  bhk: "BHK",
+  price_range: "Price Range",
+  plot_size_default: "Plot Size -- Open Plots (default)",
+  plot_size_agriculture_lands: "Plot Size -- Agriculture Lands",
+  plot_size_farmlands: "Plot Size -- Farmlands / Farm House",
+  plot_size_residential_house: "Plot Size -- Residential House",
+  plot_size_apartments: "Plot Size -- Apartments",
+  plot_size_villas: "Plot Size -- Villas",
+};
+
+export interface FilterOption {
+  id: string;
+  groupKey: string;
+  value: string;
+  minValue: number | null;
+  maxValue: number | null;
+  displayOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const contentApi = {
+  // Legal documents (Terms / Privacy)
+  getLegalSections: async (documentType: LegalDocumentType) => {
+    const response = await api.get<LegalDocument>("/admin/content/legal-sections", {
+      params: { documentType },
+    });
+    return response.data;
+  },
+  createLegalSection: async (data: {
+    documentType: LegalDocumentType;
+    title: string;
+    content: string;
+    displayOrder?: number;
+  }) => {
+    const response = await api.post<LegalDocumentSection>(
+      "/admin/content/legal-sections",
+      data,
+    );
+    return response.data;
+  },
+  updateLegalSection: async (
+    id: string,
+    data: Partial<{ title: string; content: string; displayOrder: number }>,
+  ) => {
+    const response = await api.patch<LegalDocumentSection>(
+      `/admin/content/legal-sections/${id}`,
+      data,
+    );
+    return response.data;
+  },
+  deleteLegalSection: async (id: string) => {
+    await api.delete(`/admin/content/legal-sections/${id}`);
+  },
+
+  // FAQs
+  getFaqs: async () => {
+    const response = await api.get<FaqItem[]>("/admin/content/faqs");
+    return response.data;
+  },
+  createFaq: async (data: {
+    category: string;
+    question: string;
+    answer: string;
+    displayOrder?: number;
+  }) => {
+    const response = await api.post<FaqItem>("/admin/content/faqs", data);
+    return response.data;
+  },
+  updateFaq: async (
+    id: string,
+    data: Partial<{
+      category: string;
+      question: string;
+      answer: string;
+      displayOrder: number;
+    }>,
+  ) => {
+    const response = await api.patch<FaqItem>(`/admin/content/faqs/${id}`, data);
+    return response.data;
+  },
+  deleteFaq: async (id: string) => {
+    await api.delete(`/admin/content/faqs/${id}`);
+  },
+
+  // Why Choose Us items
+  getWhyChooseItems: async () => {
+    const response = await api.get<WhyChooseItem[]>(
+      "/admin/content/why-choose-items",
+    );
+    return response.data;
+  },
+  createWhyChooseItem: async (data: {
+    sectionTitle: string;
+    icon: string;
+    title: string;
+    description: string;
+    displayOrder?: number;
+  }) => {
+    const response = await api.post<WhyChooseItem>(
+      "/admin/content/why-choose-items",
+      data,
+    );
+    return response.data;
+  },
+  updateWhyChooseItem: async (
+    id: string,
+    data: Partial<{
+      sectionTitle: string;
+      icon: string;
+      title: string;
+      description: string;
+      displayOrder: number;
+    }>,
+  ) => {
+    const response = await api.patch<WhyChooseItem>(
+      `/admin/content/why-choose-items/${id}`,
+      data,
+    );
+    return response.data;
+  },
+  deleteWhyChooseItem: async (id: string) => {
+    await api.delete(`/admin/content/why-choose-items/${id}`);
+  },
+
+  // Search filter options
+  getFilterOptions: async (groupKey?: string) => {
+    const response = await api.get<FilterOption[]>(
+      "/admin/content/filter-options",
+      { params: groupKey ? { groupKey } : undefined },
+    );
+    return response.data;
+  },
+  createFilterOption: async (data: {
+    groupKey: string;
+    value: string;
+    minValue?: number;
+    maxValue?: number;
+    displayOrder?: number;
+  }) => {
+    const response = await api.post<FilterOption>(
+      "/admin/content/filter-options",
+      data,
+    );
+    return response.data;
+  },
+  updateFilterOption: async (
+    id: string,
+    data: Partial<{
+      groupKey: string;
+      value: string;
+      minValue: number;
+      maxValue: number;
+      displayOrder: number;
+    }>,
+  ) => {
+    const response = await api.patch<FilterOption>(
+      `/admin/content/filter-options/${id}`,
+      data,
+    );
+    return response.data;
+  },
+  deleteFilterOption: async (id: string) => {
+    await api.delete(`/admin/content/filter-options/${id}`);
   },
 };
 

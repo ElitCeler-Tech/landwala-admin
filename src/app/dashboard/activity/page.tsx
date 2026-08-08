@@ -10,7 +10,6 @@ import { Pagination } from "@/components/Pagination";
 // (backend caps it at 50 items, no server-side page param) rather than a
 // full paginated table, so pagination here is applied client-side over
 // the already-fetched list.
-const PAGE_LIMIT = 10;
 const FETCH_LIMIT = 50;
 
 function formatRelativeTime(iso: string) {
@@ -29,6 +28,7 @@ export default function ActivityPage() {
   const [activity, setActivity] = useState<RecentActivityItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageLimit, setPageLimit] = useState(10);
 
   useEffect(() => {
     const fetchActivity = async () => {
@@ -44,14 +44,14 @@ export default function ActivityPage() {
     fetchActivity();
   }, []);
 
-  const totalPages = Math.max(Math.ceil(activity.length / PAGE_LIMIT), 1);
+  const totalPages = Math.max(Math.ceil(activity.length / pageLimit), 1);
   const pagedActivity = useMemo(
     () =>
       activity.slice(
-        (currentPage - 1) * PAGE_LIMIT,
-        currentPage * PAGE_LIMIT,
+        (currentPage - 1) * pageLimit,
+        currentPage * pageLimit,
       ),
-    [activity, currentPage],
+    [activity, currentPage, pageLimit],
   );
 
   return (
@@ -77,7 +77,7 @@ export default function ActivityPage() {
           <div className="bg-white rounded-xl border border-gray-100 divide-y divide-gray-50">
             {pagedActivity.map((item, idx) => (
               <div
-                key={`${item.type}-${(currentPage - 1) * PAGE_LIMIT + idx}`}
+                key={`${item.type}-${(currentPage - 1) * pageLimit + idx}`}
                 className="flex items-start justify-between gap-3 px-5 py-4"
               >
                 <p className="text-sm text-gray-700">{item.message}</p>
@@ -88,11 +88,18 @@ export default function ActivityPage() {
             ))}
           </div>
 
-          <div className="flex justify-end mt-6">
+          <div className="mt-6">
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
               onPageChange={setCurrentPage}
+              totalItems={activity.length}
+              pageSize={pageLimit}
+              onPageSizeChange={(size) => {
+                setPageLimit(size);
+                setCurrentPage(1);
+              }}
+              pageSizeOptions={[10, 20, 50]}
             />
           </div>
         </>

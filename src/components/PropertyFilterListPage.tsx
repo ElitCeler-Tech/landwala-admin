@@ -26,8 +26,6 @@ interface PropertyFilterListPageProps {
   badgeClassName?: string;
 }
 
-const LIMIT = 10;
-
 /**
  * Shared list-page shell for the "designation" property views (Most Viewed
  * style pages that filter the general /admin/properties endpoint by a
@@ -47,12 +45,13 @@ export function PropertyFilterListPage({
   const [meta, setMeta] = useState<PaginationMeta | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [searchQuery, setSearchQuery] = useState("");
 
   const load = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await fetchProperties(currentPage, LIMIT);
+      const response = await fetchProperties(currentPage, limit);
       setProperties(response.data);
       setMeta(response.meta);
     } catch (error) {
@@ -62,7 +61,7 @@ export function PropertyFilterListPage({
     }
     // fetchProperties is expected to be a stable-enough closure per page
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage]);
+  }, [currentPage, limit]);
 
   useEffect(() => {
     load();
@@ -182,20 +181,17 @@ export function PropertyFilterListPage({
         </div>
       </div>
 
-      <div className="flex justify-between mb-6 items-center mt-6">
-        <span className="text-gray-500 text-sm">
-          Showing{" "}
-          {meta
-            ? `${(currentPage - 1) * LIMIT + 1}-${Math.min(
-                currentPage * LIMIT,
-                meta.total,
-              )} of ${meta.total}`
-            : "0"}
-        </span>
+      <div className="mb-6 mt-6">
         <Pagination
           currentPage={currentPage}
           totalPages={meta?.totalPages ?? 1}
           onPageChange={setCurrentPage}
+          totalItems={meta?.total ?? 0}
+          pageSize={limit}
+          onPageSizeChange={(size) => {
+            setLimit(size);
+            setCurrentPage(1);
+          }}
         />
       </div>
     </div>

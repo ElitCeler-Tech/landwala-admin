@@ -16,7 +16,7 @@ export default function LayoutEnquiriesPage() {
     const [isInitialLoading, setIsInitialLoading] = useState(true);
     const [isFetching, setIsFetching] = useState(false);
     const [error, setError] = useState("");
-    const limit = 10;
+    const [limit, setLimit] = useState(10);
 
     useEffect(() => {
         setCurrentPage(1);
@@ -25,7 +25,7 @@ export default function LayoutEnquiriesPage() {
     useEffect(() => {
         fetchEnquiries();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentPage, searchQuery]);
+    }, [currentPage, limit, searchQuery]);
 
     const fetchEnquiries = async () => {
         setIsFetching(true);
@@ -176,19 +176,17 @@ export default function LayoutEnquiriesPage() {
                 )}
             </div>
 
-            <div className="flex justify-between mb-6 items-center mt-6">
-                <span className="text-gray-500 text-sm">
-                    {meta
-                        ? `Showing ${Math.min(
-                              (currentPage - 1) * limit + 1,
-                              meta.total,
-                          )}-${Math.min(currentPage * limit, meta.total)} of ${meta.total}`
-                        : "Showing 0"}
-                </span>
+            <div className="mb-6 mt-6">
                 <Pagination
                     currentPage={currentPage}
                     totalPages={meta?.totalPages ?? 1}
                     onPageChange={setCurrentPage}
+                    totalItems={meta?.total ?? 0}
+                    pageSize={limit}
+                    onPageSizeChange={(size) => {
+                        setLimit(size);
+                        setCurrentPage(1);
+                    }}
                 />
             </div>
         </div>

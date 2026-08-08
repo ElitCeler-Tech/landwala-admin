@@ -12,7 +12,7 @@ export default function ArchivedPropertiesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [restoringId, setRestoringId] = useState<string | null>(null);
-  const limit = 10;
+  const [limit, setLimit] = useState(10);
 
   const fetchProperties = async () => {
     setIsLoading(true);
@@ -33,7 +33,7 @@ export default function ArchivedPropertiesPage() {
   useEffect(() => {
     fetchProperties();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage]);
+  }, [currentPage, limit]);
 
   const handleRestore = async (id: string) => {
     setRestoringId(id);
@@ -138,20 +138,17 @@ export default function ArchivedPropertiesPage() {
         </div>
       </div>
 
-      <div className="flex justify-between mb-6 items-center mt-6">
-        <span className="text-gray-500 text-sm">
-          Showing{" "}
-          {meta && meta.total > 0
-            ? `${(currentPage - 1) * limit + 1}-${Math.min(
-                currentPage * limit,
-                meta.total,
-              )} of ${meta.total}`
-            : "0"}
-        </span>
+      <div className="mb-6 mt-6">
         <Pagination
           currentPage={currentPage}
           totalPages={meta?.totalPages ?? 1}
           onPageChange={setCurrentPage}
+          totalItems={meta?.total ?? 0}
+          pageSize={limit}
+          onPageSizeChange={(size) => {
+            setLimit(size);
+            setCurrentPage(1);
+          }}
         />
       </div>
     </div>

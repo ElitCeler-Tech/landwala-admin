@@ -10,12 +10,11 @@ import {
 } from "@/lib/api";
 import { Pagination } from "@/components/Pagination";
 
-const PAGE_LIMIT = 9;
-
 export default function SubscriptionPlansPage() {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [meta, setMeta] = useState<PaginationMeta | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageLimit, setPageLimit] = useState(9);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -24,7 +23,7 @@ export default function SubscriptionPlansPage() {
       try {
         const response = await subscriptionPlansApi.getSubscriptionPlans(
           currentPage,
-          PAGE_LIMIT,
+          pageLimit,
         );
         setPlans(response.data);
         setMeta(response.meta);
@@ -36,7 +35,7 @@ export default function SubscriptionPlansPage() {
     };
 
     fetchPlans();
-  }, [currentPage]);
+  }, [currentPage, pageLimit]);
 
   const getPlanUnit = (duration: number) => {
     if (duration === 1) return "/month";
@@ -141,6 +140,12 @@ export default function SubscriptionPlansPage() {
               currentPage={currentPage}
               totalPages={meta?.totalPages || 1}
               onPageChange={setCurrentPage}
+              totalItems={meta?.total ?? 0}
+              pageSize={pageLimit}
+              onPageSizeChange={(size) => {
+                setPageLimit(size);
+                setCurrentPage(1);
+              }}
             />
           </div>
         )}

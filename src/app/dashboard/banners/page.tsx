@@ -17,12 +17,12 @@ import { scrollSelectIntoView } from "@/hooks/useScrollIntoViewOnFocus";
 import { Pagination } from "@/components/Pagination";
 
 const TYPE_FILTERS: ("ALL" | BannerItemType)[] = ["ALL", "PROPERTY", "LAYOUT"];
-const PAGE_LIMIT = 12;
 
 export default function BannersPage() {
   const [items, setItems] = useState<BannerItem[]>([]);
   const [meta, setMeta] = useState<PaginationMeta | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageLimit, setPageLimit] = useState(12);
   const [isLoading, setIsLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState<"ALL" | BannerItemType>("ALL");
   const [error, setError] = useState("");
@@ -41,7 +41,7 @@ export default function BannersPage() {
     try {
       const response = await bannersApi.getBanners(
         currentPage,
-        PAGE_LIMIT,
+        pageLimit,
         typeFilter === "ALL" ? undefined : typeFilter,
       );
       setItems(
@@ -53,7 +53,7 @@ export default function BannersPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, typeFilter]);
+  }, [currentPage, pageLimit, typeFilter]);
 
   useEffect(() => {
     fetchBanners();
@@ -347,20 +347,17 @@ export default function BannersPage() {
       </div>
 
       {!isLoading && items.length > 0 && (
-        <div className="flex justify-between mb-6 items-center mt-6">
-          <span className="text-gray-500 text-sm">
-            Showing{" "}
-            {meta && meta.total > 0
-              ? `${(currentPage - 1) * PAGE_LIMIT + 1}-${Math.min(
-                  currentPage * PAGE_LIMIT,
-                  meta.total,
-                )} of ${meta.total}`
-              : "0"}
-          </span>
+        <div className="mb-6 mt-6">
           <Pagination
             currentPage={currentPage}
             totalPages={meta?.totalPages || 1}
             onPageChange={setCurrentPage}
+            totalItems={meta?.total ?? 0}
+            pageSize={pageLimit}
+            onPageSizeChange={(size) => {
+              setPageLimit(size);
+              setCurrentPage(1);
+            }}
           />
         </div>
       )}

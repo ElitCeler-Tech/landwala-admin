@@ -28,7 +28,7 @@ export default function PlotsPage() {
   const [activeCategory, setActiveCategory] = useState<string>("All");
   const [designationFilter, setDesignationFilter] =
     useState<DesignationFilter>("none");
-  const limit = 8;
+  const [limit, setLimit] = useState(8);
 
   useEffect(() => {
     const fetchProperties = async () => {
@@ -52,7 +52,7 @@ export default function PlotsPage() {
     };
 
     fetchProperties();
-  }, [currentPage, activeCategory, designationFilter]);
+  }, [currentPage, limit, activeCategory, designationFilter]);
 
   const handleCategoryChange = (category: string) => {
     setActiveCategory(category);
@@ -280,20 +280,17 @@ export default function PlotsPage() {
         </div>
       </div>
 
-      <div className="flex justify-between mb-6 items-center mt-6">
-        <span className="text-gray-500 text-sm">
-          Showing{" "}
-          {meta
-            ? `${(currentPage - 1) * limit + 1}-${Math.min(
-                currentPage * limit,
-                meta.total
-              )} of ${meta.total}`
-            : "0"}
-        </span>
+      <div className="mb-6 mt-6">
         <Pagination
           currentPage={currentPage}
           totalPages={meta?.totalPages ?? 1}
           onPageChange={setCurrentPage}
+          totalItems={meta?.total ?? 0}
+          pageSize={limit}
+          onPageSizeChange={(size) => {
+            setLimit(size);
+            setCurrentPage(1);
+          }}
         />
       </div>
     </div>

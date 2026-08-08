@@ -1,17 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Search,
-  ChevronLeft,
-  ChevronRight,
-  Loader2,
-  MessageSquareText,
-} from "lucide-react";
+import { Search, Loader2, MessageSquareText } from "lucide-react";
 import Link from "next/link";
 import { reportsApi, Report, PaginationMeta } from "@/lib/api";
 import { useReportsStore } from "@/store/useReportsStore";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { Pagination } from "@/components/Pagination";
 
 export default function ReportsPage() {
   const [reports, setReports] = useState<Report[]>([]);
@@ -21,7 +16,7 @@ export default function ReportsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchInput, setSearchInput] = useState("");
   const searchQuery = useDebouncedValue(searchInput, 350);
-  const limit = 10;
+  const [limit, setLimit] = useState(10);
 
   const { setReportDetail } = useReportsStore();
 
@@ -49,7 +44,7 @@ export default function ReportsPage() {
     };
 
     fetchReports();
-  }, [currentPage, searchQuery]);
+  }, [currentPage, limit, searchQuery]);
 
   const getStatusBadge = (status: string) => {
     const statusStyles: Record<string, string> = {
@@ -237,32 +232,18 @@ export default function ReportsPage() {
         </div>
       </div>
 
-      <div className="flex justify-between mb-6 items-center mt-6">
-        <span className="text-gray-500 text-sm">
-          Showing{" "}
-          {meta
-            ? `${(currentPage - 1) * limit + 1}-${Math.min(
-                currentPage * limit,
-                meta.total,
-              )} of ${meta.total}`
-            : "0"}
-        </span>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            disabled={!meta?.hasPrevPage}
-            className="p-2 bg-[#1e2667] text-white rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => setCurrentPage((prev) => prev + 1)}
-            disabled={!meta?.hasNextPage}
-            className="p-2 bg-[#1e2667] text-white rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
+      <div className="mb-6 mt-6">
+        <Pagination
+          currentPage={currentPage}
+          totalPages={meta?.totalPages ?? 1}
+          onPageChange={setCurrentPage}
+          totalItems={meta?.total ?? 0}
+          pageSize={limit}
+          onPageSizeChange={(size) => {
+            setLimit(size);
+            setCurrentPage(1);
+          }}
+        />
       </div>
     </div>
   );

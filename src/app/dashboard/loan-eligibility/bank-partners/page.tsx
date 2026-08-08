@@ -23,7 +23,6 @@ const EMPTY_FORM: CreateBankPartnerPayload = {
 // partner banks), so rather than round-tripping to the paginated backend
 // endpoint on every page click, we fetch the full list once and paginate
 // client-side -- same approach as the Top Agents page.
-const PAGE_LIMIT = 10;
 
 export default function BankPartnersPage() {
   const [partners, setPartners] = useState<BankPartner[]>([]);
@@ -31,6 +30,7 @@ export default function BankPartnersPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageLimit, setPageLimit] = useState(10);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -58,16 +58,16 @@ export default function BankPartnersPage() {
     [partners],
   );
   const totalPages = Math.max(
-    Math.ceil(sortedPartners.length / PAGE_LIMIT),
+    Math.ceil(sortedPartners.length / pageLimit),
     1,
   );
   const pagedPartners = useMemo(
     () =>
       sortedPartners.slice(
-        (currentPage - 1) * PAGE_LIMIT,
-        currentPage * PAGE_LIMIT,
+        (currentPage - 1) * pageLimit,
+        currentPage * pageLimit,
       ),
-    [sortedPartners, currentPage],
+    [sortedPartners, currentPage, pageLimit],
   );
 
   // Keep the current page in range if the list shrinks (e.g. after a delete).
@@ -247,18 +247,17 @@ export default function BankPartnersPage() {
       </div>
 
       {!isLoading && sortedPartners.length > 0 && (
-        <div className="flex justify-between items-center mt-6">
-          <span className="text-gray-500 text-sm">
-            Showing{" "}
-            {`${(currentPage - 1) * PAGE_LIMIT + 1}-${Math.min(
-              currentPage * PAGE_LIMIT,
-              sortedPartners.length,
-            )} of ${sortedPartners.length}`}
-          </span>
+        <div className="mt-6">
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={setCurrentPage}
+            totalItems={sortedPartners.length}
+            pageSize={pageLimit}
+            onPageSizeChange={(size) => {
+              setPageLimit(size);
+              setCurrentPage(1);
+            }}
           />
         </div>
       )}
