@@ -1188,7 +1188,22 @@ export const userActionsApi = {
     );
     return response.data;
   },
+
+  getLandProtectionComments: async (id: string) => {
+    const response = await api.get<LandProtectionComment[]>(
+      `/admin/land-protections/${id}/comments`,
+    );
+    return response.data;
+  },
 };
+
+export interface LandProtectionComment {
+  id: string;
+  landProtectionId: string;
+  message: string;
+  createdAt: string;
+  user?: { id: string; name: string | null };
+}
 
 // Enquiry Types
 export interface EnquiryUser {

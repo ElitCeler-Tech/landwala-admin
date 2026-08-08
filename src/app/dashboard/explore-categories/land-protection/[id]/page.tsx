@@ -9,6 +9,7 @@ import {
   agentsApi,
   LandProtection,
   LandProtectionAssignment,
+  LandProtectionComment,
   Agent,
 } from "@/lib/api";
 import { scrollSelectIntoView } from "@/hooks/useScrollIntoViewOnFocus";
@@ -22,6 +23,7 @@ export default function LandProtectionDetailPage() {
     [],
   );
   const [agents, setAgents] = useState<Agent[]>([]);
+  const [comments, setComments] = useState<LandProtectionComment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -34,14 +36,17 @@ export default function LandProtectionDetailPage() {
 
   const fetchAll = useCallback(async () => {
     try {
-      const [requestData, assignmentData, agentsData] = await Promise.all([
-        userActionsApi.getLandProtectionById(requestId),
-        userActionsApi.getLandProtectionAssignmentHistory(requestId),
-        agentsApi.getAgents(1, 100),
-      ]);
+      const [requestData, assignmentData, agentsData, commentsData] =
+        await Promise.all([
+          userActionsApi.getLandProtectionById(requestId),
+          userActionsApi.getLandProtectionAssignmentHistory(requestId),
+          agentsApi.getAgents(1, 100),
+          userActionsApi.getLandProtectionComments(requestId),
+        ]);
       setRequest(requestData);
       setAssignments(assignmentData);
       setAgents(agentsData.data);
+      setComments(commentsData);
     } catch (err) {
       console.error("Failed to fetch land protection details:", err);
     } finally {
@@ -509,6 +514,37 @@ export default function LandProtectionDetailPage() {
           <p className="text-sm text-gray-400">
             Not yet assigned to any agent
           </p>
+        )}
+      </div>
+
+      {/* Customer Comments */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 mt-6">
+        <h2 className="text-lg font-medium text-gray-900 mb-6">
+          Customer Comments
+        </h2>
+        {comments.length > 0 ? (
+          <div className="flex flex-col gap-4">
+            {comments.map((c) => (
+              <div
+                key={c.id}
+                className="border border-gray-100 rounded-lg p-4 bg-[#f8f9fc]"
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm font-medium text-gray-900">
+                    {c.user?.name || request.fullName}
+                  </span>
+                  <span className="text-xs text-gray-400">
+                    {formatDate(c.createdAt)}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                  {c.message}
+                </p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-400">No comments from the customer yet</p>
         )}
       </div>
     </div>
