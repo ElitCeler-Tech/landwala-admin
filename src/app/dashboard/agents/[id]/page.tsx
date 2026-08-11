@@ -229,19 +229,22 @@ export default function AgentDetailsPage() {
                 {agent.id.slice(0, 8)}...
               </span>
             </div>
-            <div>
+            <div className="min-w-0">
               <span className="text-sm font-medium text-gray-900">
                 Agent Code -{" "}
               </span>
-              <span className="text-sm text-gray-700">
+              <span className="text-sm text-gray-700 break-all">
                 {agent.agentCode || "—"}
               </span>
             </div>
-            <div>
+            <div className="min-w-0">
               <span className="text-sm font-medium text-gray-900">
                 E mail ID-
               </span>
-              <span className="text-sm text-gray-700"> {agent.email}</span>
+              <span className="text-sm text-gray-700 break-all">
+                {" "}
+                {agent.email}
+              </span>
             </div>
             <div>
               <span className="text-sm font-medium text-gray-900">

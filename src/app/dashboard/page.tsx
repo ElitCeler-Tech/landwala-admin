@@ -385,12 +385,12 @@ export default function Dashboard() {
       <div className="flex flex-wrap justify-between items-center gap-3 mb-5">
         <h1 className="text-xl font-bold text-gray-900">Dashboard Overview</h1>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {RANGE_OPTIONS.map((opt) => (
             <button
               key={opt.value}
               onClick={() => setRange(opt.value)}
-              className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors cursor-pointer ${
+              className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
                 range === opt.value
                   ? "bg-[#1e2667] text-white border-[#1e2667]"
                   : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
@@ -400,19 +400,19 @@ export default function Dashboard() {
             </button>
           ))}
           {range === "custom" && (
-            <div className="flex items-center gap-2 ml-1">
+            <div className="flex flex-wrap items-center gap-2 ml-1">
               <input
                 type="date"
                 value={customFrom}
                 onChange={(e) => setCustomFrom(e.target.value)}
-                className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+                className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#1e2667] shrink-0"
               />
-              <span className="text-gray-400 text-xs">to</span>
+              <span className="text-gray-400 text-xs shrink-0">to</span>
               <input
                 type="date"
                 value={customTo}
                 onChange={(e) => setCustomTo(e.target.value)}
-                className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+                className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#1e2667] shrink-0"
               />
             </div>
           )}

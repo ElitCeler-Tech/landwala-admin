@@ -134,26 +134,28 @@ export default function ReportsPage() {
           </div>
         )}
         <div className="w-full overflow-x-auto">
-          <table className="w-full text-left border-collapse table-fixed">
+          <table className="w-full min-w-[820px] text-left border-collapse table-fixed">
             <thead>
               <tr className="bg-[#f8f9fc] text-sm">
-                <th className="py-4 pl-8 rounded-l-xl font-medium text-gray-600 w-[15%]">
+                <th className="py-4 pl-8 pr-3 rounded-l-xl font-medium text-gray-600 w-[14%]">
                   Reporter Name
                 </th>
-                <th className="py-4 font-medium text-gray-600 w-[15%]">
+                <th className="py-4 px-3 font-medium text-gray-600 w-[16%]">
                   Email
                 </th>
-                <th className="py-4 font-medium text-gray-600 w-[10%]">Role</th>
-                <th className="py-4 font-medium text-gray-600 w-[20%]">
+                <th className="py-4 px-3 font-medium text-gray-600 w-[11%] whitespace-nowrap">
+                  Role
+                </th>
+                <th className="py-4 px-3 font-medium text-gray-600 w-[17%]">
                   Issue Title
                 </th>
-                <th className="py-4 font-medium text-gray-600 w-[20%]">
+                <th className="py-4 px-3 font-medium text-gray-600 w-[15%]">
                   Description
                 </th>
-                <th className="py-4 font-medium text-gray-600 w-[10%]">
+                <th className="py-4 px-3 font-medium text-gray-600 w-[14%] whitespace-nowrap">
                   Status
                 </th>
-                <th className="py-4 pr-8 rounded-r-xl font-medium text-gray-600 w-[10%]">
+                <th className="py-4 pl-3 pr-8 rounded-r-xl font-medium text-gray-600 w-[13%] whitespace-nowrap">
                   Action
                 </th>
               </tr>
@@ -170,26 +172,32 @@ export default function ReportsPage() {
                     key={report.id}
                     className="hover:bg-gray-50/50 transition-colors border-b border-gray-50 last:border-0"
                   >
-                    <td className="py-5 pl-8">
-                      <div className="flex flex-col">
-                        <span className="font-medium text-gray-900">
+                    <td className="py-5 pl-8 pr-3">
+                      <div className="flex flex-col min-w-0">
+                        <span
+                          className="font-medium text-gray-900 truncate"
+                          title={reporterInfo.name}
+                        >
                           {reporterInfo.name}
                         </span>
                         {reporterInfo.phone && reporterInfo.phone !== "N/A" && (
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-gray-500 truncate">
                             {reporterInfo.phone}
                           </span>
                         )}
                       </div>
                     </td>
-                    <td className="py-5">
-                      <span className="text-sm text-gray-500">
+                    <td className="py-5 px-3 min-w-0">
+                      <span
+                        className="text-sm text-gray-500 block truncate"
+                        title={reporterInfo.email}
+                      >
                         {reporterInfo.email}
                       </span>
                     </td>
-                    <td className="py-5">
+                    <td className="py-5 px-3">
                       <span
-                        className={`text-xs font-medium px-2 py-1 rounded-full ${
+                        className={`text-xs font-medium px-2 py-1 rounded-full whitespace-nowrap ${
                           report.reportedBy === "USER"
                             ? "bg-purple-100 text-purple-700"
                             : report.reportedBy === "EXECUTIVE"
@@ -200,20 +208,22 @@ export default function ReportsPage() {
                         {report.reportedBy}
                       </span>
                     </td>
-                    <td className="py-5 text-gray-900 font-medium">
-                      {report.title}
+                    <td className="py-5 px-3 text-gray-900 font-medium min-w-0">
+                      <p className="truncate" title={report.title}>
+                        {report.title}
+                      </p>
                     </td>
-                    <td className="py-5 text-gray-500">
+                    <td className="py-5 px-3 text-gray-500 min-w-0">
                       <p className="line-clamp-2" title={report.description}>
                         {report.description?.split(" ").length > 4
                           ? `${report.description.split(" ").slice(0, 4).join(" ")}...`
                           : report.description}
                       </p>
                     </td>
-                    <td className="py-5">
+                    <td className="py-5 px-3">
                       <div className="flex items-center gap-2">
                         <span
-                          className={`text-xs font-medium px-3 py-1 rounded-full capitalize ${getStatusBadge(
+                          className={`text-xs font-medium px-3 py-1 rounded-full capitalize whitespace-nowrap ${getStatusBadge(
                             report.status,
                           )}`}
                         >
@@ -229,7 +239,7 @@ export default function ReportsPage() {
                         )}
                       </div>
                     </td>
-                    <td className="py-5 pr-8">
+                    <td className="py-5 pl-3 pr-8">
                       <Link
                         href={`/dashboard/reports/${report.id}`}
                         onClick={() => setReportDetail(report.id, report)}
