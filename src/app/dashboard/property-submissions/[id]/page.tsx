@@ -258,7 +258,7 @@ export default function PropertySubmissionDetailPage() {
 
       {/* Action Buttons */}
       {canActOn && (
-        <div className="flex justify-end gap-4 mb-8">
+        <div className="flex flex-wrap justify-end gap-4 mb-8">
           <button
             onClick={handleReject}
             disabled={actionLoading !== null}

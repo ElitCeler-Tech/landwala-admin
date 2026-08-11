@@ -64,7 +64,7 @@ export default function ExecutivesPage() {
 
   return (
     <div className="p-8 pb-4 bg-white font-sans min-h-full flex flex-col">
-      <div className="flex justify-between items-end mb-8">
+      <div className="flex flex-wrap justify-between items-end gap-4 mb-8">
         <div className="flex items-center gap-4">
           <Link
             href="/dashboard"
@@ -83,7 +83,7 @@ export default function ExecutivesPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           <Link href="/dashboard/executives/create">
             <button className="flex items-center gap-2 bg-[#1e2667] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-opacity-90 transition-opacity cursor-pointer">
               <Plus className="w-4 h-4" />
@@ -142,10 +142,16 @@ export default function ExecutivesPage() {
                   key={executive.id}
                   className="hover:bg-gray-50/50 transition-colors border-b border-gray-50 last:border-0"
                 >
-                  <td className="py-5 pl-8 font-medium text-gray-900">
-                    {executive.fullName}
+                  <td className="py-5 pl-8 font-medium text-gray-900 min-w-0">
+                    <p className="truncate" title={executive.fullName}>
+                      {executive.fullName}
+                    </p>
                   </td>
-                  <td className="py-5 text-gray-500">{executive.email}</td>
+                  <td className="py-5 text-gray-500 min-w-0">
+                    <p className="truncate" title={executive.email}>
+                      {executive.email}
+                    </p>
+                  </td>
                   <td className="py-5 text-gray-500">{executive.phone}</td>
                   <td className="py-5 text-gray-500">
                     {getAssignedLocations(executive)}

@@ -59,7 +59,7 @@ export default function SubscriptionPlansPage() {
   return (
     <div className="p-8 pb-4 bg-gray-50/50 font-sans min-h-full flex flex-col items-center">
       <div className="w-full flex-1 max-w-7xl mx-auto flex flex-col">
-        <div className="mb-10 flex justify-between items-end w-full">
+        <div className="mb-10 flex flex-wrap justify-between items-end gap-4 w-full">
           <div className="text-left">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
               Subscription Plans

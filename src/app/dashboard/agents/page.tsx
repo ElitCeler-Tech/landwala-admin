@@ -73,7 +73,7 @@ export default function AgentsPage() {
 
   return (
     <div className="p-8 pb-4 bg-white font-sans min-h-full flex flex-col">
-      <div className="flex justify-between items-end mb-8">
+      <div className="flex flex-wrap justify-between items-end gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-medium text-gray-900 mb-2">
             All Agents
@@ -83,7 +83,7 @@ export default function AgentsPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           <Link href="/dashboard/agents/create">
             <button className="flex items-center gap-2 bg-[#1e2667] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-opacity-90 transition-opacity cursor-pointer">
               <Plus className="w-4 h-4" />
@@ -146,13 +146,21 @@ export default function AgentsPage() {
                   key={agent.id}
                   className="hover:bg-gray-50/50 transition-colors border-b border-gray-50 last:border-0"
                 >
-                  <td className="py-5 pl-8 font-medium text-gray-900">
-                    {agent.fullName}
+                  <td className="py-5 pl-8 font-medium text-gray-900 min-w-0">
+                    <p className="truncate" title={agent.fullName}>
+                      {agent.fullName}
+                    </p>
                   </td>
-                  <td className="py-5 text-gray-500">
-                    {agent.agentCode || "—"}
+                  <td className="py-5 text-gray-500 min-w-0">
+                    <p className="truncate" title={agent.agentCode || "—"}>
+                      {agent.agentCode || "—"}
+                    </p>
                   </td>
-                  <td className="py-5 text-gray-500">{agent.email}</td>
+                  <td className="py-5 text-gray-500 min-w-0">
+                    <p className="truncate" title={agent.email}>
+                      {agent.email}
+                    </p>
+                  </td>
                   <td className="py-5 text-gray-500">{agent.phone}</td>
                   <td className="py-5 text-gray-500">
                     {getAssignedLocations(agent)}

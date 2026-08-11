@@ -76,7 +76,7 @@ export default function UsersPage() {
 
   return (
     <div className="p-8 pb-4 bg-white font-sans min-h-full flex flex-col">
-      <div className="flex justify-between items-end mb-8">
+      <div className="flex flex-wrap justify-between items-end gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-medium text-gray-900 mb-2">All Users</h1>
           <p className="text-gray-500 italic">
@@ -84,7 +84,7 @@ export default function UsersPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           <Link href="/dashboard/users/create">
             <button className="flex items-center gap-2 bg-[#1e2667] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-opacity-90 transition-opacity cursor-pointer">
               <Plus className="w-4 h-4" />

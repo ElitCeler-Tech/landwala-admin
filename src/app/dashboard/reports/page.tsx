@@ -92,7 +92,7 @@ export default function ReportsPage() {
 
   return (
     <div className="p-8 pb-4 bg-white font-sans min-h-full flex flex-col">
-      <div className="flex justify-between items-end mb-8">
+      <div className="flex flex-wrap justify-between items-end gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-medium text-gray-900 mb-2">
             Issue Reports
@@ -102,7 +102,7 @@ export default function ReportsPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           <select
             onFocus={scrollSelectIntoView}
             value={reportedByFilter}

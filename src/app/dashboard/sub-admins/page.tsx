@@ -204,7 +204,7 @@ export default function SubAdminsPage() {
 
   return (
     <div className="p-8 pb-4 bg-white font-sans min-h-full flex flex-col relative">
-      <div className="flex justify-between items-end mb-8">
+      <div className="flex flex-wrap justify-between items-end gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-medium text-gray-900 mb-2">
             Sub Admins
@@ -214,7 +214,7 @@ export default function SubAdminsPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
@@ -275,12 +275,18 @@ export default function SubAdminsPage() {
                   key={admin.id}
                   className="hover:bg-gray-50/50 transition-colors border-b border-gray-50 last:border-0"
                 >
-                  <td className="py-5 pl-8">
-                    <div className="flex flex-col">
-                      <span className="font-medium text-gray-900">
+                  <td className="py-5 pl-8 min-w-0">
+                    <div className="flex flex-col min-w-0">
+                      <span
+                        className="font-medium text-gray-900 truncate block"
+                        title={admin.name}
+                      >
                         {admin.name}
                       </span>
-                      <span className="text-xs text-gray-500">
+                      <span
+                        className="text-xs text-gray-500 truncate block"
+                        title={admin.email}
+                      >
                         {admin.email}
                       </span>
                     </div>

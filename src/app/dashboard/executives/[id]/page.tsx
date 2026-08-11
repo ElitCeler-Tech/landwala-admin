@@ -252,7 +252,7 @@ export default function ExecutiveDetailsPage() {
         </div>
       </div>
 
-      <div className="flex justify-end gap-4 mb-8">
+      <div className="flex flex-wrap justify-end gap-4 mb-8">
         <button
           onClick={handleToggleActive}
           disabled={actionLoading}

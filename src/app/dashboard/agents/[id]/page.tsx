@@ -290,7 +290,7 @@ export default function AgentDetailsPage() {
       </div>
 
       {/* Action Buttons */}
-      <div className="flex justify-end gap-4 mb-8">
+      <div className="flex flex-wrap justify-end gap-4 mb-8">
         {agent.kycStatus === "pending" && (
           <>
             <button

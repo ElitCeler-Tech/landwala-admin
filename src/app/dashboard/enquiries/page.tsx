@@ -56,7 +56,7 @@ export default function EnquiriesPage() {
 
     return (
         <div className="p-8 pb-4 bg-white font-sans min-h-full flex flex-col">
-            <div className="flex justify-between items-end mb-8">
+            <div className="flex flex-wrap justify-between items-end gap-4 mb-8">
                 <div>
                     <h1 className="text-2xl font-medium text-gray-900 mb-2">Enquiries</h1>
                     <p className="text-gray-500 italic">

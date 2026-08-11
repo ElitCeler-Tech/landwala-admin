@@ -132,7 +132,7 @@ export default function SubscriptionPurchasesPage() {
 
   return (
     <div className="p-8 pb-4 bg-white font-sans min-h-full flex flex-col">
-      <div className="flex justify-between items-end mb-8">
+      <div className="flex flex-wrap justify-between items-end gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-medium text-gray-900 mb-2">
             Payment Transactions
@@ -241,12 +241,18 @@ export default function SubscriptionPurchasesPage() {
                     key={purchase.id}
                     className="hover:bg-gray-50/50 transition-colors border-b border-gray-50 last:border-0"
                   >
-                    <td className="py-5 pl-8">
-                      <div className="flex flex-col gap-1">
-                        <span className="font-medium text-gray-900">
+                    <td className="py-5 pl-8 min-w-0">
+                      <div className="flex flex-col gap-1 min-w-0">
+                        <span
+                          className="font-medium text-gray-900 truncate block"
+                          title={purchase.user.name || "-"}
+                        >
                           {purchase.user.name || "-"}
                         </span>
-                        <span className="text-xs text-gray-500">
+                        <span
+                          className="text-xs text-gray-500 truncate block"
+                          title={purchase.user.email || purchase.user.phone || "-"}
+                        >
                           {purchase.user.email || purchase.user.phone || "-"}
                         </span>
                       </div>
@@ -257,8 +263,10 @@ export default function SubscriptionPurchasesPage() {
                     <td className="py-5 text-gray-900">
                       ₹{purchase.plan.price}
                     </td>
-                    <td className="py-5 text-gray-500 font-mono text-xs">
-                      {purchase.cfOrderId}
+                    <td className="py-5 text-gray-500 font-mono text-xs min-w-0">
+                      <span className="truncate block" title={purchase.cfOrderId}>
+                        {purchase.cfOrderId}
+                      </span>
                     </td>
                     <td className="py-5 text-gray-500">
                       {formatDate(purchase.createdAt)}
@@ -321,12 +329,18 @@ export default function SubscriptionPurchasesPage() {
                     key={payment.id}
                     className="hover:bg-gray-50/50 transition-colors border-b border-gray-50 last:border-0"
                   >
-                    <td className="py-5 pl-8">
-                      <div className="flex flex-col gap-1">
-                        <span className="font-medium text-gray-900">
+                    <td className="py-5 pl-8 min-w-0">
+                      <div className="flex flex-col gap-1 min-w-0">
+                        <span
+                          className="font-medium text-gray-900 truncate block"
+                          title={payment.user.name || "-"}
+                        >
                           {payment.user.name || "-"}
                         </span>
-                        <span className="text-xs text-gray-500">
+                        <span
+                          className="text-xs text-gray-500 truncate block"
+                          title={payment.user.email || payment.user.phone || "-"}
+                        >
                           {payment.user.email || payment.user.phone || "-"}
                         </span>
                       </div>
@@ -337,8 +351,10 @@ export default function SubscriptionPurchasesPage() {
                     <td className="py-5 text-gray-900">
                       {payment.currency} {payment.amount}
                     </td>
-                    <td className="py-5 text-gray-500 font-mono text-xs">
-                      {payment.cfOrderId}
+                    <td className="py-5 text-gray-500 font-mono text-xs min-w-0">
+                      <span className="truncate block" title={payment.cfOrderId}>
+                        {payment.cfOrderId}
+                      </span>
                     </td>
                     <td className="py-5 text-gray-500">
                       {formatDate(payment.createdAt)}
