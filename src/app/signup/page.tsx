@@ -21,14 +21,6 @@ export default function SignupPage() {
     setError("");
     setSuccess(false);
 
-    const allowedDomains = ["landwalaa.com", "gmail.com"];
-    const emailDomain = formData.email.split("@")[1];
-    if (!emailDomain || !allowedDomains.includes(emailDomain.toLowerCase())) {
-      setError("Please use a landwalaa.com or gmail.com email address");
-      setIsLoading(false);
-      return;
-    }
-
     try {
       // Requires the current session to be a super admin (backend-enforced).
       // Deliberately does NOT log in as the new admin -- that would replace
