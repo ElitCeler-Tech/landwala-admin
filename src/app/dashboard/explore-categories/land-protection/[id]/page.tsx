@@ -289,6 +289,16 @@ export default function LandProtectionDetailPage() {
             </p>
           </div>
           <div>
+            <p className="text-gray-500 text-sm mb-1">Selected Plan:</p>
+            <p className="text-gray-900 font-medium">
+              {request.planTitle
+                ? `${request.planTitle}${
+                    request.planAmount != null ? ` (₹${request.planAmount})` : ""
+                  }`
+                : "No paid plan"}
+            </p>
+          </div>
+          <div>
             <p className="text-gray-500 text-sm mb-1">Admin Approved:</p>
             <p className="text-gray-900 font-medium">
               {request.adminApproved ? `Yes (${formatDate(request.adminApprovedAt)})` : "No"}

@@ -1006,6 +1006,8 @@ export interface LandProtection {
   adminApproved: boolean;
   adminApprovedAt: string | null;
   visitFrequency: "MONTHLY" | "QUARTERLY" | "HALF_YEARLY" | null;
+  planTitle: string | null;
+  planAmount: number | null;
   imageUrls?: string[];
   layoutUrl?: string | null;
   userLayoutUrl?: string | null;
