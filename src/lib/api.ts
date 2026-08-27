@@ -1222,6 +1222,7 @@ export const userActionsApi = {
       latitude?: number;
       longitude?: number;
       nextVisitDueAt?: string;
+      extraPhotoRequirements?: string[];
     },
   ) => {
     const response = await api.post<{
@@ -1705,6 +1706,8 @@ export interface SubscriptionPlan {
   price: number;
   durationMonths: number;
   isActive: boolean;
+  minSqYards: number | null;
+  maxSqYards: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -1720,6 +1723,8 @@ export interface CreateSubscriptionPlanPayload {
   price: number;
   durationMonths: number;
   isActive: boolean;
+  minSqYards?: number;
+  maxSqYards?: number;
 }
 
 export type UpdateSubscriptionPlanPayload =
@@ -2545,9 +2550,10 @@ export const executivesApi = {
     page: number = 1,
     limit: number = 10,
     search?: string,
+    location?: { district?: string; mandal?: string; village?: string },
   ) => {
     const response = await api.get<ExecutivesResponse>("/admin/executives", {
-      params: { page, limit, search },
+      params: { page, limit, search, ...location },
     });
     return response.data;
   },
@@ -2686,10 +2692,15 @@ export interface InspectionLandsResponse {
 }
 
 export const inspectionLandsApi = {
-  getLands: async (page: number = 1, limit: number = 10, search?: string) => {
+  getLands: async (
+    page: number = 1,
+    limit: number = 10,
+    search?: string,
+    location?: { district?: string; mandal?: string; village?: string },
+  ) => {
     const response = await api.get<InspectionLandsResponse>(
       "/admin/inspection-lands",
-      { params: { page, limit, search } },
+      { params: { page, limit, search, ...location } },
     );
     return response.data;
   },
@@ -2778,10 +2789,11 @@ export const landInspectionAssignmentApi = {
     landId: string,
     executiveId: string,
     nextVisitDueAt?: string,
+    extraPhotoRequirements?: string[],
   ) => {
     const response = await api.post<LandInspectionAssignment>(
       `/admin/inspection-lands/${landId}/assign`,
-      { executiveId, nextVisitDueAt },
+      { executiveId, nextVisitDueAt, extraPhotoRequirements },
     );
     return response.data;
   },
@@ -2790,10 +2802,11 @@ export const landInspectionAssignmentApi = {
     assignmentId: string,
     executiveId: string,
     nextVisitDueAt?: string,
+    extraPhotoRequirements?: string[],
   ) => {
     const response = await api.patch<LandInspectionAssignment>(
       `/admin/land-inspection-assignments/${assignmentId}/reassign`,
-      { executiveId, nextVisitDueAt },
+      { executiveId, nextVisitDueAt, extraPhotoRequirements },
     );
     return response.data;
   },

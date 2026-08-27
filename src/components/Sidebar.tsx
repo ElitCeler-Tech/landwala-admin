@@ -165,6 +165,7 @@ export const sidebarItems: SidebarItem[] = [
       { name: "Add Executive", href: "/dashboard/executives/create", icon: PlusCircle },
       { name: "All Executives", href: "/dashboard/executives", icon: HardHat },
       { name: "Assigned Tasks", href: "/dashboard/inspection-lands", icon: Map },
+      { name: "Assign by Location", href: "/dashboard/assign-by-location", icon: MapPin },
       { name: "Site Visits", href: "/dashboard/land-visits", icon: Camera },
     ],
   },
