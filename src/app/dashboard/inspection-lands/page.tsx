@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Search, Loader2, Plus, X } from "lucide-react";
+import { Search, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { inspectionLandsApi, InspectionLand } from "@/lib/api";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
@@ -17,24 +17,6 @@ export default function InspectionLandsPage() {
   const [searchInput, setSearchInput] = useState("");
   const searchQuery = useDebouncedValue(searchInput, 350);
   const [limit, setLimit] = useState(10);
-
-  const [error, setError] = useState("");
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [addLoading, setAddLoading] = useState(false);
-  const [form, setForm] = useState({
-    ownerName: "",
-    ownerPhone: "",
-    surveyNumbers: "",
-    district: "",
-    mandal: "",
-    village: "",
-    location: "",
-    pincode: "",
-    areaValue: "",
-    areaUnit: "",
-    latitude: "",
-    longitude: "",
-  });
 
   const fetchLands = useCallback(async () => {
     setIsFetching(true);
@@ -63,73 +45,6 @@ export default function InspectionLandsPage() {
     fetchLands();
   }, [fetchLands]);
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleAdd = async () => {
-    if (
-      !form.ownerName.trim() ||
-      !form.surveyNumbers.trim() ||
-      !form.district.trim() ||
-      !form.mandal.trim() ||
-      !form.village.trim() ||
-      !form.location.trim() ||
-      !form.pincode.trim() ||
-      !form.latitude.trim() ||
-      !form.longitude.trim()
-    ) {
-      setError("Please fill in all required fields");
-      return;
-    }
-    setAddLoading(true);
-    setError("");
-    try {
-      await inspectionLandsApi.createLand({
-        ownerName: form.ownerName.trim(),
-        ownerPhone: form.ownerPhone.trim() || undefined,
-        surveyNumbers: form.surveyNumbers
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
-        district: form.district.trim(),
-        mandal: form.mandal.trim(),
-        village: form.village.trim(),
-        location: form.location.trim(),
-        pincode: form.pincode.trim(),
-        areaValue: form.areaValue ? parseFloat(form.areaValue) : undefined,
-        areaUnit: form.areaUnit.trim() || undefined,
-        latitude: parseFloat(form.latitude),
-        longitude: parseFloat(form.longitude),
-      });
-      setForm({
-        ownerName: "",
-        ownerPhone: "",
-        surveyNumbers: "",
-        district: "",
-        mandal: "",
-        village: "",
-        location: "",
-        pincode: "",
-        areaValue: "",
-        areaUnit: "",
-        latitude: "",
-        longitude: "",
-      });
-      setShowAddForm(false);
-      await fetchLands();
-    } catch (err: any) {
-      setError(
-        err?.response?.data?.message || "Failed to create inspection land",
-      );
-    } finally {
-      setAddLoading(false);
-    }
-  };
-
   return (
     <div className="p-8 pb-4 bg-white font-sans min-h-full flex flex-col">
       <div className="flex flex-wrap justify-between items-end gap-4 mb-8">
@@ -153,134 +68,8 @@ export default function InspectionLandsPage() {
               className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg w-64 focus:outline-none focus:ring-1 focus:ring-[#1e2667] text-gray-900"
             />
           </div>
-          <button
-            onClick={() => setShowAddForm((v) => !v)}
-            className="flex items-center gap-2 bg-[#1e2667] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-opacity-90 transition-opacity cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            Add Land
-          </button>
         </div>
       </div>
-
-      {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm flex justify-between items-center">
-          {error}
-          <button onClick={() => setError("")}>
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      )}
-
-      {showAddForm && (
-        <div className="mb-6 bg-gray-50 rounded-xl border border-gray-100 p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <input
-              name="ownerName"
-              value={form.ownerName}
-              onChange={handleChange}
-              placeholder="Owner Name *"
-              className="border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
-            />
-            <input
-              name="ownerPhone"
-              value={form.ownerPhone}
-              onChange={handleChange}
-              placeholder="Owner Phone (optional)"
-              className="border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
-            />
-            <input
-              name="surveyNumbers"
-              value={form.surveyNumbers}
-              onChange={handleChange}
-              placeholder="Survey Numbers (comma-separated) *"
-              className="border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
-            />
-            <input
-              name="district"
-              value={form.district}
-              onChange={handleChange}
-              placeholder="District *"
-              className="border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
-            />
-            <input
-              name="mandal"
-              value={form.mandal}
-              onChange={handleChange}
-              placeholder="Mandal *"
-              className="border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
-            />
-            <input
-              name="village"
-              value={form.village}
-              onChange={handleChange}
-              placeholder="Village *"
-              className="border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
-            />
-            <input
-              name="location"
-              value={form.location}
-              onChange={handleChange}
-              placeholder="Location *"
-              className="border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
-            />
-            <input
-              name="pincode"
-              value={form.pincode}
-              onChange={handleChange}
-              placeholder="Pincode *"
-              maxLength={6}
-              className="border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
-            />
-            <div className="flex gap-2">
-              <input
-                name="areaValue"
-                value={form.areaValue}
-                onChange={handleChange}
-                placeholder="Area value"
-                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
-              />
-              <input
-                name="areaUnit"
-                value={form.areaUnit}
-                onChange={handleChange}
-                placeholder="Unit"
-                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
-              />
-            </div>
-            <input
-              name="latitude"
-              value={form.latitude}
-              onChange={handleChange}
-              placeholder="Latitude *"
-              className="border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
-            />
-            <input
-              name="longitude"
-              value={form.longitude}
-              onChange={handleChange}
-              placeholder="Longitude *"
-              className="border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
-            />
-          </div>
-          <div className="flex gap-3 mt-4">
-            <button
-              onClick={handleAdd}
-              disabled={addLoading}
-              className="bg-[#1e2667] text-white text-sm font-medium px-6 py-2 rounded-lg hover:bg-opacity-90 transition-opacity cursor-pointer disabled:opacity-50 flex items-center gap-2"
-            >
-              {addLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-              Save
-            </button>
-            <button
-              onClick={() => setShowAddForm(false)}
-              className="bg-gray-200 text-gray-700 text-sm font-medium px-6 py-2 rounded-lg hover:bg-gray-300 transition-colors cursor-pointer"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex-1 flex flex-col">
         {isInitialLoading ? (

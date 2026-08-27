@@ -166,6 +166,11 @@ export const sidebarItems: SidebarItem[] = [
       { name: "All Executives", href: "/dashboard/executives", icon: HardHat },
       { name: "Assigned Tasks", href: "/dashboard/inspection-lands", icon: Map },
       { name: "Assign by Location", href: "/dashboard/assign-by-location", icon: MapPin },
+      {
+        name: "Land Protection Requests",
+        href: "/dashboard/explore-categories/land-protection",
+        icon: ShieldCheck,
+      },
       { name: "Site Visits", href: "/dashboard/land-visits", icon: Camera },
     ],
   },
