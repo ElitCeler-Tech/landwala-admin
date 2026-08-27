@@ -2095,6 +2095,9 @@ export interface BannerItem {
   updatedAt: string;
   property?: Property | null;
   layout?: Layout | null;
+  /** The banner's own uploaded cover; null falls back to the linked property/layout's default image */
+  coverMediaUrl: string | null;
+  coverMediaType: "IMAGE" | "VIDEO" | null;
 }
 
 export interface BannerListResponse {
@@ -2119,17 +2122,20 @@ export const bannersApi = {
     type: BannerItemType,
     itemId: string,
     displayOrder?: number,
+    coverMedia?: File,
   ) => {
-    const body: {
-      type: BannerItemType;
-      propertyId?: string;
-      layoutId?: string;
-      displayOrder?: number;
-    } = { type, displayOrder };
-    if (type === "PROPERTY") body.propertyId = itemId;
-    else body.layoutId = itemId;
+    const formData = new FormData();
+    formData.append("type", type);
+    if (type === "PROPERTY") formData.append("propertyId", itemId);
+    else formData.append("layoutId", itemId);
+    if (displayOrder !== undefined) {
+      formData.append("displayOrder", String(displayOrder));
+    }
+    if (coverMedia) formData.append("coverMedia", coverMedia);
 
-    const response = await api.post<BannerItem>("/admin/banner", body);
+    const response = await api.post<BannerItem>("/admin/banner", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
     return response.data;
   },
 

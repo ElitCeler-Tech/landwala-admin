@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
-import { Loader2, Plus, Trash2, X } from "lucide-react";
+import { Loader2, Plus, Trash2, X, Upload, Film } from "lucide-react";
 import {
   bannersApi,
   propertiesApi,
@@ -35,6 +35,9 @@ export default function BannersPage() {
   const [pickerLoading, setPickerLoading] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState("");
   const [displayOrder, setDisplayOrder] = useState("");
+  const [coverMediaFile, setCoverMediaFile] = useState<File | null>(null);
+  const [coverMediaPreviewUrl, setCoverMediaPreviewUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchBanners = useCallback(async () => {
     setIsLoading(true);
@@ -69,6 +72,7 @@ export default function BannersPage() {
     setError("");
     setSelectedItemId("");
     setDisplayOrder("");
+    clearCoverMedia();
     setPickerLoading(true);
     try {
       if (addType === "PROPERTY") {
@@ -88,6 +92,7 @@ export default function BannersPage() {
   const handleAddTypeChange = async (type: BannerItemType) => {
     setAddType(type);
     setSelectedItemId("");
+    clearCoverMedia();
     setPickerLoading(true);
     try {
       if (type === "PROPERTY") {
@@ -116,14 +121,31 @@ export default function BannersPage() {
         addType,
         selectedItemId,
         displayOrder ? parseInt(displayOrder, 10) : undefined,
+        coverMediaFile || undefined,
       );
       setShowAddForm(false);
+      clearCoverMedia();
       await fetchBanners();
     } catch (err: any) {
       setError(err?.response?.data?.message || "Failed to add to banner");
     } finally {
       setActionLoading(null);
     }
+  };
+
+  const clearCoverMedia = () => {
+    if (coverMediaPreviewUrl) URL.revokeObjectURL(coverMediaPreviewUrl);
+    setCoverMediaFile(null);
+    setCoverMediaPreviewUrl(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleCoverMediaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (coverMediaPreviewUrl) URL.revokeObjectURL(coverMediaPreviewUrl);
+    setCoverMediaFile(file);
+    setCoverMediaPreviewUrl(URL.createObjectURL(file));
   };
 
   const handleRemove = async (bannerItemId: string) => {
@@ -143,7 +165,8 @@ export default function BannersPage() {
   const getItemTitle = (item: BannerItem) =>
     item.type === "PROPERTY" ? item.property?.title : item.layout?.title;
   const getItemImage = (item: BannerItem) =>
-    item.type === "PROPERTY" ? item.property?.images?.[0] : item.layout?.imageUrl;
+    item.coverMediaUrl ??
+    (item.type === "PROPERTY" ? item.property?.images?.[0] : item.layout?.imageUrl);
   const getItemLocation = (item: BannerItem) =>
     item.type === "PROPERTY"
       ? item.property?.locationAddress
@@ -269,11 +292,67 @@ export default function BannersPage() {
               Add
             </button>
             <button
-              onClick={() => setShowAddForm(false)}
+              onClick={() => {
+                setShowAddForm(false);
+                clearCoverMedia();
+              }}
               className="bg-gray-200 text-gray-700 text-sm font-medium px-6 py-2 rounded-lg hover:bg-gray-300 transition-colors cursor-pointer"
             >
               Cancel
             </button>
+          </div>
+
+          <div className="mt-4">
+            <label className="block text-xs text-gray-500 mb-1">
+              Cover Image or Video (optional)
+            </label>
+            <p className="text-xs text-gray-400 mb-2">
+              Leave blank to use the {addType === "PROPERTY" ? "property" : "layout"}&apos;s own default image.
+            </p>
+            <div className="flex items-center gap-4">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,video/*"
+                onChange={handleCoverMediaChange}
+                className="hidden"
+                id="cover-media-input"
+              />
+              <label
+                htmlFor="cover-media-input"
+                className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+              >
+                <Upload className="w-4 h-4" />
+                {coverMediaFile ? "Change file" : "Choose file"}
+              </label>
+              {coverMediaFile && (
+                <>
+                  <div className="relative w-20 h-14 rounded-lg overflow-hidden bg-gray-100 border border-gray-200 flex-shrink-0">
+                    {coverMediaFile.type.startsWith("video/") ? (
+                      <div className="w-full h-full flex items-center justify-center bg-black/80">
+                        <Film className="w-5 h-5 text-white" />
+                      </div>
+                    ) : coverMediaPreviewUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={coverMediaPreviewUrl}
+                        alt="Cover preview"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : null}
+                  </div>
+                  <span className="text-xs text-gray-500 truncate max-w-[160px]">
+                    {coverMediaFile.name}
+                  </span>
+                  <button
+                    onClick={clearCoverMedia}
+                    className="text-xs text-red-600 hover:underline cursor-pointer"
+                  >
+                    Remove
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -295,7 +374,11 @@ export default function BannersPage() {
                   className="border border-gray-100 rounded-xl overflow-hidden shadow-sm flex flex-col"
                 >
                   <div className="relative w-full h-40 bg-gray-100">
-                    {image ? (
+                    {item.coverMediaType === "VIDEO" ? (
+                      <div className="w-full h-full flex items-center justify-center bg-black/85">
+                        <Film className="w-8 h-8 text-white" />
+                      </div>
+                    ) : image ? (
                       <Image
                         src={image}
                         alt={title || "Banner item"}
@@ -311,6 +394,11 @@ export default function BannersPage() {
                     <span className="absolute top-2 left-2 text-xs font-medium px-2 py-1 rounded-full bg-white/90 text-gray-700">
                       {item.type}
                     </span>
+                    {item.coverMediaUrl && (
+                      <span className="absolute bottom-2 left-2 text-xs font-medium px-2 py-1 rounded-full bg-white/90 text-gray-700">
+                        Custom cover
+                      </span>
+                    )}
                     <span className="absolute top-2 right-2 text-xs font-medium px-2 py-1 rounded-full bg-[#1e2667] text-white">
                       #{item.displayOrder}
                     </span>
