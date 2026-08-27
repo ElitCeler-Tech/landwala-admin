@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Search, Loader2, MapPin } from "lucide-react";
 import {
   inspectionLandsApi,
@@ -24,8 +24,16 @@ interface LandRowState {
  * own coverage area matches that same location, then assign/reassign
  * and reschedule per property -- without hunting through the full
  * unfiltered executive list on each land's own detail page.
+ *
+ * District/mandal/village are dropdowns sourced from every active
+ * executive's own assigned coverage area (not free text) -- picking a
+ * location that no executive actually covers isn't a state worth
+ * offering, since the whole point of this page is to find who covers it.
  */
 export default function AssignByLocationPage() {
+  const [allExecutives, setAllExecutives] = useState<Executive[]>([]);
+  const [loadingLocations, setLoadingLocations] = useState(true);
+
   const [district, setDistrict] = useState("");
   const [mandal, setMandal] = useState("");
   const [village, setVillage] = useState("");
@@ -40,15 +48,60 @@ export default function AssignByLocationPage() {
   >({});
   const [rowState, setRowState] = useState<Record<string, LandRowState>>({});
 
+  useEffect(() => {
+    const loadLocations = async () => {
+      try {
+        const res = await executivesApi.getExecutives(1, 100);
+        setAllExecutives(res.data.filter((e) => e.isActive));
+      } catch (err) {
+        console.error("Failed to load executive coverage areas:", err);
+      } finally {
+        setLoadingLocations(false);
+      }
+    };
+    loadLocations();
+  }, []);
+
+  const districtOptions = useMemo(() => {
+    const set = new Set(
+      allExecutives.map((e) => e.assignedDistrict).filter(Boolean),
+    );
+    return Array.from(set).sort();
+  }, [allExecutives]);
+
+  const mandalOptions = useMemo(() => {
+    if (!district) return [];
+    const set = new Set(
+      allExecutives
+        .filter((e) => e.assignedDistrict === district)
+        .map((e) => e.assignedMandal)
+        .filter(Boolean),
+    );
+    return Array.from(set).sort();
+  }, [allExecutives, district]);
+
+  const villageOptions = useMemo(() => {
+    if (!district || !mandal) return [];
+    const set = new Set(
+      allExecutives
+        .filter(
+          (e) => e.assignedDistrict === district && e.assignedMandal === mandal,
+        )
+        .map((e) => e.assignedVillage)
+        .filter(Boolean),
+    );
+    return Array.from(set).sort();
+  }, [allExecutives, district, mandal]);
+
   const location = {
-    district: district.trim() || undefined,
-    mandal: mandal.trim() || undefined,
-    village: village.trim() || undefined,
+    district: district || undefined,
+    mandal: mandal || undefined,
+    village: village || undefined,
   };
 
   const handleSearch = async () => {
-    if (!location.district && !location.mandal && !location.village) {
-      setError("Enter at least a district, mandal, or village to search");
+    if (!location.district) {
+      setError("Select at least a district to search");
       return;
     }
     setIsLoading(true);
@@ -153,45 +206,81 @@ export default function AssignByLocationPage() {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+        {loadingLocations ? (
+          <div className="flex items-center gap-2 text-sm text-gray-500 py-2">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Loading coverage areas...
+          </div>
+        ) : districtOptions.length === 0 ? (
+          <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+            No active executive has a coverage area set yet. Add or edit an
+            executive&apos;s assigned district/mandal/village first.
+          </p>
+        ) : (
         <div className="flex flex-wrap items-end gap-4">
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-gray-600">
               District
             </label>
-            <input
-              type="text"
+            <select
               value={district}
-              onChange={(e) => setDistrict(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              placeholder="e.g. Rangareddy"
-              className="px-3 py-2 border border-gray-200 rounded-lg w-48 focus:outline-none focus:ring-1 focus:ring-[#1e2667] text-gray-900 text-sm"
-            />
+              onChange={(e) => {
+                setDistrict(e.target.value);
+                setMandal("");
+                setVillage("");
+              }}
+              className="px-3 py-2 border border-gray-200 rounded-lg w-48 focus:outline-none focus:ring-1 focus:ring-[#1e2667] text-gray-900 text-sm bg-white"
+            >
+              <option value="">Select district</option>
+              {districtOptions.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-gray-600">
               Mandal
             </label>
-            <input
-              type="text"
+            <select
               value={mandal}
-              onChange={(e) => setMandal(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              placeholder="e.g. Shamshabad"
-              className="px-3 py-2 border border-gray-200 rounded-lg w-48 focus:outline-none focus:ring-1 focus:ring-[#1e2667] text-gray-900 text-sm"
-            />
+              onChange={(e) => {
+                setMandal(e.target.value);
+                setVillage("");
+              }}
+              disabled={!district}
+              className="px-3 py-2 border border-gray-200 rounded-lg w-48 focus:outline-none focus:ring-1 focus:ring-[#1e2667] text-gray-900 text-sm bg-white disabled:bg-gray-50 disabled:text-gray-400"
+            >
+              <option value="">
+                {district ? "All mandals" : "Select district first"}
+              </option>
+              {mandalOptions.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-gray-600">
               Village
             </label>
-            <input
-              type="text"
+            <select
               value={village}
               onChange={(e) => setVillage(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              placeholder="e.g. Kothwalguda"
-              className="px-3 py-2 border border-gray-200 rounded-lg w-48 focus:outline-none focus:ring-1 focus:ring-[#1e2667] text-gray-900 text-sm"
-            />
+              disabled={!mandal}
+              className="px-3 py-2 border border-gray-200 rounded-lg w-48 focus:outline-none focus:ring-1 focus:ring-[#1e2667] text-gray-900 text-sm bg-white disabled:bg-gray-50 disabled:text-gray-400"
+            >
+              <option value="">
+                {mandal ? "All villages" : "Select mandal first"}
+              </option>
+              {villageOptions.map((v) => (
+                <option key={v} value={v}>
+                  {v}
+                </option>
+              ))}
+            </select>
           </div>
           <button
             onClick={handleSearch}
@@ -206,6 +295,7 @@ export default function AssignByLocationPage() {
             Search
           </button>
         </div>
+        )}
         {error && <p className="text-red-600 text-sm mt-3">{error}</p>}
       </div>
 

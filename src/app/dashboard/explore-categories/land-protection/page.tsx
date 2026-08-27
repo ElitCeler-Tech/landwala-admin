@@ -26,6 +26,7 @@ export default function LandProtectionPage() {
   const [searchInput, setSearchInput] = useState("");
   const searchQuery = useDebouncedValue(searchInput, 350);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [rangeFilter, setRangeFilter] = useState<"all" | "in" | "out">("all");
   const [limit, setLimit] = useState(10);
 
   useEffect(() => {
@@ -42,6 +43,7 @@ export default function LandProtectionPage() {
           statusFilter === "all" ? undefined : statusFilter,
           undefined,
           searchQuery || undefined,
+          rangeFilter === "all" ? undefined : rangeFilter === "out",
         );
         setProtections(response.requests);
         setMeta({
@@ -61,7 +63,7 @@ export default function LandProtectionPage() {
     };
 
     fetchProtections();
-  }, [currentPage, limit, statusFilter, searchQuery]);
+  }, [currentPage, limit, statusFilter, rangeFilter, searchQuery]);
 
   const getStatusBadge = (status: string) => {
     const statusStyles: Record<string, string> = {
@@ -110,7 +112,7 @@ export default function LandProtectionPage() {
         </div>
       </div>
 
-      <div className="flex gap-2 mb-6 flex-wrap">
+      <div className="flex gap-2 mb-4 flex-wrap">
         {STATUS_FILTERS.map((status) => (
           <button
             key={status}
@@ -125,6 +127,34 @@ export default function LandProtectionPage() {
             }`}
           >
             {status === "all" ? "All" : status.replace("_", " ").toLowerCase()}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex gap-2 mb-6 flex-wrap items-center">
+        <span className="text-xs font-medium text-gray-500 mr-1">
+          Service area:
+        </span>
+        {(
+          [
+            { key: "all", label: "All" },
+            { key: "in", label: "In range" },
+            { key: "out", label: "Out of range" },
+          ] as const
+        ).map((opt) => (
+          <button
+            key={opt.key}
+            onClick={() => {
+              setRangeFilter(opt.key);
+              setCurrentPage(1);
+            }}
+            className={`text-xs font-medium px-3 py-1.5 rounded-full transition-colors cursor-pointer ${
+              rangeFilter === opt.key
+                ? "bg-[#1e2667] text-white"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            {opt.label}
           </button>
         ))}
       </div>
@@ -168,9 +198,13 @@ export default function LandProtectionPage() {
                   <td className="py-5 text-gray-900">
                     <div className="flex items-center gap-2">
                       {item.location}
-                      {item.isOutOfRange && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">
+                      {item.isOutOfRange ? (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 whitespace-nowrap">
                           Out of range
+                        </span>
+                      ) : (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 whitespace-nowrap">
+                          In range
                         </span>
                       )}
                     </div>

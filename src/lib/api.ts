@@ -1159,10 +1159,11 @@ export const userActionsApi = {
     status?: string,
     userId?: string,
     search?: string,
+    isOutOfRange?: boolean,
   ) => {
     const response = await api.get<LandProtectionsResponse>(
       "/admin/land-protections",
-      { params: { page, limit, status, userId, search } },
+      { params: { page, limit, status, userId, search, isOutOfRange } },
     );
     return response.data;
   },
