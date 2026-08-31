@@ -2842,10 +2842,46 @@ export const landInspectionAssignmentApi = {
 };
 
 // Land Visit Types (GPS-verified inspection visit + admin review)
-export interface VisitPhoto {
+
+// Per-item review state, shared by VisitPhoto/VisitExtraPhoto/VisitVideo.
+// isCurrent=false rows are superseded versions kept for history/audit only
+// -- never the active shot. supersedesId points at the version this one
+// replaced, if any.
+export interface VisitItemReviewFields {
+  version: number;
+  isCurrent: boolean;
+  supersedesId: string | null;
+  itemReviewStatus: "PENDING_REVIEW" | "APPROVED" | "REJECTED";
+  itemReviewedById: string | null;
+  itemReviewedAt: string | null;
+  itemReviewNotes: string | null;
+}
+
+export interface VisitPhoto extends VisitItemReviewFields {
   id: string;
   category: string;
   imageUrl: string;
+  latitude: number;
+  longitude: number;
+  distanceMeters: number;
+  capturedAt: string;
+  createdAt: string;
+}
+
+export interface VisitExtraPhoto extends VisitItemReviewFields {
+  id: string;
+  label: string;
+  imageUrl: string;
+  latitude: number;
+  longitude: number;
+  distanceMeters: number;
+  capturedAt: string;
+  createdAt: string;
+}
+
+export interface VisitVideo extends VisitItemReviewFields {
+  id: string;
+  videoUrl: string;
   latitude: number;
   longitude: number;
   distanceMeters: number;
@@ -2891,7 +2927,12 @@ export interface LandVisitDetail {
   reviewedById: string | null;
   reviewedAt: string | null;
   adminReviewNotes: string | null;
+  // All versions (current + superseded/historical) -- group by
+  // category/label/id client-side and show the isCurrent=true row as the
+  // active shot, older rows collapsed as history.
   photos: VisitPhoto[];
+  videos: VisitVideo[];
+  extraPhotos: VisitExtraPhoto[];
 }
 
 export const landVisitsApi = {
@@ -2916,15 +2957,52 @@ export const landVisitsApi = {
     return response.data;
   },
 
-  reviewVisit: async (
-    id: string,
-    reviewStatus: "REVIEWED" | "FLAGGED",
-    adminReviewNotes?: string,
-  ) => {
+  // Bulk convenience: approves every currently-pending item on the visit at
+  // once. Rejecting an item must go through reviewPhoto/reviewExtraPhoto/
+  // reviewVideo below instead -- the backend rejects a FLAGGED value here.
+  reviewVisit: async (id: string) => {
     const response = await api.patch(`/admin/land-visits/${id}/review`, {
-      reviewStatus,
-      adminReviewNotes,
+      reviewStatus: "REVIEWED",
     });
+    return response.data;
+  },
+
+  reviewPhoto: async (
+    visitId: string,
+    photoId: string,
+    decision: "APPROVED" | "REJECTED",
+    reviewNotes?: string,
+  ) => {
+    const response = await api.patch<VisitPhoto>(
+      `/admin/land-visits/${visitId}/photos/${photoId}/review`,
+      { decision, reviewNotes },
+    );
+    return response.data;
+  },
+
+  reviewExtraPhoto: async (
+    visitId: string,
+    extraPhotoId: string,
+    decision: "APPROVED" | "REJECTED",
+    reviewNotes?: string,
+  ) => {
+    const response = await api.patch<VisitExtraPhoto>(
+      `/admin/land-visits/${visitId}/extra-photos/${extraPhotoId}/review`,
+      { decision, reviewNotes },
+    );
+    return response.data;
+  },
+
+  reviewVideo: async (
+    visitId: string,
+    videoId: string,
+    decision: "APPROVED" | "REJECTED",
+    reviewNotes?: string,
+  ) => {
+    const response = await api.patch<VisitVideo>(
+      `/admin/land-visits/${visitId}/videos/${videoId}/review`,
+      { decision, reviewNotes },
+    );
     return response.data;
   },
 };
