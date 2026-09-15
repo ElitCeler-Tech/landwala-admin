@@ -2899,6 +2899,8 @@ export interface LandVisitTableRow {
   photoCount: number;
   status: string;
   reviewStatus: string;
+  /** Reviewed once, flagged, and since resubmitted: needs a second look. */
+  awaitingReReview: boolean;
 }
 
 export interface LandVisitsResponse {
@@ -2929,6 +2931,8 @@ export interface LandVisitDetail {
   adminReviewNotes: string | null;
   /** Set once the customer confirms they reviewed this visit's media. */
   customerConfirmedAt: string | null;
+  /** Reviewed once, flagged, and since resubmitted: needs a second look. */
+  awaitingReReview: boolean;
   // All versions (current + superseded/historical) -- group by
   // category/label/id client-side and show the isCurrent=true row as the
   // active shot, older rows collapsed as history.

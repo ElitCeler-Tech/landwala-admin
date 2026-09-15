@@ -144,6 +144,13 @@ export default function LandVisitsPage() {
                       >
                         {visit.reviewStatus.replace("_", " ")}
                       </span>
+                      {/* Separates "never looked at" from "executive has
+                          fixed a rejected item and it needs another look". */}
+                      {visit.awaitingReReview && (
+                        <span className="ml-2 text-xs font-medium px-3 py-1 rounded-full bg-amber-100 text-amber-800">
+                          Resubmitted
+                        </span>
+                      )}
                     </td>
                     <td className="py-5 pr-8">
                       <Link href={`/dashboard/land-visits/${visit.id}`}>
