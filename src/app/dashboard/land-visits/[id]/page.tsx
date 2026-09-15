@@ -493,6 +493,25 @@ export default function LandVisitDetailPage() {
             )}
           </div>
         )}
+
+        {/* Closes the loop: once a visit is REVIEWED the customer is asked to
+            confirm they have seen the media, and this is the only place that
+            confirmation is visible. */}
+        {visit.reviewStatus === "REVIEWED" && (
+          <div className="mt-6 pt-6 border-t border-gray-100">
+            <p className="text-gray-500 text-sm mb-1">Customer confirmation</p>
+            {visit.customerConfirmedAt ? (
+              <p className="text-green-700 font-medium">
+                Confirmed on{" "}
+                {new Date(visit.customerConfirmedAt).toLocaleString()}
+              </p>
+            ) : (
+              <p className="text-amber-700 font-medium">
+                Not yet confirmed by the customer
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Photos */}

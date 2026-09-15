@@ -2927,6 +2927,8 @@ export interface LandVisitDetail {
   reviewedById: string | null;
   reviewedAt: string | null;
   adminReviewNotes: string | null;
+  /** Set once the customer confirms they reviewed this visit's media. */
+  customerConfirmedAt: string | null;
   // All versions (current + superseded/historical) -- group by
   // category/label/id client-side and show the isCurrent=true row as the
   // active shot, older rows collapsed as history.
