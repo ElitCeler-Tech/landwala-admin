@@ -1008,6 +1008,11 @@ export interface LandProtection {
   visitFrequency: "MONTHLY" | "QUARTERLY" | "HALF_YEARLY" | null;
   planTitle: string | null;
   planAmount: number | null;
+  /** Requests reach admin as soon as the form is submitted, so this is the
+   *  authoritative answer to whether the customer has actually paid. */
+  paymentStatus: "UNPAID" | "PAID" | "WAIVED";
+  paymentNote: string | null;
+  paymentMarkedAt: string | null;
   imageUrls?: string[];
   layoutUrl?: string | null;
   userLayoutUrl?: string | null;
@@ -1193,6 +1198,19 @@ export const userActionsApi = {
       adminApproved: boolean;
       message: string;
     }>(`/admin/land-protections/${id}/approve-out-of-range`, { adminNotes });
+    return response.data;
+  },
+
+  setPaymentStatus: async (
+    id: string,
+    paymentStatus: "UNPAID" | "PAID" | "WAIVED",
+    paymentNote?: string,
+  ) => {
+    const response = await api.patch<{
+      id: string;
+      paymentStatus: string;
+      message: string;
+    }>(`/admin/land-protections/${id}/payment`, { paymentStatus, paymentNote });
     return response.data;
   },
 

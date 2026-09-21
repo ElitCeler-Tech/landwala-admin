@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft, Loader2, ExternalLink } from "lucide-react";
+import { ChevronLeft, Loader2, ExternalLink, Plus, X } from "lucide-react";
 import {
   userActionsApi,
   executivesApi,
@@ -26,6 +26,7 @@ export default function LandProtectionDetailPage() {
   const [comments, setComments] = useState<LandProtectionComment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [paymentNote, setPaymentNote] = useState("");
   const [error, setError] = useState("");
 
   const [quoteAmount, setQuoteAmount] = useState("");
@@ -36,6 +37,9 @@ export default function LandProtectionDetailPage() {
   const [district, setDistrict] = useState("");
   const [mandal, setMandal] = useState("");
   const [village, setVillage] = useState("");
+  const [extraPhotoRequirements, setExtraPhotoRequirements] = useState<
+    string[]
+  >([]);
 
   const fetchAll = useCallback(async () => {
     try {
@@ -72,6 +76,22 @@ export default function LandProtectionDetailPage() {
       fetchAll();
     }
   }, [requestId, fetchAll]);
+
+  const handleAddPhotoRequirement = () => {
+    setExtraPhotoRequirements((prev) =>
+      prev.length >= 10 ? prev : [...prev, ""],
+    );
+  };
+
+  const handlePhotoRequirementChange = (index: number, value: string) => {
+    setExtraPhotoRequirements((prev) =>
+      prev.map((item, i) => (i === index ? value : item)),
+    );
+  };
+
+  const handleRemovePhotoRequirement = (index: number) => {
+    setExtraPhotoRequirements((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "-";
@@ -135,6 +155,28 @@ export default function LandProtectionDetailPage() {
     }
   };
 
+  const handleSetPayment = async (
+    paymentStatus: "UNPAID" | "PAID" | "WAIVED",
+  ) => {
+    setActionLoading(`payment-${paymentStatus}`);
+    setError("");
+    try {
+      await userActionsApi.setPaymentStatus(
+        requestId,
+        paymentStatus,
+        paymentNote.trim() || undefined,
+      );
+      setPaymentNote("");
+      await fetchAll();
+    } catch (err: any) {
+      setError(
+        err?.response?.data?.message || "Failed to update payment status",
+      );
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const handleAssign = async () => {
     if (!selectedExecutiveId) {
       setError("Select an executive first");
@@ -147,13 +189,21 @@ export default function LandProtectionDetailPage() {
     setActionLoading("assign");
     setError("");
     try {
+      const cleanedPhotoRequirements = extraPhotoRequirements
+        .map((item) => item.trim())
+        .filter((item) => item.length > 0);
       await userActionsApi.assignLandProtectionToExecutive(requestId, {
         executiveId: selectedExecutiveId,
         district,
         mandal,
         village,
+        extraPhotoRequirements:
+          cleanedPhotoRequirements.length > 0
+            ? cleanedPhotoRequirements
+            : undefined,
       });
       setSelectedExecutiveId("");
+      setExtraPhotoRequirements([]);
       await fetchAll();
     } catch (err: any) {
       setError(err?.response?.data?.message || "Failed to assign executive");
@@ -326,6 +376,58 @@ export default function LandProtectionDetailPage() {
           </div>
         )}
 
+        {/* Requests now reach admin as soon as the form is submitted, so
+            payment is tracked separately and can be recorded by hand for a
+            settlement taken outside the platform. */}
+        <div className="mt-6 pt-6 border-t border-gray-100">
+          <div className="flex flex-wrap items-center gap-3 mb-3">
+            <p className="text-gray-500 text-sm">Payment:</p>
+            <span
+              className={`text-xs font-medium px-3 py-1 rounded-full ${
+                request.paymentStatus === "PAID"
+                  ? "bg-green-100 text-green-700"
+                  : request.paymentStatus === "WAIVED"
+                    ? "bg-blue-100 text-blue-700"
+                    : "bg-amber-100 text-amber-800"
+              }`}
+            >
+              {request.paymentStatus}
+            </span>
+            {request.paymentMarkedAt && (
+              <span className="text-xs text-gray-400">
+                updated {new Date(request.paymentMarkedAt).toLocaleString()}
+              </span>
+            )}
+          </div>
+
+          {request.paymentNote && (
+            <p className="text-sm text-gray-700 mb-3">{request.paymentNote}</p>
+          )}
+
+          <div className="flex flex-wrap items-center gap-3">
+            <input
+              value={paymentNote}
+              onChange={(e) => setPaymentNote(e.target.value)}
+              placeholder="Reference or reason (optional)"
+              className="flex-1 min-w-[220px] border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1e2667]"
+            />
+            {(["PAID", "WAIVED", "UNPAID"] as const)
+              .filter((s) => s !== request.paymentStatus)
+              .map((s) => (
+                <button
+                  key={s}
+                  onClick={() => handleSetPayment(s)}
+                  disabled={actionLoading !== null}
+                  className="text-xs font-medium px-4 py-2 rounded-lg border border-[#1e2667] text-[#1e2667] hover:bg-[#1e2667] hover:text-white transition-colors disabled:opacity-50 cursor-pointer"
+                >
+                  {actionLoading === `payment-${s}`
+                    ? "Saving..."
+                    : `Mark ${s.toLowerCase()}`}
+                </button>
+              ))}
+          </div>
+        </div>
+
         {(request.userLayoutUrl || request.dimensionPageUrl) && (
           <div className="mt-6 pt-6 border-t border-gray-100">
             <p className="text-gray-500 text-sm mb-3">
@@ -480,6 +582,44 @@ export default function LandProtectionDetailPage() {
                 placeholder="Village *"
                 className="min-w-0 border border-gray-200 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
               />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 mb-2">
+                Extra photo requirements (optional)
+              </p>
+              <div className="space-y-2">
+                {extraPhotoRequirements.map((item, index) => (
+                  <div key={index} className="flex gap-2">
+                    <input
+                      type="text"
+                      value={item}
+                      onChange={(e) =>
+                        handlePhotoRequirementChange(index, e.target.value)
+                      }
+                      placeholder="e.g. Water source photo"
+                      className="flex-1 min-w-0 border border-gray-200 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemovePhotoRequirement(index)}
+                      className="shrink-0 p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                      aria-label="Remove requirement"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              {extraPhotoRequirements.length < 10 && (
+                <button
+                  type="button"
+                  onClick={handleAddPhotoRequirement}
+                  className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-[#1e2667] hover:bg-gray-100 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Add requirement
+                </button>
+              )}
             </div>
             <button
               onClick={handleAssign}
