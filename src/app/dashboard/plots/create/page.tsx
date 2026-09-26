@@ -12,7 +12,7 @@ import {
   X,
 } from "lucide-react";
 import clsx from "clsx";
-import { propertiesApi } from "@/lib/api";
+import { propertiesApi, PROPERTY_CATEGORIES } from "@/lib/api";
 import { scrollSelectIntoView } from "@/hooks/useScrollIntoViewOnFocus";
 
 const steps = [
@@ -570,15 +570,35 @@ export default function CreatePlotPage() {
                       <label className="text-sm font-medium text-gray-900">
                         Value
                       </label>
-                      <input
-                        type="text"
-                        value={field.value}
-                        onChange={(e) =>
-                          handleOverviewChange(index, "value", e.target.value)
-                        }
-                        placeholder="e.g., 165 - 500 sq.yd."
-                        className="w-full bg-gray-50 border-none rounded-lg px-4 py-3 text-sm focus:ring-1 focus:ring-[#1e2667] outline-none placeholder:text-gray-400 text-gray-900"
-                      />
+                      {/* Buy filters match the Type value exactly, so free
+                          text here makes a property unfilterable. Constrain
+                          it to the same vocabulary Sell writes. */}
+                      {field.label.trim().toLowerCase() === "type" ? (
+                        <select
+                          value={field.value}
+                          onChange={(e) =>
+                            handleOverviewChange(index, "value", e.target.value)
+                          }
+                          className="w-full bg-gray-50 border-none rounded-lg px-4 py-3 text-sm focus:ring-1 focus:ring-[#1e2667] outline-none text-gray-900"
+                        >
+                          <option value="">Select a category</option>
+                          {PROPERTY_CATEGORIES.map((c) => (
+                            <option key={c} value={c}>
+                              {c}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          type="text"
+                          value={field.value}
+                          onChange={(e) =>
+                            handleOverviewChange(index, "value", e.target.value)
+                          }
+                          placeholder="e.g., 165 - 500 sq.yd."
+                          className="w-full bg-gray-50 border-none rounded-lg px-4 py-3 text-sm focus:ring-1 focus:ring-[#1e2667] outline-none placeholder:text-gray-400 text-gray-900"
+                        />
+                      )}
                     </div>
                     {overviewFields.length > 1 && (
                       <button
