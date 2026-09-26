@@ -125,7 +125,10 @@ export default function InspectionLandsPage() {
                       {land.landCode || "-"}
                     </td>
                     <td className="py-5 text-gray-900">
-                      {land.village}, {land.mandal}, {land.district}
+                      {[land.village, land.mandal, land.district]
+                        .map((part) => part?.trim())
+                        .filter(Boolean)
+                        .join(", ") || land.location}
                     </td>
                     <td className="py-5">
                       <span

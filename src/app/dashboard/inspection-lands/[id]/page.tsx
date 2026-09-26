@@ -461,7 +461,10 @@ export default function InspectionLandDetailPage() {
             <div>
               <p className="text-gray-500 text-sm mb-1">Location:</p>
               <p className="text-gray-900 font-medium">
-                {land.village}, {land.mandal}, {land.district}
+                {[land.village, land.mandal, land.district]
+                  .map((part) => part?.trim())
+                  .filter(Boolean)
+                  .join(", ") || land.location}
               </p>
             </div>
             <div>
