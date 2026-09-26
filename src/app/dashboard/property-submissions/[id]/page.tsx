@@ -172,6 +172,25 @@ export default function PropertySubmissionDetailPage() {
           </span>
         </div>
 
+        {/* Approving creates a real listing. Show the link to it so admin can
+            confirm what went live rather than only that the status changed. */}
+        {submission.status === "approved" && submission.propertyId && (
+          <div className="mb-6 rounded-lg bg-green-50 border border-green-200 p-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="font-medium text-green-900">Published as a listing</p>
+              <p className="text-sm text-green-800">
+                The submitter can now see this live in their app.
+              </p>
+            </div>
+            <Link
+              href={`/dashboard/plots/${submission.propertyId}`}
+              className="text-sm font-medium px-4 py-2 rounded-lg bg-[#1e2667] text-white hover:bg-opacity-90 transition-opacity"
+            >
+              View listing
+            </Link>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-y-6 gap-x-8">
           <div>
             <p className="text-gray-500 text-sm mb-1">Category:</p>

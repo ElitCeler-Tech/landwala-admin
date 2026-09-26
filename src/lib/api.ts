@@ -1993,6 +1993,8 @@ export interface PropertySubmission {
   layoutImageUrls: string[];
   documentUrls: string[];
   status: string;
+  /** The published property this submission became, once approved. */
+  propertyId: string | null;
   submittedBy: "USER" | "AGENT";
   user?: PropertySubmissionUser | null;
   agent?: PropertySubmissionAgent | null;
