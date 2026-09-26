@@ -1430,12 +1430,18 @@ export const enquiriesApi = {
     type?: "LAYOUT" | "PROPERTY",
     search?: string,
     userId?: string,
+    // Narrow to what came in over a window, and to one property category.
+    filters?: { dateFrom?: string; dateTo?: string; category?: string },
   ) => {
     const typeParam = type ? `&type=${type}` : "";
     const searchParam = search ? `&search=${encodeURIComponent(search)}` : "";
     const userIdParam = userId ? `&userId=${userId}` : "";
+    const filterParams = Object.entries(filters ?? {})
+      .filter(([, value]) => value)
+      .map(([key, value]) => `&${key}=${encodeURIComponent(value as string)}`)
+      .join("");
     const response = await api.get<EnquiriesResponse>(
-      `/admin/enquiries?page=${page}&limit=${limit}${typeParam}${searchParam}${userIdParam}`,
+      `/admin/enquiries?page=${page}&limit=${limit}${typeParam}${searchParam}${userIdParam}${filterParams}`,
     );
     return response.data;
   },
@@ -2999,6 +3005,13 @@ export interface LandVisitDetail {
   adminReviewNotes: string | null;
   /** Set once the customer confirms they reviewed this visit's media. */
   customerConfirmedAt: string | null;
+  /** Comments the customer left on the linked land protection request. */
+  customerComments: {
+    id: string;
+    message: string;
+    userName: string | null;
+    createdAt: string;
+  }[];
   /** Reviewed once, flagged, and since resubmitted: needs a second look. */
   awaitingReReview: boolean;
   // All versions (current + superseded/historical) -- group by

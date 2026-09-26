@@ -3,9 +3,38 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Search, Loader2, Store } from "lucide-react";
-import { enquiriesApi, Enquiry, PaginationMeta } from "@/lib/api";
+import {
+    enquiriesApi,
+    Enquiry,
+    PaginationMeta,
+    PROPERTY_CATEGORIES,
+} from "@/lib/api";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { Pagination } from "@/components/Pagination";
+
+
+type RangeKey = "all" | "today" | "7d" | "30d";
+
+const RANGE_TABS: { key: RangeKey; label: string }[] = [
+    { key: "all", label: "All time" },
+    { key: "today", label: "Today" },
+    { key: "7d", label: "Last 7 days" },
+    { key: "30d", label: "Last 30 days" },
+];
+
+/**
+ * Start of the selected window as a plain date, or undefined for "all time".
+ * Local midnight, so "today" means the operator's today rather than UTC's.
+ */
+function rangeStart(range: RangeKey): string | undefined {
+    if (range === "all") return undefined;
+    const days = range === "today" ? 0 : range === "7d" ? 6 : 29;
+    const from = new Date();
+    from.setDate(from.getDate() - days);
+    from.setHours(0, 0, 0, 0);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${from.getFullYear()}-${pad(from.getMonth() + 1)}-${pad(from.getDate())}`;
+}
 
 export default function BuySellPlotsPage() {
     const [searchInput, setSearchInput] = useState("");
@@ -17,15 +46,17 @@ export default function BuySellPlotsPage() {
     const [isFetching, setIsFetching] = useState(false);
     const [error, setError] = useState("");
     const [limit, setLimit] = useState(10);
+    const [range, setRange] = useState<RangeKey>("all");
+    const [category, setCategory] = useState("All");
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchQuery]);
+    }, [searchQuery, range, category]);
 
     useEffect(() => {
         fetchEnquiries();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentPage, limit, searchQuery]);
+    }, [currentPage, limit, searchQuery, range, category]);
 
     const fetchEnquiries = async () => {
         setIsFetching(true);
@@ -36,6 +67,11 @@ export default function BuySellPlotsPage() {
                 limit,
                 "PROPERTY",
                 searchQuery || undefined,
+                undefined,
+                {
+                    dateFrom: rangeStart(range),
+                    category: category === "All" ? undefined : category,
+                },
             );
             setEnquiries(response.data);
             setMeta(response.meta);
@@ -84,6 +120,54 @@ export default function BuySellPlotsPage() {
                         />
                     </div>
                 </div>
+            </div>
+
+            {/* Which enquiries came in, and for what kind of property. */}
+            <div className="flex flex-wrap items-center gap-3 mb-6">
+                <div className="flex flex-wrap gap-2">
+                    {RANGE_TABS.map((tab) => (
+                        <button
+                            key={tab.key}
+                            onClick={() => setRange(tab.key)}
+                            className={`text-sm px-4 py-2 rounded-lg transition-colors cursor-pointer ${
+                                range === tab.key
+                                    ? "bg-[#1e2667] text-white"
+                                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                            }`}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
+                <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="text-sm border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+                >
+                    <option value="All">All categories</option>
+                    {PROPERTY_CATEGORIES.map((c) => (
+                        <option key={c} value={c}>
+                            {c}
+                        </option>
+                    ))}
+                </select>
+                {(range !== "all" || category !== "All" || searchInput) && (
+                    <button
+                        onClick={() => {
+                            setRange("all");
+                            setCategory("All");
+                            setSearchInput("");
+                        }}
+                        className="text-sm text-[#1e2667] underline cursor-pointer"
+                    >
+                        Clear filters
+                    </button>
+                )}
+                {meta && (
+                    <span className="text-sm text-gray-500 ml-auto">
+                        {meta.total} enquir{meta.total === 1 ? "y" : "ies"}
+                    </span>
+                )}
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex-1 flex flex-col relative">

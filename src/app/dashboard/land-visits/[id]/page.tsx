@@ -524,6 +524,37 @@ export default function LandVisitDetailPage() {
             )}
           </div>
         )}
+
+        {/* What the customer has written about this land protection request.
+            Kept against the request rather than the visit, so it was not
+            visible anywhere on this page before. */}
+        {visit.customerComments && visit.customerComments.length > 0 && (
+          <div className="mt-6 pt-6 border-t border-gray-100">
+            <p className="text-gray-500 text-sm mb-3">
+              Customer comments ({visit.customerComments.length})
+            </p>
+            <div className="space-y-3">
+              {visit.customerComments.map((comment) => (
+                <div
+                  key={comment.id}
+                  className="bg-gray-50 border border-gray-100 rounded-lg p-4"
+                >
+                  <div className="flex flex-wrap justify-between gap-2 mb-1">
+                    <span className="text-sm font-medium text-gray-900">
+                      {comment.userName || "Customer"}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      {new Date(comment.createdAt).toLocaleString()}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                    {comment.message}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Photos */}
