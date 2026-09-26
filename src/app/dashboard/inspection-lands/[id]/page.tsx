@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft, Loader2, Pencil, Check, X } from "lucide-react";
+import { ChevronLeft, Loader2, Pencil, Check, X, Plus } from "lucide-react";
 import {
   inspectionLandsApi,
   landInspectionAssignmentApi,
@@ -62,6 +62,9 @@ export default function InspectionLandDetailPage() {
   const [selectedExecutiveId, setSelectedExecutiveId] = useState("");
   const [nextVisitDueAt, setNextVisitDueAt] = useState("");
   const [scheduleDate, setScheduleDate] = useState("");
+  const [extraPhotoRequirements, setExtraPhotoRequirements] = useState<
+    string[]
+  >([]);
 
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<EditForm | null>(null);
@@ -95,6 +98,22 @@ export default function InspectionLandDetailPage() {
 
   const currentAssignment = assignments.find((a) => a.isActive);
 
+  const handleAddPhotoRequirement = () => {
+    setExtraPhotoRequirements((prev) =>
+      prev.length >= 10 ? prev : [...prev, ""],
+    );
+  };
+
+  const handlePhotoRequirementChange = (index: number, value: string) => {
+    setExtraPhotoRequirements((prev) =>
+      prev.map((item, i) => (i === index ? value : item)),
+    );
+  };
+
+  const handleRemovePhotoRequirement = (index: number) => {
+    setExtraPhotoRequirements((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleAssign = async () => {
     if (!selectedExecutiveId) {
       setError("Select an executive first");
@@ -103,21 +122,31 @@ export default function InspectionLandDetailPage() {
     setActionLoading(true);
     setError("");
     try {
+      const cleanedPhotoRequirements = extraPhotoRequirements
+        .map((item) => item.trim())
+        .filter((item) => item.length > 0);
+      const extraPhotoRequirementsPayload =
+        cleanedPhotoRequirements.length > 0
+          ? cleanedPhotoRequirements
+          : undefined;
       if (currentAssignment) {
         await landInspectionAssignmentApi.reassign(
           currentAssignment.id,
           selectedExecutiveId,
           nextVisitDueAt || undefined,
+          extraPhotoRequirementsPayload,
         );
       } else {
         await landInspectionAssignmentApi.assign(
           landId,
           selectedExecutiveId,
           nextVisitDueAt || undefined,
+          extraPhotoRequirementsPayload,
         );
       }
       setSelectedExecutiveId("");
       setNextVisitDueAt("");
+      setExtraPhotoRequirements([]);
       await fetchAll();
     } catch (err: any) {
       setError(err?.response?.data?.message || "Failed to assign executive");
@@ -511,6 +540,45 @@ export default function InspectionLandDetailPage() {
             {actionLoading && <Loader2 className="w-4 h-4 animate-spin" />}
             {currentAssignment ? "Reassign" : "Assign"}
           </button>
+        </div>
+
+        <div className="mt-4">
+          <p className="text-sm text-gray-600 mb-2">
+            Extra photo requirements (optional)
+          </p>
+          <div className="space-y-2">
+            {extraPhotoRequirements.map((item, index) => (
+              <div key={index} className="flex gap-2">
+                <input
+                  type="text"
+                  value={item}
+                  onChange={(e) =>
+                    handlePhotoRequirementChange(index, e.target.value)
+                  }
+                  placeholder="e.g. Water source photo"
+                  className="flex-1 min-w-0 border border-gray-200 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleRemovePhotoRequirement(index)}
+                  className="shrink-0 p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                  aria-label="Remove requirement"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+          {extraPhotoRequirements.length < 10 && (
+            <button
+              type="button"
+              onClick={handleAddPhotoRequirement}
+              className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-[#1e2667] hover:bg-gray-100 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add requirement
+            </button>
+          )}
         </div>
 
         {currentAssignment && (

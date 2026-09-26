@@ -1722,7 +1722,10 @@ export interface SubscriptionPlan {
   id: string;
   title: string;
   description: string[];
+  /** What the customer pays. */
   price: number;
+  /** Pre-discount figure shown struck through, or null when undiscounted. */
+  originalPrice: number | null;
   durationMonths: number;
   isActive: boolean;
   minSqYards: number | null;
@@ -1740,6 +1743,8 @@ export interface CreateSubscriptionPlanPayload {
   title: string;
   description: string[];
   price: number;
+  /** Pre-discount figure. Omitted entirely when the plan is not discounted. */
+  originalPrice?: number;
   durationMonths: number;
   isActive: boolean;
   minSqYards?: number;

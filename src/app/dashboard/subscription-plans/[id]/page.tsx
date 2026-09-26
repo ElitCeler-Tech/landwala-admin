@@ -25,6 +25,11 @@ export default function SubscriptionPlanDetailsPage() {
     isActive: true,
     description: [""],
   });
+  // Kept as strings so the size fields can be left blank (unbounded) rather
+  // than defaulting to 0 -- an empty min/max means "no limit" on that side.
+  const [originalPrice, setOriginalPrice] = useState("");
+  const [minSqYards, setMinSqYards] = useState("");
+  const [maxSqYards, setMaxSqYards] = useState("");
 
   useEffect(() => {
     if (isNew) return;
@@ -39,6 +44,11 @@ export default function SubscriptionPlanDetailsPage() {
           isActive: plan.isActive,
           description: plan.description?.length > 0 ? plan.description : [""],
         });
+        setOriginalPrice(
+          plan.originalPrice != null ? String(plan.originalPrice) : "",
+        );
+        setMinSqYards(plan.minSqYards != null ? String(plan.minSqYards) : "");
+        setMaxSqYards(plan.maxSqYards != null ? String(plan.maxSqYards) : "");
       } catch (err) {
         console.error("Failed to fetch plan:", err);
         setError("Failed to load plan details.");
@@ -92,6 +102,13 @@ export default function SubscriptionPlanDetailsPage() {
       const cleanedData = {
         ...formData,
         description: formData.description.filter((d) => d.trim() !== ""),
+        ...(minSqYards.trim() !== "" && { minSqYards: Number(minSqYards) }),
+        ...(maxSqYards.trim() !== "" && { maxSqYards: Number(maxSqYards) }),
+        // Sent only when filled in. Blank means the plan is not discounted,
+        // and the backend treats the field as absent rather than zero.
+        ...(String(originalPrice).trim() !== "" && {
+          originalPrice: Number(originalPrice),
+        }),
       };
 
       if (isNew) {
@@ -218,6 +235,25 @@ export default function SubscriptionPlanDetailsPage() {
 
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-gray-700">
+                  Original Price (₹)
+                </label>
+                <input
+                  type="number"
+                  name="originalPrice"
+                  min="0"
+                  value={originalPrice}
+                  onChange={(e) => setOriginalPrice(e.target.value)}
+                  placeholder="Leave blank if not discounted"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none focus:border-[#1e2667] focus:ring-1 focus:ring-[#1e2667] transition-all text-gray-900"
+                />
+                <p className="text-xs text-gray-500">
+                  Shown struck through beside the price. Leave blank to show the
+                  price on its own.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">
                   Duration (Months)
                 </label>
                 <div className="relative">
@@ -269,6 +305,46 @@ export default function SubscriptionPlanDetailsPage() {
                     Active Status
                   </span>
                 </label>
+              </div>
+            </div>
+
+            <div className="pt-6 border-t border-gray-100">
+              <h3 className="text-sm font-semibold text-gray-700">
+                Land Size Range (Sq. Yards)
+              </h3>
+              <p className="text-xs text-gray-500 mt-1 mb-4">
+                The user app auto-shows this plan to a property whose size
+                falls in this range, instead of showing every active plan.
+                Leave a side blank for no limit on that side; leave both
+                blank to show this plan for every size.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-gray-700">
+                    Min Size
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={minSqYards}
+                    onChange={(e) => setMinSqYards(e.target.value)}
+                    placeholder="No minimum"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none focus:border-[#1e2667] focus:ring-1 focus:ring-[#1e2667] transition-all text-gray-900"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-gray-700">
+                    Max Size
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={maxSqYards}
+                    onChange={(e) => setMaxSqYards(e.target.value)}
+                    placeholder="No maximum"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none focus:border-[#1e2667] focus:ring-1 focus:ring-[#1e2667] transition-all text-gray-900"
+                  />
+                </div>
               </div>
             </div>
 

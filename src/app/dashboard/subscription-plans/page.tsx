@@ -48,6 +48,13 @@ export default function SubscriptionPlansPage() {
     return title.split(" ")[0]; // "Monthly Plan" -> "Monthly"
   };
 
+  const formatSizeRange = (plan: SubscriptionPlan) => {
+    if (plan.minSqYards == null && plan.maxSqYards == null) return "All sizes";
+    if (plan.maxSqYards == null) return `${plan.minSqYards}+ sq. yd`;
+    if (plan.minSqYards == null) return `Up to ${plan.maxSqYards} sq. yd`;
+    return `${plan.minSqYards} - ${plan.maxSqYards} sq. yd`;
+  };
+
   if (isLoading) {
     return (
       <div className="p-8 bg-white font-sans min-h-full flex items-center justify-center">
@@ -92,10 +99,13 @@ export default function SubscriptionPlansPage() {
                   <h3 className="text-white text-2xl font-bold tracking-tight mb-1">
                     {formatTitle(plan.title)}
                   </h3>
-                  <p className="text-[#6484A4] text-sm font-medium mb-8">
+                  <p className="text-[#6484A4] text-sm font-medium mb-2">
                     {plan.title.includes("Plan")
                       ? plan.title
                       : `${plan.title} Plan`}
+                  </p>
+                  <p className="text-[#8BBAE9] text-xs font-medium mb-6">
+                    {formatSizeRange(plan)}
                   </p>
 
                   <div className="flex items-baseline mb-8">
