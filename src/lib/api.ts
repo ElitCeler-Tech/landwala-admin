@@ -467,6 +467,31 @@ export interface AgentStatusChange {
 }
 
 // Agents API
+/**
+ * Admin edit of an agent. Only the fields admin actually changed are sent,
+ * and the backend applies the same validation the agent's own profile edit
+ * uses, including phone/email uniqueness.
+ */
+export interface UpdateAgentPayload {
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  email?: string;
+  gender?: string;
+  dateOfBirth?: string;
+  addressLine?: string;
+  district?: string;
+  mandal?: string;
+  village?: string;
+  pincode?: string;
+  payeeName?: string;
+  accountNumber?: string;
+  bankName?: string;
+  branch?: string;
+  ifscCode?: string;
+  accountType?: string;
+}
+
 export const agentsApi = {
   getAgents: async (page: number = 1, limit: number = 10, search?: string) => {
     const searchParam = search ? `&search=${encodeURIComponent(search)}` : "";
@@ -520,6 +545,14 @@ export const agentsApi = {
 
   deleteAgent: async (id: string) => {
     await api.delete(`/admin/agents/${id}`);
+  },
+
+  updateAgent: async (id: string, data: UpdateAgentPayload) => {
+    const response = await api.patch<{ agent: Agent; message: string }>(
+      `/admin/agents/${id}`,
+      data,
+    );
+    return response.data;
   },
 
   // Properties an agent has had approved via their submissions -- same
@@ -1234,9 +1267,11 @@ export const userActionsApi = {
     id: string,
     data: {
       executiveId: string;
-      district: string;
-      mandal: string;
-      village: string;
+      // Optional -- the backend defaults these to the chosen executive's own
+      // coverage area, so admin only picks the executive.
+      district?: string;
+      mandal?: string;
+      village?: string;
       ownerPhone?: string;
       latitude?: number;
       longitude?: number;
@@ -2570,6 +2605,14 @@ export interface ExecutiveDocument {
 }
 
 export interface UpdateExecutiveProfilePayload {
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  email?: string;
+  gender?: string;
+  assignedDistrict?: string;
+  assignedMandal?: string;
+  assignedVillage?: string;
   role?: string;
   department?: string;
   managerId?: string;

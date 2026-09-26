@@ -11,7 +11,14 @@ import {
   Trash2,
 } from "lucide-react";
 import clsx from "clsx";
-import { agentsApi, Agent, Property, PaginationMeta } from "@/lib/api";
+import axios from "axios";
+import {
+  agentsApi,
+  Agent,
+  Property,
+  PaginationMeta,
+  UpdateAgentPayload,
+} from "@/lib/api";
 import { Pagination } from "@/components/Pagination";
 
 const tabs = [
@@ -21,6 +28,7 @@ const tabs = [
   "Leads Handled",
   "Land Listing",
   "Commission & Payout",
+  "Edit Profile",
 ];
 
 export default function AgentDetailsPage() {
@@ -44,10 +52,37 @@ export default function AgentDetailsPage() {
   const [isLoadingProperties, setIsLoadingProperties] = useState(false);
   const [propertiesError, setPropertiesError] = useState("");
 
+  // Edit Profile tab. Seeded from the loaded agent, so a save sends the whole
+  // set of editable fields and admin sees what is currently on record.
+  const [editForm, setEditForm] = useState<UpdateAgentPayload>({});
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [profileError, setProfileError] = useState("");
+  const [profileSaved, setProfileSaved] = useState(false);
+
   const fetchAgent = async () => {
     try {
       const data = await agentsApi.getAgentById(agentId);
       setAgent(data);
+      setEditForm({
+        firstName: data.firstName,
+        lastName: data.lastName,
+        phone: data.phone,
+        email: data.email,
+        gender: data.gender || undefined,
+        // The API returns an ISO timestamp but the DTO wants YYYY-MM-DD.
+        dateOfBirth: data.dateOfBirth ? data.dateOfBirth.slice(0, 10) : undefined,
+        addressLine: data.addressLine,
+        district: data.district,
+        mandal: data.mandal,
+        village: data.village,
+        pincode: data.pincode,
+        payeeName: data.payeeName,
+        accountNumber: data.accountNumber,
+        bankName: data.bankName,
+        branch: data.branch,
+        ifscCode: data.ifscCode,
+        accountType: data.accountType || undefined,
+      });
     } catch (error) {
       console.error("Failed to fetch agent:", error);
     } finally {
@@ -142,6 +177,35 @@ export default function AgentDetailsPage() {
       console.error("Failed to toggle agent status:", error);
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    setIsSavingProfile(true);
+    setProfileError("");
+    setProfileSaved(false);
+    try {
+      // Blank optional strings are dropped rather than sent as "", which the
+      // format validators (pincode, IFSC, account number) would reject.
+      const payload = Object.fromEntries(
+        Object.entries(editForm).filter(
+          ([, value]) => value !== undefined && value !== "",
+        ),
+      ) as UpdateAgentPayload;
+      const result = await agentsApi.updateAgent(agentId, payload);
+      setAgent(result.agent);
+      setProfileSaved(true);
+    } catch (error) {
+      console.error("Failed to update agent:", error);
+      const message = axios.isAxiosError(error)
+        ? error.response?.data?.message
+        : undefined;
+      setProfileError(
+        (Array.isArray(message) ? message[0] : message) ||
+          "Failed to save changes",
+      );
+    } finally {
+      setIsSavingProfile(false);
     }
   };
 
@@ -660,6 +724,289 @@ export default function AgentDetailsPage() {
                 This feature will be available when commission API is
                 integrated.
               </p>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "Edit Profile" && (
+          <div>
+            <h2 className="text-lg font-medium text-gray-900 mb-6">
+              Edit Agent Profile
+            </h2>
+            {profileError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+                {profileError}
+              </div>
+            )}
+            {profileSaved && (
+              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
+                Changes saved.
+              </div>
+            )}
+
+            <h3 className="text-sm font-semibold text-gray-900 mb-4">
+              Personal Details
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1">
+                  First Name
+                </label>
+                <input
+                  type="text"
+                  value={editForm.firstName || ""}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, firstName: e.target.value })
+                  }
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1">
+                  Last Name
+                </label>
+                <input
+                  type="text"
+                  value={editForm.lastName || ""}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, lastName: e.target.value })
+                  }
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1">
+                  Phone
+                </label>
+                <input
+                  type="tel"
+                  value={editForm.phone || ""}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })
+                  }
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={editForm.email || ""}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, email: e.target.value })
+                  }
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1">
+                  Gender
+                </label>
+                <select
+                  value={editForm.gender || ""}
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      gender: e.target.value || undefined,
+                    })
+                  }
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+                >
+                  <option value="">Not set</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1">
+                  Date of Birth
+                </label>
+                <input
+                  type="date"
+                  value={editForm.dateOfBirth || ""}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, dateOfBirth: e.target.value })
+                  }
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+                />
+              </div>
+            </div>
+
+            <h3 className="text-sm font-semibold text-gray-900 mb-4">
+              Location
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1">
+                  Address
+                </label>
+                <input
+                  type="text"
+                  value={editForm.addressLine || ""}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, addressLine: e.target.value })
+                  }
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1">
+                  District
+                </label>
+                <input
+                  type="text"
+                  value={editForm.district || ""}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, district: e.target.value })
+                  }
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1">
+                  Mandal
+                </label>
+                <input
+                  type="text"
+                  value={editForm.mandal || ""}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, mandal: e.target.value })
+                  }
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1">
+                  Village
+                </label>
+                <input
+                  type="text"
+                  value={editForm.village || ""}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, village: e.target.value })
+                  }
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1">
+                  Pincode
+                </label>
+                <input
+                  type="text"
+                  value={editForm.pincode || ""}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, pincode: e.target.value.replace(/\D/g, "").slice(0, 6) })
+                  }
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+                />
+              </div>
+            </div>
+
+            <h3 className="text-sm font-semibold text-gray-900 mb-4">
+              Bank Details
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1">
+                  Payee Name
+                </label>
+                <input
+                  type="text"
+                  value={editForm.payeeName || ""}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, payeeName: e.target.value })
+                  }
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1">
+                  Account Number
+                </label>
+                <input
+                  type="text"
+                  value={editForm.accountNumber || ""}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, accountNumber: e.target.value })
+                  }
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1">
+                  Bank Name
+                </label>
+                <input
+                  type="text"
+                  value={editForm.bankName || ""}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, bankName: e.target.value })
+                  }
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1">
+                  Branch
+                </label>
+                <input
+                  type="text"
+                  value={editForm.branch || ""}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, branch: e.target.value })
+                  }
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1">
+                  IFSC Code
+                </label>
+                <input
+                  type="text"
+                  value={editForm.ifscCode || ""}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, ifscCode: e.target.value.toUpperCase() })
+                  }
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1">
+                  Account Type
+                </label>
+                <select
+                  value={editForm.accountType || ""}
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      accountType: e.target.value || undefined,
+                    })
+                  }
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+                >
+                  <option value="">Not set</option>
+                  <option value="Savings">Savings</option>
+                  <option value="Current">Current</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                onClick={handleSaveProfile}
+                disabled={isSavingProfile}
+                className="bg-[#1e2667] text-white text-sm font-medium px-6 py-2 rounded-lg hover:bg-opacity-90 transition-opacity cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {isSavingProfile && (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                )}
+                Save Profile
+              </button>
             </div>
           </div>
         )}

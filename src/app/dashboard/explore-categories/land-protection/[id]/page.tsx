@@ -34,9 +34,9 @@ export default function LandProtectionDetailPage() {
     "" | "MONTHLY" | "QUARTERLY" | "HALF_YEARLY"
   >("");
   const [selectedExecutiveId, setSelectedExecutiveId] = useState("");
-  const [district, setDistrict] = useState("");
-  const [mandal, setMandal] = useState("");
-  const [village, setVillage] = useState("");
+  // Only asked for when the request itself carries no coordinates, which is
+  // the case for requests submitted before the app started sending them.
+  const [mapsLink, setMapsLink] = useState("");
   const [extraPhotoRequirements, setExtraPhotoRequirements] = useState<
     string[]
   >([]);
@@ -61,14 +61,24 @@ export default function LandProtectionDetailPage() {
     }
   }, [requestId]);
 
-  const handleSelectExecutive = (executiveId: string) => {
-    setSelectedExecutiveId(executiveId);
-    const executive = executives.find((e) => e.id === executiveId);
-    if (executive) {
-      setDistrict((prev) => prev || executive.assignedDistrict);
-      setMandal((prev) => prev || executive.assignedMandal);
-      setVillage((prev) => prev || executive.assignedVillage);
-    }
+  const selectedExecutive = executives.find(
+    (e) => e.id === selectedExecutiveId,
+  );
+
+  /**
+   * Pull a lat/lng out of whatever the admin pasted: a Google Maps share URL
+   * (".../@17.385,78.486,17z" or "?q=17.385,78.486") or a plain
+   * "17.385, 78.486" pair. Returns null when nothing usable is present.
+   */
+  const parseCoordinates = (
+    value: string,
+  ): { latitude: number; longitude: number } | null => {
+    const match = value.match(/(-?\d{1,3}\.\d+)[, ]+\s*(-?\d{1,3}\.\d+)/);
+    if (!match) return null;
+    const latitude = Number(match[1]);
+    const longitude = Number(match[2]);
+    if (Math.abs(latitude) > 90 || Math.abs(longitude) > 180) return null;
+    return { latitude, longitude };
   };
 
   useEffect(() => {
@@ -182,8 +192,13 @@ export default function LandProtectionDetailPage() {
       setError("Select an executive first");
       return;
     }
-    if (!district.trim() || !mandal.trim() || !village.trim()) {
-      setError("District, Mandal, and Village are required");
+    const hasCoordinates =
+      request?.latitude != null && request?.longitude != null;
+    const parsed = hasCoordinates ? null : parseCoordinates(mapsLink);
+    if (!hasCoordinates && !parsed) {
+      setError(
+        "This request has no map location saved. Paste its Google Maps link or coordinates below.",
+      );
       return;
     }
     setActionLoading("assign");
@@ -194,15 +209,14 @@ export default function LandProtectionDetailPage() {
         .filter((item) => item.length > 0);
       await userActionsApi.assignLandProtectionToExecutive(requestId, {
         executiveId: selectedExecutiveId,
-        district,
-        mandal,
-        village,
+        ...(parsed ?? {}),
         extraPhotoRequirements:
           cleanedPhotoRequirements.length > 0
             ? cleanedPhotoRequirements
             : undefined,
       });
       setSelectedExecutiveId("");
+      setMapsLink("");
       setExtraPhotoRequirements([]);
       await fetchAll();
     } catch (err: any) {
@@ -277,6 +291,24 @@ export default function LandProtectionDetailPage() {
                 Out of range
               </span>
             )}
+            {/* Payment sits next to the status, because a request that is
+                paid for but still early in the workflow read as nothing but
+                PENDING before. */}
+            <span
+              className={`text-xs font-medium px-3 py-1 rounded-full ${
+                request.paymentStatus === "PAID"
+                  ? "bg-green-100 text-green-700"
+                  : request.paymentStatus === "WAIVED"
+                    ? "bg-blue-100 text-blue-700"
+                    : "bg-gray-100 text-gray-600"
+              }`}
+            >
+              {request.paymentStatus === "PAID"
+                ? "Paid"
+                : request.paymentStatus === "WAIVED"
+                  ? "Waived"
+                  : "Unpaid"}
+            </span>
             <span
               className={`text-xs font-medium px-3 py-1 rounded-full ${getStatusBadge(
                 request.status,
@@ -345,7 +377,9 @@ export default function LandProtectionDetailPage() {
                 ? `${request.planTitle}${
                     request.planAmount != null ? ` (₹${request.planAmount})` : ""
                   }`
-                : "No paid plan"}
+                : request.paymentStatus === "PAID"
+                  ? "Paid, plan not recorded"
+                  : "Not selected yet"}
             </p>
           </div>
           <div>
@@ -428,37 +462,40 @@ export default function LandProtectionDetailPage() {
           </div>
         </div>
 
-        {(request.userLayoutUrl || request.dimensionPageUrl) && (
-          <div className="mt-6 pt-6 border-t border-gray-100">
-            <p className="text-gray-500 text-sm mb-3">
-              Customer Submitted Documents:
-            </p>
-            <div className="flex flex-wrap gap-4">
-              {request.userLayoutUrl && (
-                <a
-                  href={request.userLayoutUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-sm text-[#1e2667] hover:underline"
-                >
-                  View Customer&apos;s Layout Photo{" "}
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
-              )}
-              {request.dimensionPageUrl && (
-                <a
-                  href={request.dimensionPageUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-sm text-[#1e2667] hover:underline"
-                >
-                  View Dimension Page{" "}
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
-              )}
-            </div>
+        {/* Always shown, so a missing document reads as "not uploaded"
+            rather than the section silently disappearing. */}
+        <div className="mt-6 pt-6 border-t border-gray-100">
+          <p className="text-gray-500 text-sm mb-3">
+            Customer Submitted Documents
+          </p>
+          <div className="flex flex-wrap gap-6">
+            {request.dimensionPageUrl ? (
+              <a
+                href={request.dimensionPageUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-sm text-[#1e2667] hover:underline"
+              >
+                View Dimension Page <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            ) : (
+              <span className="text-sm text-gray-400">
+                Dimension page not uploaded
+              </span>
+            )}
+            {request.userLayoutUrl && (
+              <a
+                href={request.userLayoutUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-sm text-[#1e2667] hover:underline"
+              >
+                View Customer&apos;s Layout Photo{" "}
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            )}
           </div>
-        )}
+        </div>
 
         {request.imageUrls && request.imageUrls.length > 0 && (
           <div className="mt-6 pt-6 border-t border-gray-100">
@@ -550,7 +587,7 @@ export default function LandProtectionDetailPage() {
             <select
               onFocus={scrollSelectIntoView}
               value={selectedExecutiveId}
-              onChange={(e) => handleSelectExecutive(e.target.value)}
+              onChange={(e) => setSelectedExecutiveId(e.target.value)}
               className="w-full border border-gray-200 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
             >
               <option value="">Select an executive</option>
@@ -560,29 +597,33 @@ export default function LandProtectionDetailPage() {
                 </option>
               ))}
             </select>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <input
-                type="text"
-                value={district}
-                onChange={(e) => setDistrict(e.target.value)}
-                placeholder="District *"
-                className="min-w-0 border border-gray-200 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
-              />
-              <input
-                type="text"
-                value={mandal}
-                onChange={(e) => setMandal(e.target.value)}
-                placeholder="Mandal *"
-                className="min-w-0 border border-gray-200 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
-              />
-              <input
-                type="text"
-                value={village}
-                onChange={(e) => setVillage(e.target.value)}
-                placeholder="Village *"
-                className="min-w-0 border border-gray-200 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
-              />
-            </div>
+            {selectedExecutive && (
+              <p className="text-xs text-gray-500">
+                Coverage area taken from this executive:{" "}
+                {[
+                  selectedExecutive.assignedVillage,
+                  selectedExecutive.assignedMandal,
+                  selectedExecutive.assignedDistrict,
+                ]
+                  .filter(Boolean)
+                  .join(", ")}
+              </p>
+            )}
+            {(request.latitude == null || request.longitude == null) && (
+              <div>
+                <p className="text-sm text-gray-600 mb-2">
+                  This request has no map location saved. Paste its Google Maps
+                  link or coordinates.
+                </p>
+                <input
+                  type="text"
+                  value={mapsLink}
+                  onChange={(e) => setMapsLink(e.target.value)}
+                  placeholder="https://maps.app.goo.gl/... or 17.385044, 78.486671"
+                  className="w-full min-w-0 border border-gray-200 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+                />
+              </div>
+            )}
             <div>
               <p className="text-sm text-gray-600 mb-2">
                 Extra photo requirements (optional)

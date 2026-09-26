@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
+import axios from "axios";
 import Link from "next/link";
 import { ChevronLeft, Loader2, Upload, Trash2, FileText, MapPin } from "lucide-react";
 import {
@@ -73,6 +74,14 @@ export default function ExecutiveDetailsPage() {
       );
       setAttendance(attendanceData.data);
       setHrForm({
+        firstName: executiveData.firstName,
+        lastName: executiveData.lastName,
+        phone: executiveData.phone,
+        email: executiveData.email,
+        gender: executiveData.gender || undefined,
+        assignedDistrict: executiveData.assignedDistrict,
+        assignedMandal: executiveData.assignedMandal,
+        assignedVillage: executiveData.assignedVillage,
         role: executiveData.role || undefined,
         department: executiveData.department || undefined,
         managerId: executiveData.managerId || undefined,
@@ -99,8 +108,14 @@ export default function ExecutiveDetailsPage() {
       const updated = await executivesApi.updateProfile(executiveId, hrForm);
       setExecutive(updated);
     } catch (error) {
-      console.error("Failed to update HR profile:", error);
-      setHrError("Failed to save changes");
+      console.error("Failed to update executive profile:", error);
+      const message = axios.isAxiosError(error)
+        ? error.response?.data?.message
+        : undefined;
+      setHrError(
+        (Array.isArray(message) ? message[0] : message) ||
+          "Failed to save changes",
+      );
     } finally {
       setIsSavingHr(false);
     }
@@ -304,14 +319,144 @@ export default function ExecutiveDetailsPage() {
         </div>
       )}
 
-      {/* HR Profile */}
+      {/* Profile */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 mb-6">
-        <h2 className="text-lg font-medium text-gray-900 mb-6">HR Profile</h2>
+        <h2 className="text-lg font-medium text-gray-900 mb-6">Edit Profile</h2>
         {hrError && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
             {hrError}
           </div>
         )}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <div>
+            <label className="text-sm font-medium text-gray-700 block mb-1">
+              First Name
+            </label>
+            <input
+              type="text"
+              value={hrForm.firstName || ""}
+              onChange={(e) =>
+                setHrForm({ ...hrForm, firstName: e.target.value })
+              }
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-gray-700 block mb-1">
+              Last Name
+            </label>
+            <input
+              type="text"
+              value={hrForm.lastName || ""}
+              onChange={(e) =>
+                setHrForm({ ...hrForm, lastName: e.target.value })
+              }
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-gray-700 block mb-1">
+              Phone
+            </label>
+            <input
+              type="tel"
+              inputMode="numeric"
+              maxLength={10}
+              value={hrForm.phone || ""}
+              onChange={(e) =>
+                setHrForm({
+                  ...hrForm,
+                  phone: e.target.value.replace(/\D/g, "").slice(0, 10),
+                })
+              }
+              placeholder="10 digits"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              This is the number the executive logs in with.
+            </p>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-gray-700 block mb-1">
+              Email
+            </label>
+            <input
+              type="email"
+              value={hrForm.email || ""}
+              onChange={(e) => setHrForm({ ...hrForm, email: e.target.value })}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-gray-700 block mb-1">
+              Gender
+            </label>
+            <select
+              onFocus={scrollSelectIntoView}
+              value={hrForm.gender || ""}
+              onChange={(e) =>
+                setHrForm({ ...hrForm, gender: e.target.value || undefined })
+              }
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+            >
+              <option value="">Not set</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <h3 className="text-sm font-semibold text-gray-900 mb-4">
+          Coverage Area
+        </h3>
+        <p className="text-xs text-gray-500 mb-4">
+          Used as the district, mandal and village on every land this executive
+          is assigned for inspection.
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <div>
+            <label className="text-sm font-medium text-gray-700 block mb-1">
+              District
+            </label>
+            <input
+              type="text"
+              value={hrForm.assignedDistrict || ""}
+              onChange={(e) =>
+                setHrForm({ ...hrForm, assignedDistrict: e.target.value })
+              }
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-gray-700 block mb-1">
+              Mandal
+            </label>
+            <input
+              type="text"
+              value={hrForm.assignedMandal || ""}
+              onChange={(e) =>
+                setHrForm({ ...hrForm, assignedMandal: e.target.value })
+              }
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-gray-700 block mb-1">
+              Village
+            </label>
+            <input
+              type="text"
+              value={hrForm.assignedVillage || ""}
+              onChange={(e) =>
+                setHrForm({ ...hrForm, assignedVillage: e.target.value })
+              }
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#1e2667]"
+            />
+          </div>
+        </div>
+
+        <h3 className="text-sm font-semibold text-gray-900 mb-4">HR Details</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
             <label className="text-sm font-medium text-gray-700 block mb-1">
@@ -403,7 +548,7 @@ export default function ExecutiveDetailsPage() {
             className="flex items-center gap-2 bg-[#1e2667] text-white text-sm px-5 py-2 rounded-lg hover:bg-opacity-90 transition-opacity cursor-pointer disabled:opacity-50"
           >
             {isSavingHr && <Loader2 className="w-4 h-4 animate-spin" />}
-            Save HR Profile
+            Save Profile
           </button>
         </div>
       </div>
