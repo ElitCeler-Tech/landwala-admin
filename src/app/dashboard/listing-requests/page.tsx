@@ -3,7 +3,13 @@
 import { useState, useEffect } from "react";
 import { Search, Loader2, ExternalLink } from "lucide-react";
 import Link from "next/link";
-import { listingRequestsApi, ListingRequest, PaginationMeta } from "@/lib/api";
+import {
+  listingRequestsApi,
+  ListingRequest,
+  PaginationMeta,
+  propertySubmissionsApi,
+  PropertySubmission,
+} from "@/lib/api";
 import Image from "next/image";
 import { useListingRequestsStore } from "@/store/useListingRequestsStore";
 import { Pagination } from "@/components/Pagination";
@@ -30,7 +36,44 @@ export default function ListingRequestsPage() {
   } | null>(null);
   const [limit, setLimit] = useState(10);
 
+  // Agent uploads live in property submissions, not listing requests, so they
+  // were only reachable under Sell Requests mixed in with customer ones. They
+  // get their own tab here, which is where an agent's listing activity is
+  // actually looked for.
+  const [tab, setTab] = useState<"requested" | "uploaded">("requested");
+  const [uploads, setUploads] = useState<PropertySubmission[]>([]);
+  const [uploadsMeta, setUploadsMeta] = useState<PaginationMeta | null>(null);
+  const [isLoadingUploads, setIsLoadingUploads] = useState(false);
+
   const { setRequestDetail } = useListingRequestsStore();
+
+  useEffect(() => {
+    if (tab !== "uploaded") return;
+    const fetchUploads = async () => {
+      setIsLoadingUploads(true);
+      try {
+        const response = await propertySubmissionsApi.getSubmissions(
+          currentPage,
+          limit,
+          undefined,
+          searchQuery || undefined,
+          undefined,
+          "AGENT",
+        );
+        setUploads(response.data);
+        setUploadsMeta(response.meta);
+      } catch (error) {
+        console.error("Failed to fetch agent uploads:", error);
+      } finally {
+        setIsLoadingUploads(false);
+      }
+    };
+    fetchUploads();
+  }, [tab, currentPage, limit, searchQuery]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [tab]);
 
   useEffect(() => {
     const fetchRequests = async () => {
@@ -133,6 +176,27 @@ export default function ListingRequestsPage() {
         </div>
       </div>
 
+      <div className="flex gap-2 mb-6">
+        {(
+          [
+            ["requested", "Requested Listings"],
+            ["uploaded", "Agent Uploaded"],
+          ] as const
+        ).map(([key, label]) => (
+          <button
+            key={key}
+            onClick={() => setTab(key)}
+            className={`text-sm px-5 py-2 rounded-lg transition-colors cursor-pointer ${
+              tab === key
+                ? "bg-[#1e2667] text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       {message && (
         <div
           className={`mb-6 p-4 rounded-lg text-sm border ${
@@ -145,6 +209,88 @@ export default function ListingRequestsPage() {
         </div>
       )}
 
+      {tab === "uploaded" ? (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex-1 flex flex-col">
+          {isLoadingUploads ? (
+            <div className="flex-1 flex items-center justify-center py-16">
+              <Loader2 className="w-6 h-6 animate-spin text-[#1e2667]" />
+            </div>
+          ) : uploads.length === 0 ? (
+            <p className="text-gray-400 text-center py-16">
+              No properties uploaded by agents yet.
+            </p>
+          ) : (
+            <div className="w-full overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-gray-100">
+                    <th className="pb-3 text-sm font-medium text-gray-500">Property</th>
+                    <th className="pb-3 text-sm font-medium text-gray-500">Agent</th>
+                    <th className="pb-3 text-sm font-medium text-gray-500">Location</th>
+                    <th className="pb-3 text-sm font-medium text-gray-500">Status</th>
+                    <th className="pb-3 text-sm font-medium text-gray-500">Submitted</th>
+                    <th className="pb-3 text-sm font-medium text-gray-500">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {uploads.map((s) => (
+                    <tr key={s.id} className="border-b border-gray-50">
+                      <td className="py-4 pr-4 text-sm text-gray-900">
+                        {s.title}
+                        {s.category && (
+                          <span className="block text-xs text-gray-400">
+                            {s.category}
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-4 pr-4 text-sm text-gray-600">
+                        {s.agent ? (
+                          <Link
+                            href={`/dashboard/agents/${s.agent.id}`}
+                            className="text-[#1e2667] hover:underline"
+                          >
+                            {s.agent.fullName}
+                          </Link>
+                        ) : (
+                          "-"
+                        )}
+                      </td>
+                      <td className="py-4 pr-4 text-sm text-gray-600">
+                        {s.location || s.plotLocation || "-"}
+                      </td>
+                      <td className="py-4 pr-4">
+                        <span
+                          className={`text-xs px-3 py-1 rounded-full ${getStatusBadge(
+                            s.status,
+                          )}`}
+                        >
+                          {s.status}
+                        </span>
+                      </td>
+                      <td className="py-4 pr-4 text-sm text-gray-500">
+                        {new Date(s.createdAt).toLocaleDateString("en-IN")}
+                      </td>
+                      <td className="py-4">
+                        <Link
+                          href={`/dashboard/property-submissions/${s.id}`}
+                          className="text-sm text-[#1e2667] hover:underline"
+                        >
+                          View
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {uploadsMeta && uploadsMeta.totalPages > 1 && (
+            <p className="text-sm text-gray-500 mt-4">
+              {uploadsMeta.total} uploaded by agents
+            </p>
+          )}
+        </div>
+      ) : (
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex-1 flex flex-col">
         <div className="w-full overflow-x-auto">
           <table className="w-full text-left border-collapse table-fixed">
@@ -306,13 +452,18 @@ export default function ListingRequestsPage() {
           </table>
         </div>
       </div>
+      )}
 
       <div className="mb-6 mt-6">
         <Pagination
           currentPage={currentPage}
-          totalPages={meta?.totalPages ?? 1}
+          totalPages={
+            (tab === "uploaded" ? uploadsMeta?.totalPages : meta?.totalPages) ?? 1
+          }
           onPageChange={setCurrentPage}
-          totalItems={meta?.total ?? 0}
+          totalItems={
+            (tab === "uploaded" ? uploadsMeta?.total : meta?.total) ?? 0
+          }
           pageSize={limit}
           onPageSizeChange={(size) => {
             setLimit(size);

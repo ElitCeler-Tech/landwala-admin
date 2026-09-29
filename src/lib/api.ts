@@ -2056,10 +2056,12 @@ export const propertySubmissionsApi = {
     status?: string,
     search?: string,
     userId?: string,
+    // USER or AGENT, so agent uploads can be listed on their own tab.
+    submittedBy?: "USER" | "AGENT",
   ) => {
     const response = await api.get<PropertySubmissionsResponse>(
       "/admin/property-submissions",
-      { params: { page, limit, status, search, userId } },
+      { params: { page, limit, status, search, userId, submittedBy } },
     );
     return response.data;
   },
