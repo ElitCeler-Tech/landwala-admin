@@ -171,13 +171,9 @@ export default function CreateAgentPage() {
         problems.push("Pincode must be 6 digits");
     }
 
+    // Bank details are optional: an agent is routinely created before these
+    // are known. Anything actually entered still has to be well formed.
     if (step === 3) {
-      need(formData.payeeName, "Payee name");
-      need(formData.accountNumber, "Account number");
-      need(formData.bankName, "Bank name");
-      need(formData.branch, "Branch");
-      need(formData.ifscCode, "IFSC code");
-      need(formData.accountType, "Account type");
       if (
         formData.accountNumber.trim() &&
         !/^\d{9,18}$/.test(formData.accountNumber.trim())
@@ -512,9 +508,15 @@ export default function CreateAgentPage() {
 
         {currentStep === 3 && (
           <div className="border border-gray-100 rounded-xl p-6 bg-white shadow-sm">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6 border-b border-gray-100 pb-4">
-              Agent Bank Details
-            </h2>
+            <div className="mb-6 border-b border-gray-100 pb-4">
+              <h2 className="text-lg font-semibold text-gray-900">
+                Agent Bank Details
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Optional. Leave blank if you do not have them yet and add them
+                later from the agent&apos;s profile.
+              </p>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-900">
