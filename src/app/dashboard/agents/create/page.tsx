@@ -46,7 +46,10 @@ export default function CreateAgentPage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState("");
+  // The API answers a failed validation with an array of messages. Held as a
+  // list rather than a string: rendering the array directly concatenated every
+  // message into one unreadable run of text.
+  const [errors, setErrors] = useState<string[]>([]);
   const [success, setSuccess] = useState(false);
 
   const aadharInputRef = useRef<HTMLInputElement>(null);
@@ -97,7 +100,7 @@ export default function CreateAgentPage() {
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
-    setError("");
+    setErrors([]);
 
     try {
       const submitData = new FormData();
@@ -125,13 +128,85 @@ export default function CreateAgentPage() {
         router.push("/dashboard/agents");
       }, 2000);
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to create agent");
+      const message = err.response?.data?.message;
+      setErrors(
+        Array.isArray(message)
+          ? message
+          : [message || "Failed to create agent"],
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  /**
+   * What each step needs before it can be left. Checked here rather than only
+   * on submit, so a problem is reported on the step that owns it instead of
+   * surfacing as a wall of messages at the end.
+   */
+  const validateStep = (step: number): string[] => {
+    const problems: string[] = [];
+    const need = (value: string, label: string) => {
+      if (!value?.trim()) problems.push(`${label} is required`);
+    };
+
+    if (step === 1) {
+      need(formData.firstName, "First name");
+      need(formData.lastName, "Last name");
+      need(formData.phone, "Phone number");
+      need(formData.email, "Email");
+      if (formData.firstName.trim() && formData.firstName.trim().length < 2)
+        problems.push("First name must be at least 2 characters");
+      if (formData.lastName.trim() && formData.lastName.trim().length < 2)
+        problems.push("Last name must be at least 2 characters");
+      if (formData.phone.trim() && !/^\d{10}$/.test(formData.phone.trim()))
+        problems.push("Phone number must be 10 digits");
+      if (formData.email.trim() && !/^\S+@\S+\.\S+$/.test(formData.email.trim()))
+        problems.push("Enter a valid email address");
+      need(formData.addressLine, "Address");
+      need(formData.district, "District");
+      need(formData.mandal, "Mandal");
+      need(formData.village, "Village");
+      if (formData.pincode.trim() && !/^\d{6}$/.test(formData.pincode.trim()))
+        problems.push("Pincode must be 6 digits");
+    }
+
+    if (step === 3) {
+      need(formData.payeeName, "Payee name");
+      need(formData.accountNumber, "Account number");
+      need(formData.bankName, "Bank name");
+      need(formData.branch, "Branch");
+      need(formData.ifscCode, "IFSC code");
+      need(formData.accountType, "Account type");
+      if (
+        formData.accountNumber.trim() &&
+        !/^\d{9,18}$/.test(formData.accountNumber.trim())
+      )
+        problems.push("Account number must be 9 to 18 digits");
+      if (
+        formData.ifscCode.trim() &&
+        !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(formData.ifscCode.trim().toUpperCase())
+      )
+        problems.push("Enter a valid IFSC code, for example HDFC0001234");
+    }
+
+    if (step === 4) {
+      need(formData.assignedDistrict, "Assigned district");
+      need(formData.assignedMandal, "Assigned mandal");
+      need(formData.assignedVillage, "Assigned village");
+    }
+
+    return problems;
+  };
+
   const handleNext = () => {
+    const problems = validateStep(currentStep);
+    if (problems.length > 0) {
+      setErrors(problems);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    setErrors([]);
     if (currentStep < 4) {
       setCurrentStep((prev) => prev + 1);
     } else {
@@ -575,9 +650,18 @@ export default function CreateAgentPage() {
           </div>
         )}
 
-        {error && (
-          <div className="p-4 rounded-lg bg-red-50 text-red-500 text-sm font-medium">
-            {error}
+        {errors.length > 0 && (
+          <div className="p-4 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">
+            <p className="font-medium mb-2">
+              {errors.length === 1
+                ? "Please fix this before continuing:"
+                : `Please fix these ${errors.length} items before continuing:`}
+            </p>
+            <ul className="list-disc list-inside space-y-1">
+              {errors.map((message, index) => (
+                <li key={`${message}-${index}`}>{message}</li>
+              ))}
+            </ul>
           </div>
         )}
       </div>
